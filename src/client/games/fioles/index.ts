@@ -9,19 +9,14 @@ import {
 } from '../../../shared/games/fioles/definition.ts';
 import { parseBoard } from '../../../shared/games/fioles/rules.ts';
 import { h } from '../../platform/dom.ts';
-import type { Lang } from '../../platform/i18n.ts';
 import type { ClientGame, GameView, LevelTile } from '../client-game.ts';
 import { renderMiniBoard } from './board.ts';
 import { mountFiolesPlay } from './play.ts';
 import { mountFiolesReplay } from './replay.ts';
 import { FIOLES_STRINGS } from './strings.ts';
 
-const formatMoves = (value: number, lang: Lang) => FIOLES_STRINGS[lang].moves(value);
-
-/** Meilleur score du joueur sur une clé, ou undefined s'il ne l'a jamais gagnée. */
-const myBest = (view: GameView, key: string) => view.state.records[key]?.find((r) => r.player === view.me)?.value;
-
-const hasWon = (view: GameView, key: string) => myBest(view, key) !== undefined;
+/** Le joueur a gagné la clé au moins une fois. */
+const hasWon = (view: GameView, key: string) => (view.state.records[key] ?? []).some((r) => r.player === view.me);
 
 /** Plus haut niveau gagné par le joueur (0 si aucun). */
 export function highestLevel(view: GameView): number {
@@ -44,7 +39,8 @@ export const fiolesClient: ClientGame = {
     return level === null ? key : FIOLES_STRINGS[lang].level(level);
   },
 
-  formatValue: formatMoves,
+  // Seule la réussite d'un niveau compte : pas de score affiché.
+  formatValue: null,
 
   levelProgress(view) {
     return { unlocked: Math.min(highestLevel(view) + 1, MAX_LEVEL), total: MAX_LEVEL };
@@ -52,10 +48,9 @@ export const fiolesClient: ClientGame = {
 
   levelTile(level, view): LevelTile {
     const key = campaignKey(level);
-    const best = myBest(view, key);
     const required = fioles.prerequisite(key);
-    const status = best !== undefined ? 'done' : required === null || hasWon(view, required) ? 'open' : 'locked';
-    return { key, label: String(level), status, best: best === undefined ? null : formatMoves(best, view.lang) };
+    const status = hasWon(view, key) ? 'done' : required === null || hasWon(view, required) ? 'open' : 'locked';
+    return { key, label: String(level), status, best: null };
   },
 
   nextKey(key) {
@@ -85,6 +80,6 @@ export const fiolesClient: ClientGame = {
   mountReplay(host, ctx) {
     const start = startBoard(ctx.key);
     if (!start) return () => undefined;
-    return mountFiolesReplay(host, start, ctx.replay, FIOLES_STRINGS[ctx.lang]);
+    return mountFiolesReplay(host, start, ctx.replay);
   },
 };

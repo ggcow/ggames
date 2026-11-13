@@ -98,3 +98,18 @@ describe('avatars', () => {
     expect(avatar('abc123', 'Tom', 'md').className).toBe('avatar md');
   });
 });
+
+describe('grille sans score', () => {
+  it('marque un niveau réussi d’une coche quand le jeu n’a pas de score', () => {
+    const grid = renderLevelGrid({
+      progress: { unlocked: 2, total: 9999 },
+      page: 0,
+      tile: (level) => ({ key: `c:${level}`, label: String(level), status: level === 1 ? 'done' : 'open', best: null }),
+      online: [],
+      t: PLATFORM_STRINGS.fr,
+      onPage: vi.fn(),
+      onPlay: vi.fn(),
+    });
+    expect(grid.querySelector('.level.done .level-best')?.textContent).toBe('✓');
+  });
+});

@@ -34,7 +34,7 @@ export function mountRun(host: HTMLElement, ctx: AppContext, runId: string): Scr
           'span',
           { class: 'chips' },
           chip(t[`status_${run.status}`], run.status === 'won' ? 'good' : 'bad'),
-          chip(game.formatValue(run.value, ctx.lang)),
+          game.formatValue ? chip(game.formatValue(run.value, ctx.lang)) : null,
           chip(`⏱ ${formatDuration(run.durationMs, ctx.lang)}`),
           chip(formatDate(run.ended, ctx.lang)),
         ),

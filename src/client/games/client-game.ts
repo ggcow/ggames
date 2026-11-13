@@ -60,8 +60,11 @@ export interface ClientGame {
   readonly icon: string;
   /** Nom lisible d'une clé, ex. « Niveau 12 ». */
   keyLabel(key: string, lang: Lang): string;
-  /** Score lisible, ex. « 12 coups ». */
-  formatValue(value: number, lang: Lang): string;
+  /**
+   * Score lisible, ex. « 12 points ». `null` : le jeu n'affiche pas de score (pas de classement par score,
+   * seule la réussite compte).
+   */
+  readonly formatValue: ((value: number, lang: Lang) => string) | null;
   /** Avancement du joueur, pour dimensionner la grille. */
   levelProgress(view: GameView): LevelProgress;
   /** Case du niveau `level` (1 = premier niveau) pour ce joueur. */

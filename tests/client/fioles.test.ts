@@ -41,8 +41,8 @@ describe('niveaux', () => {
     expect(fiolesClient.levelProgress(view())).toEqual({ unlocked: 1, total: MAX_LEVEL });
   });
 
-  it('donne l’état de chaque case : réussie avec record, jouable, verrouillée', () => {
-    expect(fiolesClient.levelTile(1, v)).toEqual({ key: 'c:1', label: '1', status: 'done', best: '9 coups' });
+  it('donne l’état de chaque case : réussie, jouable, verrouillée, sans score', () => {
+    expect(fiolesClient.levelTile(1, v)).toEqual({ key: 'c:1', label: '1', status: 'done', best: null });
     expect(fiolesClient.levelTile(3, v)).toEqual({ key: 'c:3', label: '3', status: 'open', best: null });
     expect(fiolesClient.levelTile(4, v)).toEqual({ key: 'c:4', label: '4', status: 'locked', best: null });
     expect(fiolesClient.levelTile(8, v).status).toBe('locked');
@@ -55,7 +55,7 @@ describe('niveaux', () => {
     expect(fiolesClient.keyLabel('x:1', 'fr')).toBe('x:1');
     expect(fiolesClient.nextKey('c:5', v)).toBe('c:6');
     expect(fiolesClient.nextKey('x:1', v)).toBeNull();
-    expect(fiolesClient.formatValue(1, 'fr')).toBe('1 coup');
+    expect(fiolesClient.formatValue).toBeNull();
   });
 
   it('affiche un aperçu en direct uniquement pour un état valide', () => {
@@ -103,7 +103,7 @@ describe('partie', () => {
     expect(onProgress).toHaveBeenLastCalledWith(
       expect.objectContaining({ value: 2, replay: `${encodeActions([first])}u` }),
     );
-    expect(host.querySelector('.counter')?.textContent).toBe('2 coups');
+    expect(host.querySelector('.counter')).toBeNull();
     restart?.click();
     expect(onProgress).toHaveBeenLastCalledWith({ state: data, value: 0, replay: '' });
   });
@@ -123,11 +123,11 @@ describe('replay', () => {
     const start = parseBoard('aaab.bbba..') ?? [];
     const replay = encodeActions(solve(start) ?? []);
     const host = document.createElement('div');
-    mountFiolesReplay(host, start, replay, FIOLES_STRINGS.fr);
+    mountFiolesReplay(host, start, replay);
     const total = replay.length / 2;
-    expect(host.querySelector('.counter')?.textContent).toBe(`0 coups / ${total}`);
+    expect(host.querySelector('.counter')?.textContent).toBe(`0 / ${total}`);
     const buttons = [...host.querySelectorAll<HTMLButtonElement>('.controls button')];
     buttons[3]?.click();
-    expect(host.querySelector('.counter')?.textContent).toBe(`1 coup / ${total}`);
+    expect(host.querySelector('.counter')?.textContent).toBe(`1 / ${total}`);
   });
 });

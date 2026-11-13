@@ -21,12 +21,14 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
   let started = Date.now();
   let pending: { replay: string; value: number } | null = null;
 
+  const format = game.formatValue;
+
   const renderRecord = () => {
     const best = view?.state.records[key]?.[0];
     replaceChildren(
       recordHost,
-      best && view
-        ? chip(`🏆 ${t.record(view.playerName(best.player), game.formatValue(best.value, ctx.lang))}`)
+      best && view && format
+        ? chip(`🏆 ${t.record(view.playerName(best.player), format(best.value, ctx.lang))}`)
         : null,
     );
   };
@@ -64,14 +66,15 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         pending = null;
         api
           .submitRun(gameId, { key, status, durationMs: Date.now() - started, replay })
-          .then(({ run, records }) => showResult(status === 'won', game.formatValue(run.value, ctx.lang), records))
+          .then(({ run, records }) => showResult(status === 'won', run.value, records))
           .catch((error: unknown) => toast(errorMessage(error, t)));
       },
     });
   };
 
-  const showResult = (won: boolean, value: string, records: RecordEntry[]) => {
-    const next = view ? game.nextKey(key, view) : null;
+  /** Classement de la clé, affiché seulement pour un jeu qui a des scores. */
+  const leaderboard = (records: RecordEntry[], value: number): Child[] => {
+    if (!format) return [];
     const lines: Child[] = records.map((record, index) => {
       const name = view?.playerName(record.player) ?? '?';
       return h(
@@ -80,22 +83,28 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         h('span', { class: `rank rank-${index + 1}` }, String(index + 1)),
         avatar(record.player, name, 'xs'),
         h('span', { class: 'grow' }, name),
-        h('b', null, game.formatValue(record.value, ctx.lang)),
+        h('b', null, format(record.value, ctx.lang)),
       );
     });
+    return [
+      h('p', { class: 'modal-value' }, format(value, ctx.lang)),
+      h('h3', { class: 'section-title' }, t.leaderboard),
+      h('ol', { class: 'scores' }, ...lines),
+    ];
+  };
+
+  const showResult = (won: boolean, value: number, records: RecordEntry[]) => {
+    const next = view ? game.nextKey(key, view) : null;
     showModal(
       [
         h('div', { class: 'modal-emoji' }, won ? '🎉' : '😵'),
         h('h2', null, won ? t.won : t.lost),
-        h('p', { class: 'modal-value' }, value),
-        h('h3', { class: 'section-title' }, t.leaderboard),
-        h('ol', { class: 'scores' }, ...lines),
+        ...leaderboard(records, value),
       ],
       [
         ...(next
           ? [{ label: t.next, primary: true, action: () => ctx.navigate({ name: 'play', game: gameId, key: next }) }]
           : []),
-        { label: t.retry, action: start },
         { label: t.back, action: () => ctx.navigate({ name: 'game', game: gameId }) },
       ],
     );

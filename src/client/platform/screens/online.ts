@@ -46,7 +46,7 @@ export function renderLiveBoards(others: readonly Presence[], ctx: AppContext, g
           { class: 'live-board-head' },
           avatar(presence.player, presence.name, 'xs'),
           h('strong', null, presence.name),
-          h('small', null, game.formatValue(presence.value, ctx.lang)),
+          game.formatValue ? h('small', null, game.formatValue(presence.value, ctx.lang)) : null,
         ),
         presence.state ? game.renderLiveState(presence.state) : null,
       ),

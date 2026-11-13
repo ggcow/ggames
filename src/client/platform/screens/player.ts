@@ -28,7 +28,7 @@ export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame
         ? h(
             'button',
             { class: 'btn small', on: { click: () => key.best && openRun(key.best) } },
-            `▶ ${game.formatValue(key.best.value, ctx.lang)}`,
+            game.formatValue ? `▶ ${game.formatValue(key.best.value, ctx.lang)}` : t.watchReplay,
           )
         : chip(t.status_abandoned, 'bad'),
     );
@@ -44,7 +44,13 @@ export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame
         h(
           'small',
           null,
-          `${game.formatValue(run.value, ctx.lang)} · ${formatDuration(run.durationMs, ctx.lang)} · ${formatDate(run.ended, ctx.lang)}`,
+          [
+            game.formatValue?.(run.value, ctx.lang),
+            formatDuration(run.durationMs, ctx.lang),
+            formatDate(run.ended, ctx.lang),
+          ]
+            .filter(Boolean)
+            .join(' · '),
         ),
       ),
       chip(t[`status_${run.status}`], run.status === 'won' ? 'good' : 'bad'),

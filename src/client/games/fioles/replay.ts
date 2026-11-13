@@ -4,16 +4,10 @@ import { decodeActions, playActions } from '../../../shared/games/fioles/definit
 import type { Board, ReadonlyBoard } from '../../../shared/games/fioles/rules.ts';
 import { h, replaceChildren } from '../../platform/dom.ts';
 import { renderBoard } from './board.ts';
-import type { FiolesStrings } from './strings.ts';
 
 const STEP_MS = 700;
 
-export function mountFiolesReplay(
-  host: HTMLElement,
-  start: ReadonlyBoard,
-  replay: string,
-  strings: FiolesStrings,
-): () => void {
+export function mountFiolesReplay(host: HTMLElement, start: ReadonlyBoard, replay: string): () => void {
   const actions = decodeActions(replay) ?? [];
   const states: Board[] = playActions(
     start.map((t) => [...t]),
@@ -28,7 +22,7 @@ export function mountFiolesReplay(
   const playButton = h('button', { class: 'btn primary' });
 
   const render = () => {
-    counter.textContent = `${strings.moves(index)} / ${states.length - 1}`;
+    counter.textContent = `${index} / ${states.length - 1}`;
     slider.value = String(index);
     playButton.textContent = timer ? '⏸' : '▶';
     renderBoard(boardHost, states[index] ?? [], { width: host.clientWidth || window.innerWidth });

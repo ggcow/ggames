@@ -88,7 +88,7 @@ export function renderLevelGrid(options: LevelGridOptions): HTMLElement {
           on: { click: () => options.onPlay(tile.key) },
         },
         h('span', { class: 'level-number' }, tile.status === 'locked' ? '🔒' : tile.label),
-        tile.status === 'done' ? h('span', { class: 'level-best' }, tile.best) : null,
+        tile.status === 'done' ? h('span', { class: 'level-best' }, tile.best ?? '✓') : null,
         tile.status === 'open' ? h('span', { class: 'level-best' }, t.play) : null,
         here.length > 0
           ? h('span', { class: 'level-live' }, ...here.slice(0, 3).map((p) => avatar(p.player, p.name, 'xs')))
