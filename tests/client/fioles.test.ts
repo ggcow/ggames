@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { GameView } from '../../src/client/games/client-game.ts';
+import { renderBoard } from '../../src/client/games/fioles/board.ts';
 import { fiolesClient, highestLevel } from '../../src/client/games/fioles/index.ts';
 import { mountFiolesPlay } from '../../src/client/games/fioles/play.ts';
 import { mountFiolesReplay } from '../../src/client/games/fioles/replay.ts';
@@ -129,5 +130,18 @@ describe('replay', () => {
     const buttons = [...host.querySelectorAll<HTMLButtonElement>('.controls button')];
     buttons[3]?.click();
     expect(host.querySelector('.counter')?.textContent).toBe(`1 / ${total}`);
+  });
+});
+
+describe('plateau', () => {
+  it('n’anime le bouchon que sur la fiole qui vient d’être terminée', () => {
+    const host = document.createElement('div');
+    const board = [[0, 0, 0, 0], [1, 1, 1, 1], [2, 2, 2], [2]];
+    renderBoard(host, board, { width: 390, arrived: { tube: 1, count: 2 } });
+    const tubes = [...host.querySelectorAll('.tube')];
+    expect(tubes.map((t) => t.classList.contains('done'))).toEqual([true, true, false, false]);
+    expect(tubes.map((t) => t.classList.contains('sealed'))).toEqual([false, true, false, false]);
+    renderBoard(host, board, { width: 390 });
+    expect(host.querySelectorAll('.sealed')).toHaveLength(0);
   });
 });

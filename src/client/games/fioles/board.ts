@@ -35,8 +35,11 @@ export function renderBoard(host: HTMLElement, board: ReadonlyBoard, options: Bo
 function renderTube(tube: readonly number[], index: number, options: BoardOptions): HTMLElement {
   const classes = ['tube'];
   if (options.selected === index) classes.push('selected');
+  const arrived = options.arrived?.tube === index;
   if (isTubeDone(tube)) classes.push('done');
-  const arrivedFrom = options.arrived?.tube === index ? tube.length - options.arrived.count : Number.POSITIVE_INFINITY;
+  // Le bouchon ne s'anime que sur la fiole qui vient d'être terminée, pas à chaque redessin du plateau.
+  if (arrived && isTubeDone(tube)) classes.push('sealed');
+  const arrivedFrom = arrived ? tube.length - (options.arrived?.count ?? 0) : Number.POSITIVE_INFINITY;
   const glass = h(
     'div',
     { class: 'glass' },
