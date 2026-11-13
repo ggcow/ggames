@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.3.0](///compare/v0.2.0...v0.3.0) (2026-11-13)
+
+### ⚠ BREAKING CHANGES
+
+* **fioles:** generateBoard prend un BoardSpec ; campaignColors est
+  remplacée par campaignSpec. Les parties Fioles enregistrées sont supprimées.
+
+### Fonctionnalités
+
+* **fioles:** afficher de nouveau le nombre de coups 1c6a940
+* **fioles:** ne compter que la réussite des niveaux f11d6c8
+* **fioles:** nouvelle campagne qui monte plus vite en difficulté 3465d43
+* **platform:** montrer où en est chaque joueur sur la grille des niveaux cefc9e5
+
+### Corrections
+
+* **fioles:** n'animer le bouchon que sur la fiole qui vient d'être terminée 98ca7d6
+
 ## [0.2.0](///compare/v0.1.0...v0.2.0) (2026-11-13)
 
 ### ⚠ BREAKING CHANGES
