@@ -1,10 +1,11 @@
 import type { Run } from '../../../shared/platform/protocol.ts';
 import type { Unmount } from '../../games/client-game.ts';
 import { findClientGame } from '../../games/registry.ts';
+import { avatar } from '../avatar.ts';
 import { type AppContext, createGameView, type ScreenHandle } from '../context.ts';
 import { h, replaceChildren } from '../dom.ts';
 import { formatDate, formatDuration } from '../i18n.ts';
-import { errorMessage, loading, screenHeader, toast } from '../ui.ts';
+import { chip, errorMessage, loading, screenHeader, toast } from '../ui.ts';
 
 /** Revoir une partie enregistrée, action par action. */
 export function mountRun(host: HTMLElement, ctx: AppContext, runId: string): ScreenHandle {
@@ -15,17 +16,28 @@ export function mountRun(host: HTMLElement, ctx: AppContext, runId: string): Scr
     const game = findClientGame(run.game);
     if (!game) return;
     const state = await api.game(run.game);
-    const view = createGameView(state, ctx.me.id, ctx.lang);
+    const name = createGameView(state, ctx.me.id, ctx.lang).playerName(run.player);
     const replayHost = h('div', { class: 'play-host' });
     replaceChildren(
       host,
-      screenHeader(t.replayOf(view.playerName(run.player)), () =>
-        ctx.navigate({ name: 'player', game: run.game, player: run.player }),
+      screenHeader(
+        game.keyLabel(run.key, ctx.lang),
+        () => ctx.navigate({ name: 'player', game: run.game, player: run.player }),
+        t,
       ),
       h(
-        'p',
-        { class: 'center muted' },
-        `${game.keyLabel(run.key, ctx.lang)} · ${t[`status_${run.status}`]} · ${game.formatValue(run.value, ctx.lang)} · ${formatDuration(run.durationMs, ctx.lang)} · ${formatDate(run.ended, ctx.lang)}`,
+        'div',
+        { class: 'run-head' },
+        avatar(run.player, name, 'sm'),
+        h('strong', null, t.replayOf(name)),
+        h(
+          'span',
+          { class: 'chips' },
+          chip(t[`status_${run.status}`], run.status === 'won' ? 'good' : 'bad'),
+          chip(game.formatValue(run.value, ctx.lang)),
+          chip(`⏱ ${formatDuration(run.durationMs, ctx.lang)}`),
+          chip(formatDate(run.ended, ctx.lang)),
+        ),
       ),
       replayHost,
     );

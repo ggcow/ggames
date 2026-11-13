@@ -1,30 +1,30 @@
 import type { Presence } from '../../../shared/platform/protocol.ts';
 import { findClientGame } from '../../games/registry.ts';
+import { avatar } from '../avatar.ts';
 import type { AppContext } from '../context.ts';
 import { h } from '../dom.ts';
 
-/** Liste des joueurs connectés avec ce qu'ils font ; un clic rejoint leur partie. */
+/** Joueurs connectés avec ce qu'ils font ; toucher un joueur en partie rejoint son niveau. */
 export function renderOnline(others: readonly Presence[], ctx: AppContext): HTMLElement {
-  if (others.length === 0) return h('p', { class: 'muted' }, ctx.t.nobodyOnline);
+  if (others.length === 0) return h('p', { class: 'muted empty-line' }, ctx.t.nobodyOnline);
   return h(
     'div',
-    { class: 'stack' },
+    { class: 'online-list' },
     ...others.map((presence) => {
       const game = presence.game ? findClientGame(presence.game) : null;
-      const activity =
-        game && presence.key
-          ? `${game.icon} ${game.name[ctx.lang]} · ${game.keyLabel(presence.key, ctx.lang)}`
-          : ctx.t.inMenus;
-      const join =
-        game && presence.key
-          ? () => ctx.navigate({ name: 'play', game: game.definition.id, key: presence.key ?? '' })
-          : undefined;
+      const key = presence.key;
+      const activity = game && key ? `${game.icon} ${game.keyLabel(key, ctx.lang)}` : ctx.t.inMenus;
+      const join = game && key ? () => ctx.navigate({ name: 'play', game: game.definition.id, key }) : undefined;
       return h(
         'button',
-        { class: 'card online', disabled: !join, on: join ? { click: join } : {} },
-        h('span', { class: 'dot' }),
-        h('strong', null, presence.name),
-        h('small', { class: 'muted grow' }, activity),
+        { class: 'online-chip', disabled: !join, on: join ? { click: join } : {} },
+        h(
+          'span',
+          { class: 'online-avatar' },
+          avatar(presence.player, presence.name, 'md'),
+          h('span', { class: 'dot' }),
+        ),
+        h('span', { class: 'online-text' }, h('strong', null, presence.name), h('small', null, activity)),
       );
     }),
   );
@@ -41,7 +41,13 @@ export function renderLiveBoards(others: readonly Presence[], ctx: AppContext, g
       h(
         'div',
         { class: 'live-board' },
-        h('small', null, `${presence.name} · ${game.formatValue(presence.value, ctx.lang)}`),
+        h(
+          'div',
+          { class: 'live-board-head' },
+          avatar(presence.player, presence.name, 'xs'),
+          h('strong', null, presence.name),
+          h('small', null, game.formatValue(presence.value, ctx.lang)),
+        ),
         presence.state ? game.renderLiveState(presence.state) : null,
       ),
     ),

@@ -20,9 +20,9 @@ export function mountLogin(host: HTMLElement, options: LoginOptions): void {
 
   const name = h('input', { type: 'text', placeholder: t.name, maxLength: 16, autocomplete: 'username' });
   const password = h('input', { type: 'password', placeholder: t.password, autocomplete: 'current-password' });
-  const message = h('p', { class: 'error' });
-  const submit = h('button', { class: 'primary', type: 'submit' });
-  const toggle = h('button', { class: 'ghost', type: 'button' });
+  const message = h('p', { class: 'error', attrs: { role: 'alert' } });
+  const submit = h('button', { class: 'btn primary', type: 'submit' });
+  const toggle = h('button', { class: 'link', type: 'button' });
 
   const render = () => {
     submit.textContent = mode === 'login' ? t.login : t.register;
@@ -40,7 +40,7 @@ export function mountLogin(host: HTMLElement, options: LoginOptions): void {
   const form = h(
     'form',
     {
-      class: 'stack',
+      class: 'panel stack',
       on: {
         submit: (event) => {
           event.preventDefault();
@@ -66,8 +66,22 @@ export function mountLogin(host: HTMLElement, options: LoginOptions): void {
 
   replaceChildren(
     host,
-    h('button', { class: 'ghost lang', on: { click: options.onSwitchLang } }, t.switchLang),
-    h('div', { class: 'hero' }, h('h1', null, t.appName)),
+    h(
+      'div',
+      { class: 'login-top' },
+      h(
+        'button',
+        { class: 'round small', attrs: { 'aria-label': t.switchLang }, on: { click: options.onSwitchLang } },
+        t.langShort,
+      ),
+    ),
+    h(
+      'div',
+      { class: 'brand big' },
+      h('div', { class: 'brand-icons', attrs: { 'aria-hidden': 'true' } }, '🧪🎲🧩'),
+      h('h1', null, t.appName),
+      h('p', null, t.tagline),
+    ),
     form,
   );
   render();

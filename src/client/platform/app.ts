@@ -16,6 +16,7 @@ import { mountPlayer } from './screens/player.ts';
 import { mountRun } from './screens/run.ts';
 import { createLocalStore, type LocalStore } from './storage.ts';
 import { PLATFORM_STRINGS } from './strings.ts';
+import { closeModals } from './ui.ts';
 
 const SESSION_KEY = 'session';
 const LANG_KEY = 'lang';
@@ -127,6 +128,7 @@ export class App {
   private show(): void {
     this.screen?.dispose?.();
     this.screen = null;
+    closeModals();
     document.documentElement.lang = this.lang === 'zh' ? 'zh-CN' : 'fr';
     document.title = PLATFORM_STRINGS[this.lang].appName;
     const route = parseRoute(window.location.hash) ?? { name: 'hub' };

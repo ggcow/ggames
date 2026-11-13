@@ -14,7 +14,7 @@ export function avatarColor(id: string): string {
 /** Première lettre du pseudo (gère les caractères chinois et les emojis). */
 export const initial = (name: string): string => ([...name.trim()][0] ?? '?').toUpperCase();
 
-export function avatar(id: string, name: string, size: 'xs' | 'sm' | 'md' = 'sm'): HTMLElement {
+export function avatar(id: string, name: string, size: 'xs' | 'sm' | 'md' | 'lg' = 'sm'): HTMLElement {
   return h(
     'span',
     { class: `avatar ${size}`, style: { background: avatarColor(id) }, attrs: { title: name } },

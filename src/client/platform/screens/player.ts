@@ -1,72 +1,73 @@
-import type { PlayerGameDetail, RunSummary } from '../../../shared/platform/protocol.ts';
+import type { KeyProgress, PlayerGameDetail, RunSummary } from '../../../shared/platform/protocol.ts';
 import type { ClientGame } from '../../games/client-game.ts';
+import { avatar } from '../avatar.ts';
 import type { AppContext, ScreenHandle } from '../context.ts';
 import { h, replaceChildren } from '../dom.ts';
 import { formatDate, formatDuration } from '../i18n.ts';
-import { errorMessage, loading, screenHeader, section, toast } from '../ui.ts';
+import { chip, errorMessage, loading, screenHeader, section, toast } from '../ui.ts';
 
-/** Progression détaillée d'un joueur sur un jeu : niveaux, essais, meilleurs scores, replays. */
+/** Fiche d'un joueur sur un jeu : statistiques, niveaux joués, meilleurs scores, dernières parties. */
 export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame, playerId: string): ScreenHandle {
   const { t, api } = ctx;
   const gameId = game.definition.id;
   let detail: PlayerGameDetail | null = null;
 
+  const openRun = (run: RunSummary) => ctx.navigate({ name: 'run', run: run.id });
+
+  const keyRow = (key: KeyProgress) =>
+    h(
+      'div',
+      { class: 'list-row' },
+      h(
+        'span',
+        { class: 'list-text' },
+        h('strong', null, game.keyLabel(key.key, ctx.lang)),
+        h('small', null, `${t.attempts} ${key.attempts} · ${t.wins} ${key.wins}`),
+      ),
+      key.best
+        ? h(
+            'button',
+            { class: 'btn small', on: { click: () => key.best && openRun(key.best) } },
+            `▶ ${game.formatValue(key.best.value, ctx.lang)}`,
+          )
+        : chip(t.status_abandoned, 'bad'),
+    );
+
   const runRow = (run: RunSummary) =>
     h(
       'button',
-      { class: 'card run', on: { click: () => ctx.navigate({ name: 'run', run: run.id }) } },
-      h('strong', { class: 'grow' }, game.keyLabel(run.key, ctx.lang)),
-      h('small', { class: `status ${run.status}` }, t[`status_${run.status}`]),
+      { class: 'list-row', on: { click: () => openRun(run) } },
       h(
-        'small',
-        { class: 'muted block' },
-        `${game.formatValue(run.value, ctx.lang)} · ${formatDuration(run.durationMs, ctx.lang)} · ${formatDate(run.ended, ctx.lang)}`,
+        'span',
+        { class: 'list-text' },
+        h('strong', null, game.keyLabel(run.key, ctx.lang)),
+        h(
+          'small',
+          null,
+          `${game.formatValue(run.value, ctx.lang)} · ${formatDuration(run.durationMs, ctx.lang)} · ${formatDate(run.ended, ctx.lang)}`,
+        ),
       ),
+      chip(t[`status_${run.status}`], run.status === 'won' ? 'good' : 'bad'),
     );
 
   const render = () => {
     if (!detail) return loading(host, t);
-    const progress = detail.progress;
+    const { player, progress } = detail;
     replaceChildren(
       host,
-      screenHeader(`${detail.player.name} · ${game.name[ctx.lang]}`, () =>
-        ctx.navigate({ name: 'game', game: gameId }),
+      screenHeader(game.name[ctx.lang], () => ctx.navigate({ name: 'game', game: gameId }), t),
+      h('div', { class: 'profile' }, avatar(player.id, player.name, 'lg'), h('h2', null, player.name)),
+      h(
+        'div',
+        { class: 'stats' },
+        stat(t.completed, String(progress?.completed ?? 0)),
+        stat(t.runs, String(progress?.runs ?? 0)),
+        stat(t.playTime, formatDuration(progress?.playTimeMs ?? 0, ctx.lang)),
       ),
-      progress
-        ? h(
-            'div',
-            { class: 'stats' },
-            stat(t.completed, String(progress.completed)),
-            stat(t.runs, String(progress.runs)),
-            stat(t.playTime, formatDuration(progress.playTimeMs, ctx.lang)),
-          )
-        : h('p', { class: 'muted' }, t.noRuns),
-      section(
-        t.levels,
-        h(
-          'div',
-          { class: 'stack' },
-          ...detail.keys.map((key) =>
-            h(
-              'div',
-              { class: 'card key-row' },
-              h('strong', { class: 'grow' }, game.keyLabel(key.key, ctx.lang)),
-              h('small', { class: 'muted' }, `${t.attempts} ${key.attempts} · ${t.wins} ${key.wins}`),
-              key.best
-                ? h(
-                    'button',
-                    {
-                      class: 'ghost small',
-                      on: { click: () => key.best && ctx.navigate({ name: 'run', run: key.best.id }) },
-                    },
-                    `${t.best} ${game.formatValue(key.best.value, ctx.lang)} ${t.watchReplay}`,
-                  )
-                : null,
-            ),
-          ),
-        ),
-      ),
-      section(t.recent, h('div', { class: 'stack' }, ...detail.recent.map(runRow))),
+      detail.keys.length > 0
+        ? section(t.levels, h('div', { class: 'list' }, ...detail.keys.map(keyRow)))
+        : h('p', { class: 'muted empty-line' }, t.noRuns),
+      detail.recent.length > 0 ? section(t.recent, h('div', { class: 'list' }, ...detail.recent.map(runRow))) : null,
     );
   };
 
@@ -85,4 +86,4 @@ export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame
 }
 
 const stat = (label: string, value: string) =>
-  h('div', { class: 'stat' }, h('strong', null, value), h('small', { class: 'muted' }, label));
+  h('div', { class: 'stat' }, h('strong', null, value), h('small', null, label));

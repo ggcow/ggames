@@ -23,9 +23,9 @@ export function mountFiolesReplay(
   let timer: ReturnType<typeof setInterval> | null = null;
 
   const boardHost = h('div', { class: 'board-host' });
-  const counter = h('p', { class: 'center counter' });
+  const counter = h('span', { class: 'counter' });
   const slider = h('input', { type: 'range', attrs: { min: '0', max: String(states.length - 1), value: '0' } });
-  const playButton = h('button', { class: 'primary' });
+  const playButton = h('button', { class: 'btn primary' });
 
   const render = () => {
     counter.textContent = `${strings.moves(index)} / ${states.length - 1}`;
@@ -66,16 +66,16 @@ export function mountFiolesReplay(
 
   replaceChildren(
     host,
-    counter,
-    boardHost,
+    h('div', { class: 'counter-row' }, counter),
+    h('div', { class: 'table' }, boardHost),
     slider,
     h(
       'div',
       { class: 'controls' },
-      h('button', { on: { click: () => jump(0) } }, '⏮'),
-      h('button', { on: { click: () => jump(index - 1) } }, '◀'),
+      h('button', { class: 'btn', on: { click: () => jump(0) } }, '⏮'),
+      h('button', { class: 'btn', on: { click: () => jump(index - 1) } }, '◀'),
       playButton,
-      h('button', { on: { click: () => jump(index + 1) } }, '▶|'),
+      h('button', { class: 'btn', on: { click: () => jump(index + 1) } }, '▶|'),
     ),
   );
   render();

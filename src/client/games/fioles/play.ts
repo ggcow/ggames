@@ -32,10 +32,15 @@ export function mountFiolesPlay(host: HTMLElement, options: FiolesPlayOptions): 
   let finished = false;
 
   const boardHost = h('div', { class: 'board-host' });
-  const counter = h('p', { class: 'center counter' });
-  const undo = h('button', { on: { click: () => undoLast() } }, strings.undo);
-  const restart = h('button', { on: { click: () => reset() } }, strings.restart);
-  replaceChildren(host, counter, boardHost, h('div', { class: 'controls' }, undo, restart));
+  const counter = h('span', { class: 'counter' });
+  const undo = h('button', { class: 'btn', on: { click: () => undoLast() } }, strings.undo);
+  const restart = h('button', { class: 'btn', on: { click: () => reset() } }, strings.restart);
+  replaceChildren(
+    host,
+    h('div', { class: 'counter-row' }, counter),
+    h('div', { class: 'table' }, boardHost),
+    h('div', { class: 'controls' }, undo, restart),
+  );
 
   const render = (arrived?: { tube: number; count: number }) => {
     counter.textContent = strings.moves(actions.length);

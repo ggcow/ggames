@@ -6,7 +6,7 @@ import { detectLang, formatDuration, isLang } from '../../src/client/platform/i1
 import { formatRoute, parseRoute, type Route } from '../../src/client/platform/router.ts';
 import { createLocalStore } from '../../src/client/platform/storage.ts';
 import { PLATFORM_STRINGS } from '../../src/client/platform/strings.ts';
-import { errorMessage } from '../../src/client/platform/ui.ts';
+import { closeModals, errorMessage, showModal } from '../../src/client/platform/ui.ts';
 
 describe('router', () => {
   const routes: Route[] = [
@@ -170,5 +170,19 @@ describe('client API', () => {
     expect(errorMessage(new ApiError(NETWORK_ERROR, ''), t)).toBe(t.error_network);
     expect(errorMessage(new ApiError(409, 'name taken'), t)).toBe(t.error_nameTaken);
     expect(errorMessage(new Error('x'), t)).toBe(t.error_generic);
+  });
+});
+
+describe('fenêtres modales', () => {
+  it('se ferment par leurs boutons ou toutes ensemble au changement d’écran', () => {
+    const action = vi.fn();
+    showModal([h('p', null, 'a')], [{ label: 'OK', action }]);
+    document.querySelector<HTMLButtonElement>('.modal button')?.click();
+    expect(action).toHaveBeenCalledOnce();
+    expect(document.querySelectorAll('.modal')).toHaveLength(0);
+    showModal([], []);
+    showModal([], []);
+    closeModals();
+    expect(document.querySelectorAll('.modal')).toHaveLength(0);
   });
 });

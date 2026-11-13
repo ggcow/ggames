@@ -1,8 +1,9 @@
 import type { GameState, RecordEntry } from '../../../shared/platform/protocol.ts';
 import type { ClientGame, GameView, Unmount } from '../../games/client-game.ts';
+import { avatar } from '../avatar.ts';
 import { type AppContext, createGameView, type ScreenHandle } from '../context.ts';
 import { type Child, h, replaceChildren } from '../dom.ts';
-import { errorMessage, loading, screenHeader, showModal, toast } from '../ui.ts';
+import { chip, errorMessage, loading, screenHeader, showModal, toast } from '../ui.ts';
 import { renderLiveBoards } from './online.ts';
 
 /**
@@ -13,7 +14,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
   const { t, api } = ctx;
   const gameId = game.definition.id;
   const liveHost = h('div');
-  const recordHost = h('p', { class: 'muted center small' });
+  const recordHost = h('div', { class: 'record' });
   const boardHost = h('div', { class: 'play-host' });
   let view: GameView | null = null;
   let unmountGame: Unmount | null = null;
@@ -22,15 +23,19 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
 
   const renderRecord = () => {
     const best = view?.state.records[key]?.[0];
-    recordHost.textContent =
-      best && view ? t.record(view.playerName(best.player), game.formatValue(best.value, ctx.lang)) : '';
+    replaceChildren(
+      recordHost,
+      best && view
+        ? chip(`🏆 ${t.record(view.playerName(best.player), game.formatValue(best.value, ctx.lang))}`)
+        : null,
+    );
   };
 
   const renderLive = () => {
     const others = ctx.live.presence.filter((p) => p.player !== ctx.me.id && p.game === gameId && p.key === key);
     replaceChildren(
       liveHost,
-      others.length > 0 ? h('small', { class: 'muted' }, t.alsoHere) : null,
+      others.length > 0 ? h('small', { class: 'section-title' }, t.alsoHere) : null,
       renderLiveBoards(others, ctx, gameId),
     );
   };
@@ -67,19 +72,23 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
 
   const showResult = (won: boolean, value: string, records: RecordEntry[]) => {
     const next = view ? game.nextKey(key, view) : null;
-    const lines: Child[] = records.map((record, index) =>
-      h(
+    const lines: Child[] = records.map((record, index) => {
+      const name = view?.playerName(record.player) ?? '?';
+      return h(
         'li',
         { class: record.player === ctx.me.id ? 'me' : '' },
-        h('span', null, `${index + 1}. ${view?.playerName(record.player) ?? '?'}`),
+        h('span', { class: `rank rank-${index + 1}` }, String(index + 1)),
+        avatar(record.player, name, 'xs'),
+        h('span', { class: 'grow' }, name),
         h('b', null, game.formatValue(record.value, ctx.lang)),
-      ),
-    );
+      );
+    });
     showModal(
       [
+        h('div', { class: 'modal-emoji' }, won ? '🎉' : '😵'),
         h('h2', null, won ? t.won : t.lost),
-        h('p', null, value),
-        h('h3', null, t.leaderboard),
+        h('p', { class: 'modal-value' }, value),
+        h('h3', { class: 'section-title' }, t.leaderboard),
         h('ol', { class: 'scores' }, ...lines),
       ],
       [
@@ -101,7 +110,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
   const showLocked = () =>
     replaceChildren(
       host,
-      screenHeader(game.keyLabel(key, ctx.lang), () => ctx.navigate({ name: 'game', game: gameId })),
+      screenHeader(game.keyLabel(key, ctx.lang), () => ctx.navigate({ name: 'game', game: gameId }), t),
       h(
         'div',
         { class: 'empty' },
@@ -122,7 +131,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         if (!isUnlocked(state)) return showLocked();
         replaceChildren(
           host,
-          screenHeader(game.keyLabel(key, ctx.lang), () => ctx.navigate({ name: 'game', game: gameId })),
+          screenHeader(game.keyLabel(key, ctx.lang), () => ctx.navigate({ name: 'game', game: gameId }), t),
           recordHost,
           liveHost,
           boardHost,
