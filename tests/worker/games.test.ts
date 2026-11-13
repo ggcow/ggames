@@ -1,0 +1,157 @@
+import { describe, expect, it } from 'vitest';
+import {
+  campaignBoard,
+  campaignKey,
+  customKey,
+  encodeActions,
+  type FiolesAction,
+} from '../../src/shared/games/fioles/definition.ts';
+import { type Board, boardToString } from '../../src/shared/games/fioles/rules.ts';
+import type {
+  CreateContentResponse,
+  GameState,
+  GameSummary,
+  PlayerGameDetail,
+  Run,
+  SubmitRunResponse,
+} from '../../src/shared/platform/protocol.ts';
+import { solve } from '../support/fioles-solver.ts';
+import { call, newPlayer } from './support.ts';
+
+const solution = (board: Board): FiolesAction[] => {
+  const actions = solve(board);
+  if (!actions) throw new Error('plateau sans solution');
+  return actions;
+};
+
+const LEVEL_1 = campaignBoard(1);
+const WIN_1 = encodeActions(solution(LEVEL_1));
+
+const submit = (token: string, body: unknown) => call<SubmitRunResponse>('/api/games/fioles/runs', { token, body });
+
+describe('jeux', () => {
+  it('liste les jeux disponibles avec leurs statistiques', async () => {
+    const { token } = await newPlayer();
+    const { body } = await call<GameSummary[]>('/api/games', { token });
+    expect(body).toEqual([{ id: 'fioles', players: 0, runs: 0, lastPlayed: null }]);
+  });
+
+  it('répond 404 pour un jeu inconnu', async () => {
+    const { token } = await newPlayer();
+    expect((await call('/api/games/inconnu', { token })).status).toBe(404);
+  });
+});
+
+describe('parties', () => {
+  it('enregistre une partie gagnée avec le score recalculé par le serveur', async () => {
+    const me = await newPlayer();
+    const { status, body } = await submit(me.token, {
+      key: campaignKey(1),
+      status: 'won',
+      durationMs: 12_000,
+      replay: WIN_1,
+    });
+    expect(status).toBe(200);
+    expect(body.run).toMatchObject({ key: 'c:1', status: 'won', value: WIN_1.length / 2, player: me.player.id });
+    expect(body.records).toEqual([{ player: me.player.id, value: body.run.value, run: body.run.id }]);
+  });
+
+  it('refuse une victoire dont le replay ne résout pas le niveau', async () => {
+    const { token } = await newPlayer();
+    const partial = WIN_1.slice(0, 2);
+    expect((await submit(token, { key: 'c:1', status: 'won', durationMs: 1, replay: partial })).status).toBe(400);
+  });
+
+  it('refuse un replay contenant une action impossible', async () => {
+    const { token } = await newPlayer();
+    expect((await submit(token, { key: 'c:1', status: 'abandoned', durationMs: 1, replay: 'u' })).status).toBe(400);
+    expect((await submit(token, { key: 'c:1', status: 'abandoned', durationMs: 1, replay: 'zz' })).status).toBe(400);
+  });
+
+  it('refuse une clé inconnue', async () => {
+    const { token } = await newPlayer();
+    expect((await submit(token, { key: 'x:1', status: 'abandoned', durationMs: 1, replay: '' })).status).toBe(400);
+    expect((await submit(token, { key: 'l:abcdef', status: 'abandoned', durationMs: 1, replay: '' })).status).toBe(404);
+  });
+
+  it('calcule progression, détail par niveau et replay consultable', async () => {
+    const me = await newPlayer();
+    const other = await newPlayer();
+    await submit(me.token, { key: 'c:1', status: 'abandoned', durationMs: 3000, replay: WIN_1.slice(0, 2) });
+    const won = await submit(me.token, { key: 'c:1', status: 'won', durationMs: 9000, replay: WIN_1 });
+
+    const state = await call<GameState>('/api/games/fioles', { token: other.token });
+    expect(state.body.progress).toEqual([
+      { player: me.player.id, completed: 1, runs: 2, playTimeMs: 12_000, lastPlayed: won.body.run.ended },
+    ]);
+    expect(state.body.records['c:1']?.[0]?.player).toBe(me.player.id);
+    expect(state.body.players.map((p) => p.id)).toEqual(expect.arrayContaining([me.player.id, other.player.id]));
+
+    const detail = await call<PlayerGameDetail>(`/api/games/fioles/players/${me.player.id}`, { token: other.token });
+    expect(detail.body.keys).toEqual([{ key: 'c:1', attempts: 2, wins: 1, best: won.body.run }]);
+    expect(detail.body.recent).toHaveLength(2);
+
+    const run = await call<Run>(`/api/runs/${won.body.run.id}`, { token: other.token });
+    expect(run.body).toEqual({ ...won.body.run, replay: WIN_1 });
+
+    const games = await call<GameSummary[]>('/api/games', { token: other.token });
+    expect(games.body[0]).toMatchObject({ id: 'fioles', players: 1, runs: 2 });
+  });
+
+  it('classe les joueurs par meilleur score et ne garde que le meilleur de chacun', async () => {
+    const a = await newPlayer();
+    const b = await newPlayer();
+    const slower = encodeActions([{ type: 'pour', from: 0, to: 3 }, { type: 'undo' }, ...solution(LEVEL_1)]);
+    await submit(a.token, { key: 'c:1', status: 'won', durationMs: 1, replay: slower });
+    await submit(b.token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });
+    const best = await submit(a.token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });
+    expect(best.body.records.map((r) => r.player)).toEqual([b.player.id, a.player.id]);
+    expect(best.body.records.every((r) => r.value === WIN_1.length / 2)).toBe(true);
+  });
+});
+
+describe('contenus créés', () => {
+  const board: Board = [[0, 1, 0, 1], [1, 0, 1, 0], [], []];
+  const data = boardToString(board);
+  const winning = encodeActions(solution(board));
+
+  const create = (token: string, body: Record<string, unknown>) =>
+    call<CreateContentResponse>('/api/games/fioles/contents', {
+      token,
+      body: { data, title: 'Mon niveau', durationMs: 5000, replay: winning, ...body },
+    });
+
+  it("publie un niveau avec la partie gagnée de l'auteur", async () => {
+    const author = await newPlayer();
+    const { status, body } = await create(author.token, {});
+    expect(status).toBe(200);
+    expect(body.content).toMatchObject({ data, title: 'Mon niveau', author: author.player.id, game: 'fioles' });
+    expect(body.run).toMatchObject({ key: customKey(body.content.id), status: 'won', player: author.player.id });
+  });
+
+  it('refuse un niveau sans preuve de victoire, invalide ou déjà publié', async () => {
+    const author = await newPlayer();
+    expect((await create(author.token, { replay: '' })).status).toBe(400);
+    expect((await create(author.token, { data: 'aaaa.bbbb.' })).status).toBe(400);
+    const first = await create(author.token, {});
+    const again = await create(author.token, {});
+    expect(again.status).toBe(409);
+    expect(again.body).toEqual({ error: first.body.content.id });
+  });
+
+  it("se joue par les autres et ne se supprime que par l'auteur, avec ses parties", async () => {
+    const author = await newPlayer();
+    const other = await newPlayer();
+    const { body } = await create(author.token, {});
+    const key = customKey(body.content.id);
+    expect((await submit(other.token, { key, status: 'won', durationMs: 1, replay: winning })).status).toBe(200);
+
+    const path = `/api/games/fioles/contents/${body.content.id}`;
+    expect((await call(path, { method: 'DELETE', token: other.token })).status).toBe(403);
+    expect((await call(path, { method: 'DELETE', token: author.token })).status).toBe(200);
+
+    const state = await call<GameState>('/api/games/fioles', { token: other.token });
+    expect(state.body.contents).toEqual([]);
+    expect(state.body.records[key]).toBeUndefined();
+  });
+});

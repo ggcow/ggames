@@ -1,0 +1,25 @@
+// Worker "ggames-api" : API + Durable Object (toutes les données) + fichiers statiques en local.
+// En production, les joueurs passent par Cloudflare Pages (pages/wrangler.jsonc, domaine *.pages.dev)
+// qui relaie /api/* vers ce Worker par service binding. workers.dev est bloqué en Chine : désactivé.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ggames-api",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "build": {
+    "command": "node scripts/build.ts",
+    "watch_dir": ["src/client", "src/shared", "site"]
+  },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "WORLD", "class_name": "World" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["World"] }],
+  "observability": { "enabled": true }
+}

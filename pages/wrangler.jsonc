@@ -1,0 +1,10 @@
+// Projet Cloudflare Pages "ggames" : sert dist/ sur ggames.pages.dev (accessible depuis la Chine)
+// et relaie /api/* vers le Worker "ggames-api" (voir functions/api/[[path]].ts).
+// Déployer depuis ce dossier : `cd pages && npx wrangler pages deploy`.
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "ggames",
+  "pages_build_output_dir": "../dist",
+  "compatibility_date": "2026-10-01",
+  "services": [{ "binding": "API", "service": "ggames-api" }]
+}
