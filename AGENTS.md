@@ -80,7 +80,7 @@ La plateforme ne connaît aucune règle de jeu. Un jeu fournit :
   partie, prérequis de déblocage (`prerequisite()`), et `replay()` qui rejoue une partie et calcule son score ;
 - côté client, un `ClientGame` (`src/client/games/client-game.ts`) : nom, libellés, avancement et case de chaque
   niveau (`levelProgress()`, `levelTile()`), écrans de jeu et de replay, et `formatValue` pour afficher un score
-  (`null` si seule la réussite compte, comme Fioles : la plateforme masque alors scores et classements par score).
+  (`null` si seule la réussite compte : la plateforme masque alors scores et classements par score).
 
 La plateforme affiche la grille des niveaux (`src/client/platform/level-grid.ts`, 20 niveaux par page) à partir
 de `levelProgress()` et `levelTile()`.
