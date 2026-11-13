@@ -11,7 +11,7 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
 - La progression de chacun (niveaux réussis, parties, temps de jeu), les classements et le replay de chaque
   partie.
 - Quand un ami joue, son plateau s'affiche en direct ; toucher son nom permet de jouer le même niveau.
-- Interface en français et en chinois (bouton 中文 / Français).
+- Interface en français et en chinois (bouton 中 / Fr en haut de l’écran).
 
 ### Jeux
 
