@@ -72,6 +72,16 @@ describe('parties', () => {
     expect((await submit(token, { key: 'c:0', status: 'abandoned', durationMs: 1, replay: '' })).status).toBe(400);
   });
 
+  it('refuse un niveau verrouillé puis l’accepte une fois le précédent gagné', async () => {
+    const { token } = await newPlayer();
+    const win2 = encodeActions(solution(campaignBoard(2)));
+    expect((await submit(token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(403);
+    await submit(token, { key: 'c:1', status: 'abandoned', durationMs: 1, replay: WIN_1.slice(0, 2) });
+    expect((await submit(token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(403);
+    await submit(token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });
+    expect((await submit(token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(200);
+  });
+
   it('calcule progression, détail par niveau et replay consultable', async () => {
     const me = await newPlayer();
     const other = await newPlayer();

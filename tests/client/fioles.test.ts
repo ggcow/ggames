@@ -5,7 +5,7 @@ import { mountFiolesPlay } from '../../src/client/games/fioles/play.ts';
 import { mountFiolesReplay } from '../../src/client/games/fioles/replay.ts';
 import { FIOLES_STRINGS } from '../../src/client/games/fioles/strings.ts';
 import { createGameView } from '../../src/client/platform/context.ts';
-import { campaignBoard, encodeActions, fioles } from '../../src/shared/games/fioles/definition.ts';
+import { campaignBoard, encodeActions, fioles, MAX_LEVEL } from '../../src/shared/games/fioles/definition.ts';
 import { boardToString, parseBoard } from '../../src/shared/games/fioles/rules.ts';
 import type { GameState } from '../../src/shared/platform/protocol.ts';
 import { solve } from '../support/fioles-solver.ts';
@@ -26,20 +26,26 @@ function view(overrides: Partial<GameState> = {}): GameView {
   return createGameView(state, ME, 'fr');
 }
 
-describe('catalogue', () => {
-  it('débloque le niveau suivant le plus haut niveau gagné', () => {
-    const v = view({
-      records: {
-        'c:1': [{ player: ME, value: 9, run: 'r1' }],
-        'c:3': [{ player: ME, value: 20, run: 'r2' }],
-        'c:7': [{ player: OTHER, value: 30, run: 'r3' }],
-      },
-    });
-    expect(highestLevel(v)).toBe(3);
-    const [campaign] = fiolesClient.catalog(v);
-    expect(campaign?.entries.map((e) => e.key)).toEqual(['c:4', 'c:3', 'c:2', 'c:1']);
-    expect(campaign?.entries[0]).toMatchObject({ status: 'open', detail: 'À jouer' });
-    expect(campaign?.entries[3]).toMatchObject({ status: 'done', detail: 'Ton record : 9 coups' });
+describe('niveaux', () => {
+  const v = view({
+    records: {
+      'c:1': [{ player: ME, value: 9, run: 'r1' }],
+      'c:2': [{ player: ME, value: 14, run: 'r2' }],
+      'c:7': [{ player: OTHER, value: 30, run: 'r3' }],
+    },
+  });
+
+  it('débloque le niveau qui suit le plus haut niveau gagné', () => {
+    expect(highestLevel(v)).toBe(2);
+    expect(fiolesClient.levelProgress(v)).toEqual({ unlocked: 3, total: MAX_LEVEL });
+    expect(fiolesClient.levelProgress(view())).toEqual({ unlocked: 1, total: MAX_LEVEL });
+  });
+
+  it('donne l’état de chaque case : réussie avec record, jouable, verrouillée', () => {
+    expect(fiolesClient.levelTile(1, v)).toEqual({ key: 'c:1', label: '1', status: 'done', best: '9 coups' });
+    expect(fiolesClient.levelTile(3, v)).toEqual({ key: 'c:3', label: '3', status: 'open', best: null });
+    expect(fiolesClient.levelTile(4, v)).toEqual({ key: 'c:4', label: '4', status: 'locked', best: null });
+    expect(fiolesClient.levelTile(8, v).status).toBe('locked');
   });
 
   it('nomme les clés et propose le niveau suivant', () => {

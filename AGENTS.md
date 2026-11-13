@@ -28,8 +28,10 @@ Il décrit l'état actuel du projet et les règles à respecter. `CLAUDE.md` l'i
 Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine continentale.
 
 - Chaque joueur a un compte (pseudo + mot de passe) et se connecte depuis n'importe quel appareil.
-- L'accueil liste les jeux. Pour chaque jeu : ce qu'on peut jouer, la progression de chaque joueur
-  (niveaux réussis, essais, temps), les classements, et le replay de chaque partie.
+- L'accueil liste les jeux. Pour chaque jeu : la grille des niveaux par pages (réussis, jouable, verrouillés),
+  la progression de chaque joueur (niveaux réussis, essais, temps), les classements, et le replay de chaque
+  partie.
+- Un niveau se débloque en gagnant celui qui le précède ; le serveur refuse une partie sur un niveau verrouillé.
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct.
 - Interface en français et en chinois.
@@ -75,9 +77,12 @@ scripts/build.ts           construction de dist/
 La plateforme ne connaît aucune règle de jeu. Un jeu fournit :
 
 - côté partagé, une `GameDefinition` (`src/shared/games/game.ts`) : ordre des scores, validation des clés de
-  partie, et `replay()` qui rejoue une partie et calcule son score ;
-- côté client, un `ClientGame` (`src/client/games/client-game.ts`) : nom, catalogue de ce qui se joue, libellés,
-  écrans de jeu et de replay.
+  partie, prérequis de déblocage (`prerequisite()`), et `replay()` qui rejoue une partie et calcule son score ;
+- côté client, un `ClientGame` (`src/client/games/client-game.ts`) : nom, libellés, avancement et case de chaque
+  niveau (`levelProgress()`, `levelTile()`), écrans de jeu et de replay.
+
+La plateforme affiche la grille des niveaux (`src/client/platform/level-grid.ts`, 20 niveaux par page) à partir
+de `levelProgress()` et `levelTile()`.
 
 ### Modèle de données (SQLite du Durable Object `World`)
 

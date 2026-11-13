@@ -153,6 +153,19 @@ export class PlatformStore {
     );
   }
 
+  hasWon(game: GameId, player: PlayerId, key: string): boolean {
+    return (
+      this.sql
+        .exec(
+          "SELECT 1 FROM runs WHERE game = ? AND player = ? AND key = ? AND status = 'won' LIMIT 1",
+          game,
+          player,
+          key,
+        )
+        .toArray().length > 0
+    );
+  }
+
   findRun(id: string): Run | null {
     const row = this.sql
       .exec<RunWithReplayRow>(`SELECT ${RUN_COLUMNS}, replay FROM runs WHERE id = ?`, id)

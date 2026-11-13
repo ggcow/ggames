@@ -14,16 +14,25 @@ export interface GameView {
   playerName(id: PlayerId): string;
 }
 
-export interface CatalogEntry {
+/** `done` : gagné au moins une fois. `open` : jouable. `locked` : prérequis pas encore gagné. */
+export type LevelStatus = 'locked' | 'open' | 'done';
+
+/** Case d'un niveau dans la grille. */
+export interface LevelTile {
   key: string;
+  /** Texte court affiché dans la case, ex. « 12 ». */
   label: string;
-  detail: string;
-  status: 'locked' | 'open' | 'done';
+  status: LevelStatus;
+  /** Meilleur score du joueur, déjà formaté, ou null s'il n'a pas gagné ce niveau. */
+  best: string | null;
 }
 
-export interface CatalogGroup {
-  title: string;
-  entries: CatalogEntry[];
+/** Avancement d'un joueur dans les niveaux d'un jeu. */
+export interface LevelProgress {
+  /** Numéro du plus haut niveau jouable (1 = premier niveau). */
+  unlocked: number;
+  /** Nombre total de niveaux. */
+  total: number;
 }
 
 export interface PlayContext {
@@ -53,8 +62,10 @@ export interface ClientGame {
   keyLabel(key: string, lang: Lang): string;
   /** Score lisible, ex. « 12 coups ». */
   formatValue(value: number, lang: Lang): string;
-  /** Ce que le joueur peut jouer, par groupes. */
-  catalog(view: GameView): CatalogGroup[];
+  /** Avancement du joueur, pour dimensionner la grille. */
+  levelProgress(view: GameView): LevelProgress;
+  /** Case du niveau `level` (1 = premier niveau) pour ce joueur. */
+  levelTile(level: number, view: GameView): LevelTile;
   /** Clé proposée après une victoire sur `key`, ou null. */
   nextKey(key: string, view: GameView): string | null;
   /** Aperçu de l'état diffusé par un joueur en train de jouer. */

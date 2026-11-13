@@ -27,7 +27,10 @@ export function campaignBoard(level: number): Board {
 
 /* ---------- Clés ---------- */
 
-/** Clé d'un niveau de la campagne : `c:<niveau>`, de 1 à 9999. */
+/** Nombre de niveaux de la campagne. */
+export const MAX_LEVEL = 9999;
+
+/** Clé d'un niveau de la campagne : `c:<niveau>`, de 1 à MAX_LEVEL. */
 export const campaignKey = (level: number): string => `c:${level}`;
 
 /** Numéro du niveau désigné par une clé, ou `null` si la clé est invalide. */
@@ -99,6 +102,10 @@ export const fioles: GameDefinition = {
   id: FIOLES_ID,
   scoreOrder: 'asc',
   isValidKey: (key) => parseCampaignKey(key) !== null,
+  prerequisite(key) {
+    const level = parseCampaignKey(key);
+    return level !== null && level > 1 ? campaignKey(level - 1) : null;
+  },
   replay(key, replay): ReplayOutcome | null {
     const start = startBoard(key);
     const actions = decodeActions(replay);

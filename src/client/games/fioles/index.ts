@@ -1,10 +1,16 @@
-// Jeu Fioles branché sur la plateforme : catalogue de la campagne, écrans de jeu et de replay.
+// Jeu Fioles branché sur la plateforme : niveaux de la campagne, écrans de jeu et de replay.
 
-import { campaignKey, fioles, parseCampaignKey, startBoard } from '../../../shared/games/fioles/definition.ts';
+import {
+  campaignKey,
+  fioles,
+  MAX_LEVEL,
+  parseCampaignKey,
+  startBoard,
+} from '../../../shared/games/fioles/definition.ts';
 import { parseBoard } from '../../../shared/games/fioles/rules.ts';
 import { h } from '../../platform/dom.ts';
 import type { Lang } from '../../platform/i18n.ts';
-import type { CatalogEntry, CatalogGroup, ClientGame, GameView } from '../client-game.ts';
+import type { ClientGame, GameView, LevelTile } from '../client-game.ts';
 import { renderMiniBoard } from './board.ts';
 import { mountFiolesPlay } from './play.ts';
 import { mountFiolesReplay } from './replay.ts';
@@ -14,6 +20,8 @@ const formatMoves = (value: number, lang: Lang) => FIOLES_STRINGS[lang].moves(va
 
 /** Meilleur score du joueur sur une clé, ou undefined s'il ne l'a jamais gagnée. */
 const myBest = (view: GameView, key: string) => view.state.records[key]?.find((r) => r.player === view.me)?.value;
+
+const hasWon = (view: GameView, key: string) => myBest(view, key) !== undefined;
 
 /** Plus haut niveau gagné par le joueur (0 si aucun). */
 export function highestLevel(view: GameView): number {
@@ -38,17 +46,16 @@ export const fiolesClient: ClientGame = {
 
   formatValue: formatMoves,
 
-  catalog(view): CatalogGroup[] {
-    const strings = FIOLES_STRINGS[view.lang];
-    const unlocked = highestLevel(view) + 1;
-    const entries: CatalogEntry[] = Array.from({ length: unlocked }, (_, i) => {
-      const key = campaignKey(i + 1);
-      const best = myBest(view, key);
-      return best === undefined
-        ? { key, label: strings.level(i + 1), detail: strings.toPlay, status: 'open' }
-        : { key, label: strings.level(i + 1), detail: strings.yourBest(formatMoves(best, view.lang)), status: 'done' };
-    });
-    return [{ title: strings.campaign, entries: entries.reverse() }];
+  levelProgress(view) {
+    return { unlocked: Math.min(highestLevel(view) + 1, MAX_LEVEL), total: MAX_LEVEL };
+  },
+
+  levelTile(level, view): LevelTile {
+    const key = campaignKey(level);
+    const best = myBest(view, key);
+    const required = fioles.prerequisite(key);
+    const status = best !== undefined ? 'done' : required === null || hasWon(view, required) ? 'open' : 'locked';
+    return { key, label: String(level), status, best: best === undefined ? null : formatMoves(best, view.lang) };
   },
 
   nextKey(key) {

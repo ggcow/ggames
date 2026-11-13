@@ -46,6 +46,13 @@ describe('clés', () => {
     expect(fioles.isValidKey('c:3')).toBe(true);
   });
 
+  it('exige d’avoir gagné le niveau précédent', () => {
+    expect(fioles.prerequisite('c:1')).toBeNull();
+    expect(fioles.prerequisite('c:2')).toBe('c:1');
+    expect(fioles.prerequisite('c:40')).toBe('c:39');
+    expect(fioles.prerequisite('x:1')).toBeNull();
+  });
+
   it.each(['c:0', 'c:01', 'c:10000', 'l:abc123', 'x:1', ''])('rejette %s', (key) => {
     expect(parseCampaignKey(key)).toBeNull();
     expect(fioles.isValidKey(key)).toBe(false);

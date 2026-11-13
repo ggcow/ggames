@@ -92,6 +92,25 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     );
   };
 
+  /** Le prérequis de la clé est gagné (le serveur refuserait sinon d'enregistrer la partie). */
+  const isUnlocked = (state: GameState) => {
+    const required = game.definition.prerequisite(key);
+    return required === null || (state.records[required] ?? []).some((r) => r.player === ctx.me.id);
+  };
+
+  const showLocked = () =>
+    replaceChildren(
+      host,
+      screenHeader(game.keyLabel(key, ctx.lang), () => ctx.navigate({ name: 'game', game: gameId })),
+      h(
+        'div',
+        { class: 'empty' },
+        h('span', { class: 'empty-icon' }, '🔒'),
+        h('h2', null, t.locked),
+        h('p', { class: 'muted' }, t.lockedHint),
+      ),
+    );
+
   const load = () =>
     api
       .game(gameId)
@@ -100,6 +119,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         view = createGameView(state, ctx.me.id, ctx.lang);
         renderRecord();
         if (!first) return;
+        if (!isUnlocked(state)) return showLocked();
         replaceChildren(
           host,
           screenHeader(game.keyLabel(key, ctx.lang), () => ctx.navigate({ name: 'game', game: gameId })),

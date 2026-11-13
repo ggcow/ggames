@@ -148,7 +148,10 @@ export class World extends DurableObject<Env> {
     return run ? ok(run) : fail(404, 'unknown run');
   }
 
-  /** Enregistre une partie après l'avoir rejouée : le score retenu est celui calculé par le serveur. */
+  /**
+   * Enregistre une partie après l'avoir rejouée : le score retenu est celui calculé par le serveur.
+   * Refusée si le joueur n'a pas encore débloqué la clé (prérequis non gagné).
+   */
   async submitRun(
     token: unknown,
     gameId: unknown,
@@ -166,6 +169,8 @@ export class World extends DurableObject<Env> {
       return fail(400, 'invalid run');
     }
     if (!game.isValidKey(key)) return fail(400, 'invalid key');
+    const required = game.prerequisite(key);
+    if (required !== null && !this.store.hasWon(game.id, me.id, required)) return fail(403, 'locked');
     const run = this.verifiedRun(game, me, key, status, duration, replay);
     if (!run) return fail(400, 'invalid replay');
     this.store.insertRun(run);

@@ -16,6 +16,8 @@ export interface GameDefinition {
   readonly scoreOrder: 'asc' | 'desc';
   /** Vrai si `key` désigne un niveau ou un mode existant. */
   isValidKey(key: string): boolean;
+  /** Clé qu'il faut avoir gagnée pour pouvoir jouer `key`, ou `null` si `key` est accessible d'emblée. */
+  prerequisite(key: string): string | null;
   /** Rejoue une partie. `null` si le replay est invalide (action impossible, format incorrect). */
   replay(key: string, replay: string): ReplayOutcome | null;
 }
