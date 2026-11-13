@@ -1,12 +1,16 @@
-// Grille des niveaux d'un jeu, découpée en pages. Les calculs de pagination sont des fonctions pures.
+// Grille des niveaux d'un jeu, découpée en pages, avec la position de chaque joueur.
+// Les calculs (pagination, positions) sont des fonctions pures.
 
-import type { Presence } from '../../shared/platform/protocol.ts';
+import type { PlayerId, PlayerInfo, Presence } from '../../shared/platform/protocol.ts';
 import type { LevelProgress, LevelTile } from '../games/client-game.ts';
 import { avatar } from './avatar.ts';
 import { h } from './dom.ts';
 import type { PlatformStrings } from './strings.ts';
 
 export const PAGE_SIZE = 20;
+
+/** Avatars affichés au plus sur une case ; au-delà, un compteur « +n ». */
+const MAX_MARKERS = 3;
 
 /**
  * Nombre de pages à afficher : jusqu'à la page qui contient le premier niveau encore verrouillé,
@@ -17,10 +21,13 @@ export function pageCount(progress: LevelProgress, pageSize = PAGE_SIZE): number
   return Math.max(1, Math.ceil(lastShown / pageSize));
 }
 
-/** Page (0 = première) qui contient le plus haut niveau jouable : celle à ouvrir par défaut. */
-export function currentPage(progress: LevelProgress, pageSize = PAGE_SIZE): number {
-  return Math.floor((Math.max(1, progress.unlocked) - 1) / pageSize);
-}
+/** Page (0 = première) qui contient le niveau `level`. */
+export const pageOfLevel = (level: number, pageSize = PAGE_SIZE): number =>
+  Math.floor((Math.max(1, level) - 1) / pageSize);
+
+/** Page qui contient le plus haut niveau jouable : celle à ouvrir par défaut. */
+export const currentPage = (progress: LevelProgress, pageSize = PAGE_SIZE): number =>
+  pageOfLevel(progress.unlocked, pageSize);
 
 /** Numéros des niveaux d'une page, bornés au nombre total de niveaux. */
 export function pageLevels(page: number, progress: LevelProgress, pageSize = PAGE_SIZE): number[] {
@@ -29,25 +36,90 @@ export function pageLevels(page: number, progress: LevelProgress, pageSize = PAG
   return Array.from({ length: Math.max(0, last - first + 1) }, (_, i) => first + i);
 }
 
+/** Où se trouve un joueur dans les niveaux. */
+export interface PlayerPosition {
+  player: PlayerId;
+  name: string;
+  level: number;
+  /** En train de jouer ce niveau en ce moment. */
+  live: boolean;
+}
+
+export interface PositionsInput {
+  players: readonly PlayerInfo[];
+  online: readonly Presence[];
+  gameId: string;
+  /** Plus haut niveau jouable d'un joueur. */
+  unlockedOf: (player: PlayerId) => number;
+  /** Niveau désigné par une clé, ou null. */
+  levelOf: (key: string) => number | null;
+}
+
+/**
+ * Position de chaque joueur : le niveau qu'il joue s'il est en ligne dans ce jeu, sinon le plus haut niveau
+ * qu'il a débloqué. Triées du plus avancé au moins avancé.
+ */
+export function playerPositions(input: PositionsInput): PlayerPosition[] {
+  return input.players
+    .map((player) => {
+      const presence = input.online.find((p) => p.player === player.id && p.game === input.gameId && p.key);
+      const liveLevel = presence?.key ? input.levelOf(presence.key) : null;
+      return {
+        player: player.id,
+        name: player.name,
+        level: liveLevel ?? input.unlockedOf(player.id),
+        live: liveLevel !== null,
+      };
+    })
+    .sort((a, b) => b.level - a.level || a.name.localeCompare(b.name));
+}
+
 export interface LevelGridOptions {
   progress: LevelProgress;
   page: number;
   tile: (level: number) => LevelTile;
-  /** Joueurs connectés, affichés sur la case du niveau qu'ils jouent. */
-  online: readonly Presence[];
+  positions: readonly PlayerPosition[];
   t: PlatformStrings;
   onPage: (page: number) => void;
   onPlay: (key: string) => void;
 }
 
-export function renderLevelGrid(options: LevelGridOptions): HTMLElement {
-  const { progress, page, t } = options;
-  const pages = pageCount(progress);
-  const levels = pageLevels(page, progress);
-  const first = levels[0] ?? 1;
-  const last = levels[levels.length - 1] ?? first;
+const marker = (position: PlayerPosition): HTMLElement => {
+  const element = avatar(position.player, position.name, 'xs');
+  if (position.live) element.classList.add('live');
+  return element;
+};
 
-  const nav = h(
+/** Bande des joueurs avec leur niveau ; toucher un joueur affiche la page de son niveau. */
+function renderPositions(options: LevelGridOptions): HTMLElement {
+  const { t } = options;
+  return h(
+    'div',
+    { class: 'positions' },
+    ...options.positions.map((position) =>
+      h(
+        'button',
+        {
+          class: position.live ? 'position live' : 'position',
+          attrs: { 'aria-label': `${position.name} ${t.levelShort(position.level)}` },
+          on: { click: () => options.onPage(pageOfLevel(position.level)) },
+        },
+        avatar(position.player, position.name, 'sm'),
+        h(
+          'span',
+          { class: 'position-text' },
+          h('strong', null, position.name),
+          h('small', null, t.levelShort(position.level)),
+        ),
+      ),
+    ),
+  );
+}
+
+function renderPager(options: LevelGridOptions, first: number, last: number): HTMLElement {
+  const { page, t } = options;
+  const pages = pageCount(options.progress);
+  return h(
     'div',
     { class: 'pager' },
     h(
@@ -72,30 +144,44 @@ export function renderLevelGrid(options: LevelGridOptions): HTMLElement {
       '›',
     ),
   );
+}
 
-  const grid = h(
-    'div',
-    { class: 'level-grid' },
-    ...levels.map((level) => {
-      const tile = options.tile(level);
-      const here = options.online.filter((p) => p.key === tile.key);
-      return h(
-        'button',
-        {
-          class: `level ${tile.status}`,
-          disabled: tile.status === 'locked',
-          attrs: { 'aria-label': `${tile.label} ${t[`level_${tile.status}`]}` },
-          on: { click: () => options.onPlay(tile.key) },
-        },
-        h('span', { class: 'level-number' }, tile.status === 'locked' ? '🔒' : tile.label),
-        tile.status === 'done' ? h('span', { class: 'level-best' }, tile.best ?? '✓') : null,
-        tile.status === 'open' ? h('span', { class: 'level-best' }, t.play) : null,
-        here.length > 0
-          ? h('span', { class: 'level-live' }, ...here.slice(0, 3).map((p) => avatar(p.player, p.name, 'xs')))
-          : null,
-      );
-    }),
+function renderTile(options: LevelGridOptions, level: number): HTMLElement {
+  const { t } = options;
+  const tile = options.tile(level);
+  const here = options.positions.filter((p) => p.level === level);
+  const extra = here.length - MAX_MARKERS;
+  return h(
+    'button',
+    {
+      class: `level ${tile.status}`,
+      disabled: tile.status === 'locked',
+      attrs: { 'aria-label': `${tile.label} ${t[`level_${tile.status}`]}` },
+      on: { click: () => options.onPlay(tile.key) },
+    },
+    h('span', { class: 'level-number' }, tile.status === 'locked' ? '🔒' : tile.label),
+    tile.status === 'done' ? h('span', { class: 'level-best' }, tile.best ?? '✓') : null,
+    tile.status === 'open' ? h('span', { class: 'level-best' }, t.play) : null,
+    here.length > 0
+      ? h(
+          'span',
+          { class: 'level-live' },
+          ...here.slice(0, MAX_MARKERS).map(marker),
+          extra > 0 ? h('span', { class: 'avatar xs more' }, `+${extra}`) : null,
+        )
+      : null,
   );
+}
 
-  return h('div', { class: 'levels' }, nav, grid);
+export function renderLevelGrid(options: LevelGridOptions): HTMLElement {
+  const levels = pageLevels(options.page, options.progress);
+  const first = levels[0] ?? 1;
+  const last = levels[levels.length - 1] ?? first;
+  return h(
+    'div',
+    { class: 'levels' },
+    renderPositions(options),
+    renderPager(options, first, last),
+    h('div', { class: 'level-grid' }, ...levels.map((level) => renderTile(options, level))),
+  );
 }

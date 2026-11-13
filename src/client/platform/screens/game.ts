@@ -4,7 +4,7 @@ import { avatar } from '../avatar.ts';
 import { type AppContext, createGameView, type ScreenHandle } from '../context.ts';
 import { h, replaceChildren } from '../dom.ts';
 import { formatDuration } from '../i18n.ts';
-import { currentPage, renderLevelGrid } from '../level-grid.ts';
+import { currentPage, playerPositions, renderLevelGrid } from '../level-grid.ts';
 import { errorMessage, loading, screenHeader, section, toast } from '../ui.ts';
 import { renderOnline } from './online.ts';
 
@@ -22,7 +22,7 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
   const renderGrid = () => {
     if (!state) return;
     const view = createGameView(state, ctx.me.id, ctx.lang);
-    const progress = game.levelProgress(view);
+    const progress = game.levelProgress(view, ctx.me.id);
     page ??= currentPage(progress);
     replaceChildren(
       gridHost,
@@ -30,7 +30,13 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
         progress,
         page,
         tile: (level) => game.levelTile(level, view),
-        online: others(),
+        positions: playerPositions({
+          players: state.players,
+          online: ctx.live.presence,
+          gameId,
+          unlockedOf: (player) => game.levelProgress(view, player).unlocked,
+          levelOf: (key) => game.levelOf(key),
+        }),
         t,
         onPage: (next) => {
           page = next;

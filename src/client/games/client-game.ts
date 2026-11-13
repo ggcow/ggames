@@ -65,8 +65,10 @@ export interface ClientGame {
    * seule la réussite compte).
    */
   readonly formatValue: ((value: number, lang: Lang) => string) | null;
-  /** Avancement du joueur, pour dimensionner la grille. */
-  levelProgress(view: GameView): LevelProgress;
+  /** Avancement d'un joueur : dimensionne la grille et situe chaque joueur dessus. */
+  levelProgress(view: GameView, player: PlayerId): LevelProgress;
+  /** Numéro du niveau désigné par une clé, ou null si la clé n'est pas un niveau. */
+  levelOf(key: string): number | null;
   /** Case du niveau `level` (1 = premier niveau) pour ce joueur. */
   levelTile(level: number, view: GameView): LevelTile;
   /** Clé proposée après une victoire sur `key`, ou null. */

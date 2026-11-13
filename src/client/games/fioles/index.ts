@@ -8,6 +8,7 @@ import {
   startBoard,
 } from '../../../shared/games/fioles/definition.ts';
 import { parseBoard } from '../../../shared/games/fioles/rules.ts';
+import type { PlayerId } from '../../../shared/platform/protocol.ts';
 import { h } from '../../platform/dom.ts';
 import type { Lang } from '../../platform/i18n.ts';
 import type { ClientGame, GameView, LevelTile } from '../client-game.ts';
@@ -23,12 +24,12 @@ const myBest = (view: GameView, key: string) => view.state.records[key]?.find((r
 
 const hasWon = (view: GameView, key: string) => myBest(view, key) !== undefined;
 
-/** Plus haut niveau gagné par le joueur (0 si aucun). */
-export function highestLevel(view: GameView): number {
+/** Plus haut niveau gagné par un joueur (0 si aucun). */
+export function highestLevel(view: GameView, player: PlayerId): number {
   let highest = 0;
   for (const [key, records] of Object.entries(view.state.records)) {
     const level = parseCampaignKey(key);
-    if (level !== null && records.some((r) => r.player === view.me)) highest = Math.max(highest, level);
+    if (level !== null && records.some((r) => r.player === player)) highest = Math.max(highest, level);
   }
   return highest;
 }
@@ -46,9 +47,11 @@ export const fiolesClient: ClientGame = {
 
   formatValue: formatMoves,
 
-  levelProgress(view) {
-    return { unlocked: Math.min(highestLevel(view) + 1, MAX_LEVEL), total: MAX_LEVEL };
+  levelProgress(view, player) {
+    return { unlocked: Math.min(highestLevel(view, player) + 1, MAX_LEVEL), total: MAX_LEVEL };
   },
+
+  levelOf: parseCampaignKey,
 
   levelTile(level, view): LevelTile {
     const key = campaignKey(level);

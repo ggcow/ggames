@@ -37,9 +37,13 @@ describe('niveaux', () => {
   });
 
   it('débloque le niveau qui suit le plus haut niveau gagné', () => {
-    expect(highestLevel(v)).toBe(2);
-    expect(fiolesClient.levelProgress(v)).toEqual({ unlocked: 3, total: MAX_LEVEL });
-    expect(fiolesClient.levelProgress(view())).toEqual({ unlocked: 1, total: MAX_LEVEL });
+    expect(highestLevel(v, ME)).toBe(2);
+    expect(highestLevel(v, OTHER)).toBe(7);
+    expect(fiolesClient.levelProgress(v, ME)).toEqual({ unlocked: 3, total: MAX_LEVEL });
+    expect(fiolesClient.levelProgress(v, OTHER)).toEqual({ unlocked: 8, total: MAX_LEVEL });
+    expect(fiolesClient.levelProgress(view(), ME)).toEqual({ unlocked: 1, total: MAX_LEVEL });
+    expect(fiolesClient.levelOf('c:12')).toBe(12);
+    expect(fiolesClient.levelOf('x')).toBeNull();
   });
 
   it('donne l’état de chaque case : réussie avec record, jouable, verrouillée', () => {

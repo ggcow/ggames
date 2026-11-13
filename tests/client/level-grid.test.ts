@@ -1,7 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { LevelTile } from '../../src/client/games/client-game.ts';
 import { avatar, avatarColor, initial } from '../../src/client/platform/avatar.ts';
-import { currentPage, pageCount, pageLevels, renderLevelGrid } from '../../src/client/platform/level-grid.ts';
+import {
+  currentPage,
+  type PlayerPosition,
+  pageCount,
+  pageLevels,
+  pageOfLevel,
+  playerPositions,
+  renderLevelGrid,
+} from '../../src/client/platform/level-grid.ts';
 import { PLATFORM_STRINGS } from '../../src/client/platform/strings.ts';
 import type { Presence } from '../../src/shared/platform/protocol.ts';
 
@@ -31,14 +39,17 @@ describe('grille', () => {
     if (level === 3) return { key: 'c:3', label: '3', status: 'open', best: null };
     return { key: `c:${level}`, label: String(level), status: 'locked', best: null };
   };
-  const friend: Presence = { player: 'abc123', name: 'léa', game: 'fioles', key: 'c:2', state: null, value: 3 };
+  const positions: PlayerPosition[] = [
+    { player: 'abc123', name: 'léa', level: 2, live: true },
+    { player: 'def456', name: 'Tom', level: 3, live: false },
+  ];
 
   const render = (page = 0, onPage = vi.fn(), onPlay = vi.fn()) =>
     renderLevelGrid({
       progress: { unlocked: 3, total: 9999 },
       page,
       tile,
-      online: [friend],
+      positions,
       t: PLATFORM_STRINGS.fr,
       onPage,
       onPlay,
@@ -64,10 +75,50 @@ describe('grille', () => {
     expect(onPlay).toHaveBeenCalledExactlyOnceWith('c:3');
   });
 
-  it('montre les amis connectés sur le niveau qu’ils jouent', () => {
+  it('place chaque joueur sur son niveau, en direct ou non', () => {
     const cells = render().querySelectorAll('.level');
-    expect(cells[1]?.querySelector('.avatar')?.textContent).toBe('L');
+    expect(cells[1]?.querySelector('.avatar.live')?.textContent).toBe('L');
+    expect(cells[2]?.querySelector('.avatar')?.textContent).toBe('T');
+    expect(cells[2]?.querySelector('.avatar.live')).toBeNull();
     expect(cells[0]?.querySelector('.avatar')).toBeNull();
+  });
+
+  it('résume les positions et ouvre la page du niveau d’un joueur', () => {
+    const onPage = vi.fn();
+    const grid = renderLevelGrid({
+      progress: { unlocked: 3, total: 9999 },
+      page: 0,
+      tile,
+      positions: [{ player: 'abc123', name: 'Léa', level: 45, live: false }],
+      t: PLATFORM_STRINGS.fr,
+      onPage,
+      onPlay: vi.fn(),
+    });
+    const chip = grid.querySelector<HTMLButtonElement>('.position');
+    expect(chip?.textContent).toContain('Niv. 45');
+    chip?.click();
+    expect(onPage).toHaveBeenCalledWith(2);
+  });
+
+  it('limite les avatars d’une case et affiche le nombre restant', () => {
+    const crowd = ['a1', 'b2', 'c3', 'd4', 'e5'].map((id) => ({
+      player: `${id}xxxx`,
+      name: id,
+      level: 1,
+      live: false,
+    }));
+    const grid = renderLevelGrid({
+      progress: { unlocked: 3, total: 9999 },
+      page: 0,
+      tile,
+      positions: crowd,
+      t: PLATFORM_STRINGS.fr,
+      onPage: vi.fn(),
+      onPlay: vi.fn(),
+    });
+    const markers = grid.querySelectorAll('.level')[0]?.querySelectorAll('.avatar');
+    expect(markers).toHaveLength(4);
+    expect(markers?.[3]?.textContent).toBe('+2');
   });
 
   it('change de page avec les flèches, sans dépasser les bornes', () => {
@@ -79,7 +130,7 @@ describe('grille', () => {
       progress: { unlocked: 25, total: 9999 },
       page: 0,
       tile,
-      online: [],
+      positions: [],
       t: PLATFORM_STRINGS.fr,
       onPage,
       onPlay: vi.fn(),
@@ -105,11 +156,58 @@ describe('grille sans score', () => {
       progress: { unlocked: 2, total: 9999 },
       page: 0,
       tile: (level) => ({ key: `c:${level}`, label: String(level), status: level === 1 ? 'done' : 'open', best: null }),
-      online: [],
+      positions: [],
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay: vi.fn(),
     });
     expect(grid.querySelector('.level.done .level-best')?.textContent).toBe('✓');
+  });
+});
+
+describe('positions des joueurs', () => {
+  const players = [
+    { id: 'aaa111', name: 'Léa', created: 1 },
+    { id: 'bbb222', name: 'Tom', created: 2 },
+    { id: 'ccc333', name: 'Zoé', created: 3 },
+  ];
+  const unlocked: Record<string, number> = { aaa111: 5, bbb222: 12, ccc333: 5 };
+  const presence = (player: string, game: string, key: string | null): Presence => ({
+    player,
+    name: '',
+    game,
+    key,
+    state: null,
+    value: 0,
+  });
+
+  it('prend le plus haut niveau débloqué, ou le niveau joué en direct, et trie du plus avancé', () => {
+    const positions = playerPositions({
+      players,
+      online: [presence('ccc333', 'fioles', 'c:2'), presence('aaa111', 'autre', 'c:40')],
+      gameId: 'fioles',
+      unlockedOf: (id) => unlocked[id] ?? 1,
+      levelOf: (key) => Number(key.slice(2)),
+    });
+    expect(positions).toEqual([
+      { player: 'bbb222', name: 'Tom', level: 12, live: false },
+      { player: 'aaa111', name: 'Léa', level: 5, live: false },
+      { player: 'ccc333', name: 'Zoé', level: 2, live: true },
+    ]);
+  });
+
+  it('ignore une présence sur une clé qui n’est pas un niveau', () => {
+    const [position] = playerPositions({
+      players: [players[0] as (typeof players)[number]],
+      online: [presence('aaa111', 'fioles', 'menu')],
+      gameId: 'fioles',
+      unlockedOf: () => 3,
+      levelOf: () => null,
+    });
+    expect(position).toMatchObject({ level: 3, live: false });
+  });
+
+  it('trouve la page d’un niveau', () => {
+    expect([1, 20, 21, 45].map((level) => pageOfLevel(level))).toEqual([0, 0, 1, 2]);
   });
 });
