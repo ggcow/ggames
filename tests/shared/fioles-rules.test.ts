@@ -11,6 +11,7 @@ import {
   isTubeDone,
   parseBoard,
   pour,
+  solverEffort,
 } from '../../src/shared/games/fioles/rules.ts';
 
 describe('createRandom', () => {
@@ -95,14 +96,34 @@ describe('solveur et génération', () => {
     ).toBe(false);
   });
 
+  const spec = { colors: 6, empty: 2, noAdjacentPairs: false, candidates: 1 };
+
   it('génère un plateau valide, faisable et déterministe', () => {
-    const board = generateBoard(6, 2, 99);
+    const board = generateBoard(spec, 99);
     expect(board).toHaveLength(8);
     expect(board.slice(6)).toEqual([[], []]);
     expect(board.flat()).toHaveLength(6 * CAP);
     expect(isSolved(board)).toBe(false);
     expect(isSolvable(board, 500_000)).toBe(true);
-    expect(generateBoard(6, 2, 99)).toEqual(board);
+    expect(generateBoard(spec, 99)).toEqual(board);
+  });
+
+  it('respecte l’interdiction des paires collées', () => {
+    const board = generateBoard({ ...spec, noAdjacentPairs: true }, 7);
+    expect(board.every((tube) => tube.every((color, i) => i === 0 || tube[i - 1] !== color))).toBe(true);
+  });
+
+  it('garde le plateau le plus difficile parmi les candidats', () => {
+    const many = generateBoard({ ...spec, candidates: 6 }, 3);
+    const single = generateBoard(spec, 3);
+    expect(solverEffort(many, 500_000)).toBeGreaterThanOrEqual(solverEffort(single, 500_000) ?? 0);
+  });
+
+  it('mesure l’effort du solveur et renvoie null au-delà de la limite', () => {
+    const board = [[0, 1, 0, 1], [1, 0, 1, 0], [], []];
+    expect(solverEffort(board, 10_000)).toBeGreaterThan(0);
+    expect(solverEffort(board, 0)).toBeNull();
+    expect(solverEffort([[0, 0, 0, 0], []], 10)).toBe(0);
   });
 });
 

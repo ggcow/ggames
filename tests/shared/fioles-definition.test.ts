@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   campaignBoard,
-  campaignColors,
   campaignKey,
+  campaignSpec,
   decodeActions,
   encodeActions,
   type FiolesAction,
@@ -15,15 +15,21 @@ import { boardToString, isSolvable, isSolved, MAX_COLORS, parseBoard } from '../
 import { solve } from '../support/fioles-solver.ts';
 
 describe('campagne', () => {
-  it('augmente les couleurs tous les 3 niveaux jusqu’au maximum', () => {
-    expect([1, 3, 4, 6, 7].map(campaignColors)).toEqual([3, 3, 4, 4, 5]);
-    expect(campaignColors(500)).toBe(MAX_COLORS);
+  it('ajoute une couleur par niveau jusqu’au niveau 10, puis multiplie les plateaux candidats', () => {
+    expect([1, 2, 5, 10, 11, 500].map((level) => campaignSpec(level).colors)).toEqual([3, 4, 7, 12, 12, MAX_COLORS]);
+    expect([1, 2, 3, 40].map((level) => campaignSpec(level).noAdjacentPairs)).toEqual([false, false, true, true]);
+    expect([1, 10, 11, 20, 50, 500].map((level) => campaignSpec(level).candidates)).toEqual([1, 1, 2, 11, 41, 41]);
+    expect(campaignSpec(7).empty).toBe(2);
   });
 
   it('génère les niveaux 1 à 40 valides, faisables et identiques à chaque appel', () => {
     for (let level = 1; level <= 40; level++) {
       const board = campaignBoard(level);
-      expect(board).toHaveLength(campaignColors(level) + 2);
+      const spec = campaignSpec(level);
+      expect(board).toHaveLength(spec.colors + spec.empty);
+      if (spec.noAdjacentPairs) {
+        expect(board.every((tube) => tube.every((color, i) => i === 0 || tube[i - 1] !== color))).toBe(true);
+      }
       expect(parseBoard(boardToString(board))).not.toBeNull();
       expect(isSolved(board)).toBe(false);
       expect(isSolvable(board, 500_000)).toBe(true);

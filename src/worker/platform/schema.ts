@@ -46,6 +46,9 @@ const MIGRATIONS: readonly string[] = [
   DROP TABLE contents;
   DELETE FROM runs WHERE game = 'fioles' AND key LIKE 'l:%';
   `,
+  `
+  DELETE FROM runs WHERE game = 'fioles';
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

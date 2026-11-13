@@ -1,14 +1,32 @@
 // Définition du jeu Fioles pour la plateforme : niveaux de la campagne, clés, replays.
 
 import type { GameDefinition, ReplayOutcome } from '../game.ts';
-import { type Board, cloneBoard, generateBoard, isSolved, MAX_COLORS, pour } from './rules.ts';
+import { type Board, type BoardSpec, cloneBoard, generateBoard, isSolved, MAX_COLORS, pour } from './rules.ts';
 
 export const FIOLES_ID = 'fioles';
 
 /* ---------- Campagne ---------- */
 
-/** +1 couleur tous les 3 niveaux, plafonné à MAX_COLORS. Toujours 2 fioles vides. */
-export const campaignColors = (level: number): number => Math.min(3 + Math.floor((level - 1) / 3), MAX_COLORS);
+/** Au-delà de ce niveau, toutes les couleurs sont en jeu : la difficulté vient du choix du plateau. */
+const FULL_COLORS_LEVEL = MAX_COLORS - 2;
+
+/** Plafond du nombre de plateaux candidats supplémentaires (coût de génération : quelques ms chacun). */
+const MAX_EXTRA_CANDIDATES = 40;
+
+/**
+ * Difficulté du niveau `level` : une couleur de plus à chaque niveau (3 au niveau 1, toutes au niveau 10),
+ * pas de paires collées à partir du niveau 3, puis un plateau candidat de plus par niveau (jusqu'à 41) pour garder
+ * le plus dur pour le solveur.
+ * Toujours 2 fioles vides.
+ */
+export function campaignSpec(level: number): BoardSpec {
+  return {
+    colors: Math.min(level + 2, MAX_COLORS),
+    empty: 2,
+    noAdjacentPairs: level >= 3,
+    candidates: 1 + Math.min(Math.max(level - FULL_COLORS_LEVEL, 0), MAX_EXTRA_CANDIDATES),
+  };
+}
 
 const campaignCache = new Map<number, Board>();
 
@@ -19,7 +37,7 @@ const campaignCache = new Map<number, Board>();
 export function campaignBoard(level: number): Board {
   let board = campaignCache.get(level);
   if (!board) {
-    board = generateBoard(campaignColors(level), 2, level);
+    board = generateBoard(campaignSpec(level), level);
     campaignCache.set(level, board);
   }
   return cloneBoard(board);

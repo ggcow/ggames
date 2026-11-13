@@ -46,9 +46,10 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   375 px de large. Cible de compilation définie dans `scripts/build.ts`.
 - **Bilingue** : tout texte visible passe par un dictionnaire `defineStrings` (fr + zh). Le compilateur impose
   les mêmes clés dans les deux langues.
-- **Données de production** : ne jamais modifier une migration existante (`src/worker/platform/schema.ts`), ni
-  la génération des niveaux de campagne (`createRandom`, `generateBoard`, `campaignColors`), ni le format des
-  replays : les parties enregistrées deviendraient invalides.
+- **Données de production** : ne jamais modifier une migration existante (`src/worker/platform/schema.ts`).
+  Modifier la génération des niveaux (`createRandom`, `generateBoard`, `campaignSpec`) ou le format des replays
+  rend les parties enregistrées invalides : à faire uniquement avec une migration qui supprime les parties du jeu
+  concerné, et seulement si le propriétaire l'a demandé.
 
 ## Architecture
 

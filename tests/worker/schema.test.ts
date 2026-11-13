@@ -27,4 +27,19 @@ describe('schéma', () => {
       expect(tables(state.storage.sql)).toEqual(before);
     });
   });
+
+  it('remet à zéro les parties Fioles en passant à la version 3 (nouvelle campagne)', async () => {
+    await runInDurableObject(world(), (_instance, state) => {
+      const { sql } = state.storage;
+      sql.exec("INSERT INTO players (id, name, name_key, password_hash, created) VALUES ('abc123', 'A', 'a', 'x', 1)");
+      sql.exec(
+        "INSERT INTO runs (id, game, key, player, status, value, duration_ms, replay, ended) VALUES ('run001', 'fioles', 'c:1', 'abc123', 'won', 5, 1, '', 1)",
+      );
+      sql.exec('UPDATE schema_version SET version = 2');
+      migrate(sql);
+      expect(sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM runs').one().n).toBe(0);
+      expect(sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM players').one().n).toBe(1);
+      expect(sql.exec<{ version: number }>('SELECT version FROM schema_version').one().version).toBe(SCHEMA_VERSION);
+    });
+  });
 });

@@ -86,16 +86,17 @@ const stateKey = (board: ReadonlyBoard): string =>
     .join('|');
 
 /**
- * Recherche en profondeur avec mémorisation des états.
- * `true` : solution trouvée. `false` : impossible, ou plus de `limit` états explorés.
+ * Effort du solveur : nombre d'états explorés (recherche en profondeur avec mémorisation) avant de trouver
+ * une solution. `null` si le plateau est impossible ou demande plus de `limit` états.
+ * Sert à vérifier qu'un plateau est faisable et à estimer sa difficulté.
  */
-export function isSolvable(start: ReadonlyBoard, limit: number): boolean {
+export function solverEffort(start: ReadonlyBoard, limit: number): number | null {
   const seen = new Set<string>([stateKey(start)]);
   const stack: Board[] = [cloneBoard(start)];
   let explored = 0;
   for (let board = stack.pop(); board; board = stack.pop()) {
-    if (isSolved(board)) return true;
-    if (++explored > limit) return false;
+    if (isSolved(board)) return explored;
+    if (++explored > limit) return null;
     const towardEmpty: Board[] = [];
     const towardColor: Board[] = [];
     board.forEach((source, from) => {
@@ -114,28 +115,57 @@ export function isSolvable(start: ReadonlyBoard, limit: number): boolean {
     });
     stack.push(...towardEmpty, ...towardColor); // pile : les coups vers une même couleur sont explorés en premier
   }
-  return false;
+  return null;
 }
+
+export const isSolvable = (start: ReadonlyBoard, limit: number): boolean => solverEffort(start, limit) !== null;
 
 /* ---------- Génération ---------- */
 
-/** Mélange vérifié par le solveur. Même résultat pour une même graine. */
-export function generateBoard(colors: number, empty: number, seed: number): Board {
-  let candidate: Board = [];
-  for (let attempt = 0; attempt < 25; attempt++) {
-    const random = createRandom(seed * 131 + attempt);
-    const balls: Color[] = [];
-    for (let color = 0; color < colors; color++) for (let k = 0; k < CAP; k++) balls.push(color);
-    for (let i = balls.length - 1; i > 0; i--) {
-      const j = Math.floor(random() * (i + 1));
-      [balls[i], balls[j]] = [balls[j] as Color, balls[i] as Color];
-    }
-    candidate = [];
-    for (let i = 0; i < colors; i++) candidate.push(balls.slice(i * CAP, i * CAP + CAP));
-    for (let i = 0; i < empty; i++) candidate.push([]);
-    if (!candidate.some(isTubeDone) && isSolvable(candidate, 30_000)) return candidate;
+/** Paramètres d'un plateau généré. */
+export interface BoardSpec {
+  colors: number;
+  empty: number;
+  /** Refuser les plateaux dont une fiole commence avec deux boules identiques côte à côte. */
+  noAdjacentPairs: boolean;
+  /** Nombre de plateaux faisables à générer ; le plus difficile pour le solveur est retenu. */
+  candidates: number;
+}
+
+const SOLVER_LIMIT = 30_000;
+const MAX_ATTEMPTS = 400;
+
+const hasAdjacentPair = (tube: readonly Color[]): boolean => tube.some((color, i) => i > 0 && tube[i - 1] === color);
+
+function shuffledBoard(colors: number, empty: number, random: () => number): Board {
+  const balls: Color[] = [];
+  for (let color = 0; color < colors; color++) for (let k = 0; k < CAP; k++) balls.push(color);
+  for (let i = balls.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [balls[i], balls[j]] = [balls[j] as Color, balls[i] as Color];
   }
-  return candidate;
+  const board: Board = [];
+  for (let i = 0; i < colors; i++) board.push(balls.slice(i * CAP, i * CAP + CAP));
+  for (let i = 0; i < empty; i++) board.push([]);
+  return board;
+}
+
+/** Plateau faisable respectant `spec`. Même résultat pour une même graine. */
+export function generateBoard(spec: BoardSpec, seed: number): Board {
+  let best: { board: Board; effort: number } | null = null;
+  let last: Board = [];
+  let found = 0;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS && found < spec.candidates; attempt++) {
+    const board = shuffledBoard(spec.colors, spec.empty, createRandom(seed * 131 + attempt));
+    last = board;
+    if (board.some(isTubeDone)) continue;
+    if (spec.noAdjacentPairs && board.some(hasAdjacentPair)) continue;
+    const effort = solverEffort(board, SOLVER_LIMIT);
+    if (effort === null) continue;
+    found++;
+    if (!best || effort > best.effort) best = { board, effort };
+  }
+  return best?.board ?? last;
 }
 
 /* ---------- Encodage texte ---------- */
