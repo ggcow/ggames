@@ -26,13 +26,6 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
       screenHeader(`${game.icon} ${game.name[ctx.lang]}`, () => ctx.navigate({ name: 'hub' })),
       section(t.online, onlineHost),
       ...game.catalog(view).map((group) => renderGroup(group)),
-      game.mountCreator
-        ? h(
-            'button',
-            { class: 'primary', on: { click: () => ctx.navigate({ name: 'create', game: gameId }) } },
-            t.create,
-          )
-        : null,
       section(t.players, renderProgress(state)),
     );
     renderPresence();
@@ -44,12 +37,8 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
       h(
         'div',
         { class: 'catalog' },
-        ...group.entries.map((entry) => {
-          const content = group.contents
-            ? state?.contents.find((c) => game.definition.contentKey(c.id) === entry.key)
-            : null;
-          const mine = content?.author === ctx.me.id;
-          return h(
+        ...group.entries.map((entry) =>
+          h(
             'div',
             { class: `entry ${entry.status}` },
             h(
@@ -62,11 +51,8 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
               h('strong', null, entry.label),
               h('small', null, entry.detail),
             ),
-            mine && content
-              ? h('button', { class: 'ghost small', on: { click: () => removeContent(content.id) } }, t.deleteContent)
-              : null,
-          );
-        }),
+          ),
+        ),
       ),
     );
 
@@ -93,14 +79,6 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
         ),
       ),
     );
-  };
-
-  const removeContent = (id: string) => {
-    if (!window.confirm(t.confirmDelete)) return;
-    api
-      .deleteContent(gameId, id)
-      .then(load)
-      .catch((error: unknown) => toast(errorMessage(error, t)));
   };
 
   const load = () =>

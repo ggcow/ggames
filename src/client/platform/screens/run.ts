@@ -16,8 +16,6 @@ export function mountRun(host: HTMLElement, ctx: AppContext, runId: string): Scr
     if (!game) return;
     const state = await api.game(run.game);
     const view = createGameView(state, ctx.me.id, ctx.lang);
-    const target = game.definition.parseKey(run.key);
-    const content = target?.kind === 'content' ? (state.contents.find((c) => c.id === target.contentId) ?? null) : null;
     const replayHost = h('div', { class: 'play-host' });
     replaceChildren(
       host,
@@ -27,11 +25,11 @@ export function mountRun(host: HTMLElement, ctx: AppContext, runId: string): Scr
       h(
         'p',
         { class: 'center muted' },
-        `${game.keyLabel(run.key, ctx.lang, view)} · ${t[`status_${run.status}`]} · ${game.formatValue(run.value, ctx.lang)} · ${formatDuration(run.durationMs, ctx.lang)} · ${formatDate(run.ended, ctx.lang)}`,
+        `${game.keyLabel(run.key, ctx.lang)} · ${t[`status_${run.status}`]} · ${game.formatValue(run.value, ctx.lang)} · ${formatDuration(run.durationMs, ctx.lang)} · ${formatDate(run.ended, ctx.lang)}`,
       ),
       replayHost,
     );
-    unmountReplay = game.mountReplay(replayHost, { key: run.key, content, replay: run.replay, lang: ctx.lang });
+    unmountReplay = game.mountReplay(replayHost, { key: run.key, replay: run.replay, lang: ctx.lang });
   };
 
   loading(host, t);

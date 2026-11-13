@@ -1,7 +1,7 @@
-// Définition du jeu Fioles pour la plateforme : clés, campagne, replays, validation des niveaux créés.
+// Définition du jeu Fioles pour la plateforme : niveaux de la campagne, clés, replays.
 
-import type { GameDefinition, KeyTarget, ReplayOutcome } from '../game.ts';
-import { type Board, cloneBoard, generateBoard, isSolved, MAX_COLORS, parseBoard, pour } from './rules.ts';
+import type { GameDefinition, ReplayOutcome } from '../game.ts';
+import { type Board, cloneBoard, generateBoard, isSolved, MAX_COLORS, pour } from './rules.ts';
 
 export const FIOLES_ID = 'fioles';
 
@@ -27,18 +27,13 @@ export function campaignBoard(level: number): Board {
 
 /* ---------- Clés ---------- */
 
-/** `c:<niveau>` pour la campagne, `l:<id>` pour un niveau créé par un joueur. */
-export type FiolesTarget = { kind: 'campaign'; level: number } | { kind: 'custom'; contentId: string };
-
+/** Clé d'un niveau de la campagne : `c:<niveau>`, de 1 à 9999. */
 export const campaignKey = (level: number): string => `c:${level}`;
-export const customKey = (contentId: string): string => `l:${contentId}`;
 
-export function parseFiolesKey(key: string): FiolesTarget | null {
-  const campaign = /^c:([1-9]\d{0,3})$/.exec(key);
-  if (campaign?.[1]) return { kind: 'campaign', level: Number(campaign[1]) };
-  const custom = /^l:([a-z0-9]{6,20})$/.exec(key);
-  if (custom?.[1]) return { kind: 'custom', contentId: custom[1] };
-  return null;
+/** Numéro du niveau désigné par une clé, ou `null` si la clé est invalide. */
+export function parseCampaignKey(key: string): number | null {
+  const match = /^c:([1-9]\d{0,3})$/.exec(key);
+  return match?.[1] ? Number(match[1]) : null;
 }
 
 /* ---------- Replays ---------- */
@@ -92,12 +87,10 @@ export function playActions(start: Board, actions: readonly FiolesAction[]): Boa
   return states;
 }
 
-/** Plateau de départ d'une clé : généré pour la campagne, lu dans le contenu pour un niveau créé. */
-export function startBoard(key: string, content: string | null): Board | null {
-  const target = parseFiolesKey(key);
-  if (!target) return null;
-  if (target.kind === 'campaign') return campaignBoard(target.level);
-  return content === null ? null : parseBoard(content);
+/** Plateau de départ d'une clé, ou `null` si la clé est invalide. */
+export function startBoard(key: string): Board | null {
+  const level = parseCampaignKey(key);
+  return level === null ? null : campaignBoard(level);
 }
 
 /* ---------- Définition ---------- */
@@ -105,18 +98,9 @@ export function startBoard(key: string, content: string | null): Board | null {
 export const fioles: GameDefinition = {
   id: FIOLES_ID,
   scoreOrder: 'asc',
-  parseKey(key): KeyTarget | null {
-    const target = parseFiolesKey(key);
-    if (!target) return null;
-    return target.kind === 'campaign' ? { kind: 'builtin' } : { kind: 'content', contentId: target.contentId };
-  },
-  contentKey: customKey,
-  isValidContent(data) {
-    const board = parseBoard(data);
-    return board !== null && !isSolved(board);
-  },
-  replay(key, content, replay): ReplayOutcome | null {
-    const start = startBoard(key, content);
+  isValidKey: (key) => parseCampaignKey(key) !== null,
+  replay(key, replay): ReplayOutcome | null {
+    const start = startBoard(key);
     const actions = decodeActions(replay);
     if (!start || !actions) return null;
     const states = playActions(start, actions);

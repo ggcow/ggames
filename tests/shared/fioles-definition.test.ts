@@ -3,12 +3,11 @@ import {
   campaignBoard,
   campaignColors,
   campaignKey,
-  customKey,
   decodeActions,
   encodeActions,
   type FiolesAction,
   fioles,
-  parseFiolesKey,
+  parseCampaignKey,
   playActions,
   startBoard,
 } from '../../src/shared/games/fioles/definition.ts';
@@ -40,16 +39,16 @@ describe('campagne', () => {
 });
 
 describe('clés', () => {
-  it('reconnaît campagne et niveaux créés', () => {
-    expect(parseFiolesKey(campaignKey(12))).toEqual({ kind: 'campaign', level: 12 });
-    expect(parseFiolesKey(customKey('abc123'))).toEqual({ kind: 'custom', contentId: 'abc123' });
-    expect(fioles.parseKey('c:3')).toEqual({ kind: 'builtin' });
-    expect(fioles.parseKey('l:abc123')).toEqual({ kind: 'content', contentId: 'abc123' });
+  it('reconnaît les niveaux de la campagne', () => {
+    expect(campaignKey(12)).toBe('c:12');
+    expect(parseCampaignKey('c:12')).toBe(12);
+    expect(parseCampaignKey('c:9999')).toBe(9999);
+    expect(fioles.isValidKey('c:3')).toBe(true);
   });
 
-  it.each(['c:0', 'c:01', 'c:10000', 'l:ABC', 'l:abc', 'x:1', ''])('rejette %s', (key) => {
-    expect(parseFiolesKey(key)).toBeNull();
-    expect(fioles.parseKey(key)).toBeNull();
+  it.each(['c:0', 'c:01', 'c:10000', 'l:abc123', 'x:1', ''])('rejette %s', (key) => {
+    expect(parseCampaignKey(key)).toBeNull();
+    expect(fioles.isValidKey(key)).toBe(false);
   });
 });
 
@@ -90,36 +89,20 @@ describe('replays', () => {
     const win = solve(board);
     if (!win) throw new Error('pas de solution');
     const withUndo: FiolesAction[] = [win[0] as FiolesAction, { type: 'undo' }, ...win];
-    expect(fioles.replay('c:1', null, encodeActions(win))).toEqual({ finished: true, value: win.length });
-    expect(fioles.replay('c:1', null, encodeActions(withUndo))).toEqual({ finished: true, value: win.length + 2 });
-    expect(fioles.replay('c:1', null, encodeActions(win.slice(0, 1)))).toEqual({ finished: false, value: 1 });
+    expect(fioles.replay('c:1', encodeActions(win))).toEqual({ finished: true, value: win.length });
+    expect(fioles.replay('c:1', encodeActions(withUndo))).toEqual({ finished: true, value: win.length + 2 });
+    expect(fioles.replay('c:1', encodeActions(win.slice(0, 1)))).toEqual({ finished: false, value: 1 });
   });
 
   it('refuse des actions après la victoire', () => {
-    const data = 'aaab.bbba..';
-    const win = solve(parseBoard(data) ?? []);
+    const win = solve(campaignBoard(1));
     if (!win) throw new Error('pas de solution');
     const extra = encodeActions([...win, { type: 'undo' }]);
-    expect(fioles.replay('l:abcdef', data, extra)).toBeNull();
+    expect(fioles.replay('c:1', extra)).toBeNull();
   });
 
-  it('exige les données du contenu pour un niveau créé', () => {
-    expect(startBoard('l:abcdef', null)).toBeNull();
-    expect(fioles.replay('l:abcdef', null, '')).toBeNull();
-  });
-});
-
-describe('contenus', () => {
-  it('accepte un plateau valide non résolu', () => {
-    expect(fioles.isValidContent('abab.baba..')).toBe(true);
-  });
-
-  it('refuse un plateau résolu ou invalide', () => {
-    expect(fioles.isValidContent('aaaa.bbbb..')).toBe(false);
-    expect(fioles.isValidContent('aab.bba..')).toBe(false);
-  });
-
-  it('donne la clé de partie d’un contenu', () => {
-    expect(fioles.contentKey('abc123')).toBe('l:abc123');
+  it('refuse une clé invalide', () => {
+    expect(startBoard('x:1')).toBeNull();
+    expect(fioles.replay('x:1', '')).toBeNull();
   });
 });

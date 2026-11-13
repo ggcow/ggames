@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { findGame, GAMES } from '../../src/shared/games/registry.ts';
 import {
   cleanName,
-  cleanTitle,
   isGameId,
   isRunStatus,
   isValidPassword,
@@ -44,11 +43,6 @@ describe('champs du protocole', () => {
     expect(cleanName('  小明  ')).toBe('小明');
     expect(cleanName('   ')).toBeNull();
     expect(cleanName('x'.repeat(40))).toHaveLength(LIMITS.name);
-  });
-
-  it('cleanTitle', () => {
-    expect(cleanTitle(undefined)).toBe('');
-    expect(cleanTitle('t'.repeat(40))).toHaveLength(LIMITS.title);
   });
 
   it('isValidPassword', () => {

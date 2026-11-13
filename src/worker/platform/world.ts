@@ -6,10 +6,7 @@ import { DurableObject } from 'cloudflare:workers';
 import type { GameDefinition } from '../../shared/games/game.ts';
 import { findGame, GAMES } from '../../shared/games/registry.ts';
 import {
-  type ContentInfo,
-  type CreateContentResponse,
   cleanName,
-  cleanTitle,
   type GameState,
   type GameSummary,
   isRunStatus,
@@ -35,7 +32,7 @@ import { nameKey, PlatformStore } from './store.ts';
 import { LoginThrottle } from './throttle.ts';
 
 /** Garde-fous : plateforme entre amis à inscription libre. */
-export const QUOTAS = { players: 200, contentsPerGame: 2000, recentRuns: 30 } as const;
+export const QUOTAS = { players: 200, recentRuns: 30 } as const;
 
 /** Données attachées à chaque WebSocket ; conservées pendant l'hibernation. */
 interface Attachment extends Presence {
@@ -127,7 +124,6 @@ export class World extends DurableObject<Env> {
     return ok({
       players: this.store.listPlayers(),
       progress: this.store.progress(game.id),
-      contents: this.store.listContents(game.id),
       records: this.store.records(game.id, game.scoreOrder),
     });
   }
@@ -169,67 +165,13 @@ export class World extends DurableObject<Env> {
     if (typeof key !== 'string' || key.length > LIMITS.key || !isRunStatus(status) || duration === null) {
       return fail(400, 'invalid run');
     }
-    const target = game.parseKey(key);
-    if (!target) return fail(400, 'invalid key');
-    const content = target.kind === 'content' ? this.store.findContent(game.id, target.contentId) : null;
-    if (target.kind === 'content' && !content) return fail(404, 'unknown content');
-    const run = this.verifiedRun(game, me, key, content?.data ?? null, status, duration, replay);
+    if (!game.isValidKey(key)) return fail(400, 'invalid key');
+    const run = this.verifiedRun(game, me, key, status, duration, replay);
     if (!run) return fail(400, 'invalid replay');
     this.store.insertRun(run);
     this.broadcast({ type: 'changed', game: game.id });
     const { replay: _replay, ...summary } = run;
     return ok({ run: summary, records: this.store.records(game.id, game.scoreOrder, key)[key] ?? [] });
-  }
-
-  /** Publie un contenu, avec la partie gagnée de l'auteur comme preuve qu'il est faisable. */
-  async createContent(
-    token: unknown,
-    gameId: unknown,
-    data: unknown,
-    rawTitle: unknown,
-    durationMs: unknown,
-    replay: unknown,
-  ): Promise<Result<CreateContentResponse>> {
-    const me = await this.authenticate(token);
-    if (!me) return unauthorized();
-    const game = findGame(gameId);
-    if (!game) return unknownGame();
-    const duration = parseDuration(durationMs);
-    if (typeof data !== 'string' || data.length > LIMITS.data || !game.isValidContent(data) || duration === null) {
-      return fail(400, 'invalid content');
-    }
-    const existing = this.store.findContentByData(game.id, data);
-    if (existing) return fail(409, existing.id);
-    if (this.store.countContents(game.id) >= QUOTAS.contentsPerGame) return fail(429, 'content quota reached');
-    const content: ContentInfo = {
-      id: createId(),
-      game: game.id,
-      data,
-      title: cleanTitle(rawTitle),
-      author: me.id,
-      created: Date.now(),
-    };
-    const run = this.verifiedRun(game, me, game.contentKey(content.id), data, 'won', duration, replay);
-    if (!run) return fail(400, 'invalid replay');
-    this.store.insertContent(content);
-    this.store.insertRun(run);
-    this.broadcast({ type: 'changed', game: game.id });
-    const { replay: _replay, ...summary } = run;
-    return ok({ content, run: summary });
-  }
-
-  /** Supprime un contenu et ses parties. Réservé à l'auteur. */
-  async deleteContent(token: unknown, gameId: unknown, contentId: unknown): Promise<Result<true>> {
-    const me = await this.authenticate(token);
-    if (!me) return unauthorized();
-    const game = findGame(gameId);
-    if (!game) return unknownGame();
-    const content = typeof contentId === 'string' ? this.store.findContent(game.id, contentId) : null;
-    if (!content) return fail(404, 'unknown content');
-    if (content.author !== me.id) return fail(403, 'not the author');
-    this.store.deleteContent(game.id, content.id, game.contentKey(content.id));
-    this.broadcast({ type: 'changed', game: game.id });
-    return ok(true);
   }
 
   /* ---------- Temps réel ---------- */
@@ -286,13 +228,12 @@ export class World extends DurableObject<Env> {
     game: GameDefinition,
     player: PlayerInfo,
     key: string,
-    content: string | null,
     status: RunStatus,
     durationMs: number,
     replay: unknown,
   ): Run | null {
     if (typeof replay !== 'string' || replay.length > LIMITS.replay) return null;
-    const outcome = game.replay(key, content, replay);
+    const outcome = game.replay(key, replay);
     if (!outcome || outcome.finished !== (status === 'won')) return null;
     return {
       id: createId(),

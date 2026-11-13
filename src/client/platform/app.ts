@@ -8,7 +8,6 @@ import type { AppContext, ScreenHandle } from './context.ts';
 import { detectLang, isLang, type Lang } from './i18n.ts';
 import { LiveClient } from './live.ts';
 import { formatRoute, type GameRoute, parseRoute, type Route } from './router.ts';
-import { mountCreate } from './screens/create.ts';
 import { mountGame } from './screens/game.ts';
 import { mountHub } from './screens/hub.ts';
 import { mountLogin } from './screens/login.ts';
@@ -161,7 +160,6 @@ export class App {
       case 'game':
       case 'player':
       case 'play':
-      case 'create':
         return this.mountGameRoute(route, ctx);
     }
   }
@@ -177,8 +175,6 @@ export class App {
         return mountPlayer(this.root, ctx, game, route.player);
       case 'play':
         return mountPlay(this.root, ctx, game, route.key);
-      case 'create':
-        return mountCreate(this.root, ctx, game);
     }
   }
 

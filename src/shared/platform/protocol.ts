@@ -1,11 +1,10 @@
 // Contrat client <-> serveur de la plateforme, commun à tous les jeux :
-// comptes, parties enregistrées (avec replay), progression, contenus créés, présence en temps réel.
-// Le contenu des champs `key`, `data`, `replay` et `state` est défini par chaque jeu (voir shared/games).
+// comptes, parties enregistrées (avec replay), progression, classements, présence en temps réel.
+// Le contenu des champs `key`, `replay` et `state` est défini par chaque jeu (voir shared/games).
 
 import { cleanText, isId, isRecord, parseJson } from './validate.ts';
 
 export type PlayerId = string;
-export type ContentId = string;
 export type RunId = string;
 export type GameId = string;
 
@@ -13,9 +12,7 @@ export const LIMITS = {
   name: 16,
   passwordMin: 4,
   passwordMax: 128,
-  title: 24,
   key: 40,
-  data: 512,
   replay: 20_000,
   state: 512,
   value: 1_000_000,
@@ -53,16 +50,6 @@ export interface Run extends RunSummary {
   replay: string;
 }
 
-/** Contenu créé par un joueur (ex. un niveau). `data` est validé par le jeu. */
-export interface ContentInfo {
-  id: ContentId;
-  game: GameId;
-  data: string;
-  title: string;
-  author: PlayerId;
-  created: number;
-}
-
 /** Meilleure partie gagnée d'un joueur sur une clé. */
 export interface RecordEntry {
   player: PlayerId;
@@ -91,7 +78,6 @@ export interface GameSummary {
 export interface GameState {
   players: PlayerInfo[];
   progress: PlayerProgress[];
-  contents: ContentInfo[];
   /** Classement par clé, du meilleur au moins bon. */
   records: Record<string, RecordEntry[]>;
 }
@@ -134,17 +120,6 @@ export interface SubmitRunResponse {
   run: RunSummary;
   records: RecordEntry[];
 }
-export interface CreateContentRequest {
-  data: string;
-  title: string;
-  /** Partie gagnée de l'auteur sur son contenu : preuve qu'il est faisable. */
-  durationMs: number;
-  replay: string;
-}
-export interface CreateContentResponse {
-  content: ContentInfo;
-  run: RunSummary;
-}
 export interface ErrorResponse {
   error: string;
 }
@@ -159,8 +134,6 @@ export const ROUTES = {
   game: (game: GameId) => `/api/games/${game}`,
   playerDetail: (game: GameId, player: PlayerId) => `/api/games/${game}/players/${player}`,
   runs: (game: GameId) => `/api/games/${game}/runs`,
-  contents: (game: GameId) => `/api/games/${game}/contents`,
-  content: (game: GameId, id: ContentId) => `/api/games/${game}/contents/${id}`,
   run: (id: RunId) => `/api/runs/${id}`,
 } as const;
 
@@ -198,8 +171,6 @@ export function cleanName(value: unknown): string | null {
   const name = cleanText(value, LIMITS.name);
   return name.length > 0 ? name : null;
 }
-
-export const cleanTitle = (value: unknown): string => cleanText(value, LIMITS.title);
 
 export const isValidPassword = (value: unknown): value is string =>
   typeof value === 'string' && value.length >= LIMITS.passwordMin && value.length <= LIMITS.passwordMax;

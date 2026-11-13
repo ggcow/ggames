@@ -6,8 +6,7 @@ import type { GameId, PlayerId, RunId } from '../../shared/platform/protocol.ts'
 export type GameRoute =
   | { name: 'game'; game: GameId }
   | { name: 'player'; game: GameId; player: PlayerId }
-  | { name: 'play'; game: GameId; key: string }
-  | { name: 'create'; game: GameId };
+  | { name: 'play'; game: GameId; key: string };
 
 export type Route = { name: 'login' } | { name: 'hub' } | { name: 'run'; run: RunId } | GameRoute;
 
@@ -25,8 +24,6 @@ export function formatRoute(route: Route): string {
       return `#/g/${route.game}/p/${route.player}`;
     case 'play':
       return `#/g/${route.game}/play/${encodeURIComponent(route.key)}`;
-    case 'create':
-      return `#/g/${route.game}/create`;
     case 'run':
       return `#/run/${route.run}`;
   }
@@ -41,7 +38,6 @@ export function parseRoute(hash: string): Route | null {
   if (first === 'run' && game && SEGMENT.test(game) && parts.length === 2) return { name: 'run', run: game };
   if (first !== 'g' || !game || !SEGMENT.test(game)) return null;
   if (parts.length === 2) return { name: 'game', game };
-  if (kind === 'create' && parts.length === 3) return { name: 'create', game };
   if (kind === 'p' && value && SEGMENT.test(value) && parts.length === 4)
     return { name: 'player', game, player: value };
   if (kind === 'play' && value && parts.length === 4) {

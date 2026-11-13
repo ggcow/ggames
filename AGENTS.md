@@ -18,7 +18,8 @@ Il décrit l'état actuel du projet et les règles à respecter. `CLAUDE.md` l'i
    ou paragraphe ne doit décrire un état passé.
 5. **Le code ne raconte pas son histoire ; git, si.** Interdit dans le code et la documentation : « ancien »,
    « nouveau », « désormais », « remplacé par », « avant on faisait », code commenté, code mort, fonctions
-   gardées « au cas où ». L'historique se lit uniquement avec `git log`.
+   gardées « au cas où ». L'historique se lit uniquement avec `git log`. Seule exception : les migrations
+   SQL (`schema.ts`), qui forment par nature un journal d'étapes.
 6. **Git propre.** Commits atomiques au format Conventional Commits, rédigés avec soin (voir plus bas).
    Version sémantique et tag à chaque livraison. CI qui vérifie tout sur chaque push.
 
@@ -32,7 +33,7 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct.
 - Interface en français et en chinois.
-- Premier jeu : **Fioles** (trier des couleurs dans des fioles), avec campagne infinie et éditeur de niveaux.
+- Premier jeu : **Fioles** (trier des couleurs dans des fioles), avec une campagne de niveaux infinie.
 
 ## Contraintes à ne jamais casser
 
@@ -74,9 +75,9 @@ scripts/build.ts           construction de dist/
 La plateforme ne connaît aucune règle de jeu. Un jeu fournit :
 
 - côté partagé, une `GameDefinition` (`src/shared/games/game.ts`) : ordre des scores, validation des clés de
-  partie et des contenus créés, et `replay()` qui rejoue une partie et calcule son score ;
+  partie, et `replay()` qui rejoue une partie et calcule son score ;
 - côté client, un `ClientGame` (`src/client/games/client-game.ts`) : nom, catalogue de ce qui se joue, libellés,
-  écrans de jeu, de replay et de création.
+  écrans de jeu et de replay.
 
 ### Modèle de données (SQLite du Durable Object `World`)
 
@@ -85,7 +86,6 @@ La plateforme ne connaît aucune règle de jeu. Un jeu fournit :
 | `players`  | compte : id, pseudo (unique sans casse), hash PBKDF2 du mot de passe |
 | `sessions` | jetons de session (hash SHA-256), un par appareil connecté           |
 | `runs`     | chaque partie : jeu, clé, joueur, statut, score, durée, replay, date |
-| `contents` | contenus créés par les joueurs (ex. niveaux), validés par le jeu     |
 
 Progression, classements et statistiques sont calculés à partir de `runs` (requêtes dans `store.ts`).
 La présence en temps réel vit dans les WebSockets en hibernation, pas en base.

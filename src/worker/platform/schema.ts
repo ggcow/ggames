@@ -1,6 +1,7 @@
 // Schéma SQLite du Durable Object World, appliqué par étapes numérotées.
 // Faire évoluer le schéma : ajouter une étape à la fin de MIGRATIONS. Ne jamais modifier une étape
-// existante : elle a déjà été appliquée sur les données de production.
+// existante : elle a déjà été appliquée sur les données de production. Les étapes forment donc un
+// journal ; le schéma courant est le résultat de toutes les étapes.
 
 const MIGRATIONS: readonly string[] = [
   `
@@ -40,6 +41,10 @@ const MIGRATIONS: readonly string[] = [
   );
   CREATE INDEX runs_game_key ON runs (game, key, status, value);
   CREATE INDEX runs_game_player ON runs (game, player, ended);
+  `,
+  `
+  DROP TABLE contents;
+  DELETE FROM runs WHERE game = 'fioles' AND key LIKE 'l:%';
   `,
 ];
 

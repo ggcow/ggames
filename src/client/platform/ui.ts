@@ -73,7 +73,7 @@ export function errorMessage(error: unknown, t: PlatformStrings): string {
   if (!(error instanceof ApiError)) return t.error_generic;
   if (error.status === NETWORK_ERROR) return t.error_network;
   if (error.status === 401) return t.error_credentials;
-  if (error.status === 409) return error.message === 'name taken' ? t.error_nameTaken : t.error_duplicate;
+  if (error.status === 409) return t.error_nameTaken;
   if (error.status === 429) return t.error_tooMany;
   if (error.status === 400) return t.error_invalid;
   return t.error_generic;

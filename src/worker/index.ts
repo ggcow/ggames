@@ -77,18 +77,6 @@ const ROUTE_TABLE: readonly Route[] = [
     ),
   },
   {
-    method: 'POST',
-    pattern: new RegExp(`^/api/games/${GAME}/contents$`),
-    handler: withBody(async (b, { world, token, params }) =>
-      toResponse(await world.createContent(token, params[0], b['data'], b['title'], b['durationMs'], b['replay'])),
-    ),
-  },
-  {
-    method: 'DELETE',
-    pattern: new RegExp(`^/api/games/${GAME}/contents/${ID}$`),
-    handler: async ({ world, token, params }) => toResponse(await world.deleteContent(token, params[0], params[1])),
-  },
-  {
     method: 'GET',
     pattern: new RegExp(`^/api/runs/${ID}$`),
     handler: async ({ world, token, params }) => toResponse(await world.getRun(token, params[0])),

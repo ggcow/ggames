@@ -1,7 +1,6 @@
 // Accès aux données SQLite du Durable Object. Aucune règle métier ici : uniquement des requêtes typées.
 
 import type {
-  ContentInfo,
   GameId,
   GameSummary,
   KeyProgress,
@@ -16,7 +15,6 @@ import type {
 export type ScoreOrder = 'asc' | 'desc';
 
 type PlayerRow = { id: string; name: string; created: number };
-type ContentRow = { id: string; game: string; data: string; title: string; author: string; created: number };
 type CredentialRow = PlayerRow & { password_hash: string };
 type RunRow = {
   id: string;
@@ -136,63 +134,6 @@ export class PlatformStore {
 
   deleteSession(tokenHash: string): void {
     this.sql.exec('DELETE FROM sessions WHERE token_hash = ?', tokenHash);
-  }
-
-  /* ---------- Contenus ---------- */
-
-  countContents(game: GameId): number {
-    return this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM contents WHERE game = ?', game).one().n;
-  }
-
-  findContent(game: GameId, id: string): ContentInfo | null {
-    return (
-      this.sql
-        .exec<ContentRow>(
-          'SELECT id, game, data, title, author, created FROM contents WHERE game = ? AND id = ?',
-          game,
-          id,
-        )
-        .toArray()[0] ?? null
-    );
-  }
-
-  findContentByData(game: GameId, data: string): ContentInfo | null {
-    return (
-      this.sql
-        .exec<ContentRow>(
-          'SELECT id, game, data, title, author, created FROM contents WHERE game = ? AND data = ?',
-          game,
-          data,
-        )
-        .toArray()[0] ?? null
-    );
-  }
-
-  listContents(game: GameId): ContentInfo[] {
-    return this.sql
-      .exec<ContentRow>(
-        'SELECT id, game, data, title, author, created FROM contents WHERE game = ? ORDER BY created DESC',
-        game,
-      )
-      .toArray();
-  }
-
-  insertContent(content: ContentInfo): void {
-    this.sql.exec(
-      'INSERT INTO contents (id, game, data, title, author, created) VALUES (?, ?, ?, ?, ?, ?)',
-      content.id,
-      content.game,
-      content.data,
-      content.title,
-      content.author,
-      content.created,
-    );
-  }
-
-  /** Supprime un contenu et toutes les parties jouées dessus. */
-  deleteContent(game: GameId, id: string, key: string): void {
-    this.sql.exec('DELETE FROM runs WHERE game = ? AND key = ?', game, key);
-    this.sql.exec('DELETE FROM contents WHERE game = ? AND id = ?', game, id);
   }
 
   /* ---------- Parties ---------- */

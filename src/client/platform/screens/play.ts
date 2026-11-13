@@ -1,4 +1,4 @@
-import type { ContentInfo, GameState, RecordEntry } from '../../../shared/platform/protocol.ts';
+import type { GameState, RecordEntry } from '../../../shared/platform/protocol.ts';
 import type { ClientGame, GameView, Unmount } from '../../games/client-game.ts';
 import { type AppContext, createGameView, type ScreenHandle } from '../context.ts';
 import { type Child, h, replaceChildren } from '../dom.ts';
@@ -44,13 +44,12 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
       .catch(() => undefined);
   };
 
-  const start = (content: ContentInfo | null) => {
+  const start = () => {
     unmountGame?.();
     started = Date.now();
     pending = null;
     unmountGame = game.mountPlay(boardHost, {
       key,
-      content,
       lang: ctx.lang,
       progress: ({ state, value, replay }) => {
         pending = { replay, value };
@@ -60,15 +59,13 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         pending = null;
         api
           .submitRun(gameId, { key, status, durationMs: Date.now() - started, replay })
-          .then(({ run, records }) =>
-            showResult(status === 'won', game.formatValue(run.value, ctx.lang), records, content),
-          )
+          .then(({ run, records }) => showResult(status === 'won', game.formatValue(run.value, ctx.lang), records))
           .catch((error: unknown) => toast(errorMessage(error, t)));
       },
     });
   };
 
-  const showResult = (won: boolean, value: string, records: RecordEntry[], content: ContentInfo | null) => {
+  const showResult = (won: boolean, value: string, records: RecordEntry[]) => {
     const next = view ? game.nextKey(key, view) : null;
     const lines: Child[] = records.map((record, index) =>
       h(
@@ -89,7 +86,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         ...(next
           ? [{ label: t.next, primary: true, action: () => ctx.navigate({ name: 'play', game: gameId, key: next }) }]
           : []),
-        { label: t.retry, action: () => start(content) },
+        { label: t.retry, action: start },
         { label: t.back, action: () => ctx.navigate({ name: 'game', game: gameId }) },
       ],
     );
@@ -103,18 +100,15 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         view = createGameView(state, ctx.me.id, ctx.lang);
         renderRecord();
         if (!first) return;
-        const target = game.definition.parseKey(key);
-        const content =
-          target?.kind === 'content' ? (state.contents.find((c) => c.id === target.contentId) ?? null) : null;
         replaceChildren(
           host,
-          screenHeader(game.keyLabel(key, ctx.lang, view), () => ctx.navigate({ name: 'game', game: gameId })),
+          screenHeader(game.keyLabel(key, ctx.lang), () => ctx.navigate({ name: 'game', game: gameId })),
           recordHost,
           liveHost,
           boardHost,
         );
         renderLive();
-        start(content);
+        start();
       })
       .catch((error: unknown) => toast(errorMessage(error, t)));
 

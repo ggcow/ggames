@@ -14,9 +14,9 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
 
 ### Jeux
 
-| Jeu       | Principe                                                                 | Extras                               |
-| --------- | ------------------------------------------------------------------------ | ------------------------------------ |
-| 🧪 Fioles | Verser les couleurs jusqu'à ce que chaque fiole soit d'une seule couleur | campagne infinie, éditeur de niveaux |
+| Jeu       | Principe                                                                 | Extras           |
+| --------- | ------------------------------------------------------------------------ | ---------------- |
+| 🧪 Fioles | Verser les couleurs jusqu'à ce que chaque fiole soit d'une seule couleur | campagne infinie |
 
 ## Fonctionnement technique
 

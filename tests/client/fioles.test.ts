@@ -1,13 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { GameView } from '../../src/client/games/client-game.ts';
-import { countColor, draftProblem, emptyDraft, parseDraft } from '../../src/client/games/fioles/editor.ts';
-import { fiolesClient, highestCampaignLevel } from '../../src/client/games/fioles/index.ts';
+import { fiolesClient, highestLevel } from '../../src/client/games/fioles/index.ts';
 import { mountFiolesPlay } from '../../src/client/games/fioles/play.ts';
 import { mountFiolesReplay } from '../../src/client/games/fioles/replay.ts';
 import { FIOLES_STRINGS } from '../../src/client/games/fioles/strings.ts';
 import { createGameView } from '../../src/client/platform/context.ts';
-import { encodeActions, fioles } from '../../src/shared/games/fioles/definition.ts';
-import { parseBoard } from '../../src/shared/games/fioles/rules.ts';
+import { campaignBoard, encodeActions, fioles } from '../../src/shared/games/fioles/definition.ts';
+import { boardToString, parseBoard } from '../../src/shared/games/fioles/rules.ts';
 import type { GameState } from '../../src/shared/platform/protocol.ts';
 import { solve } from '../support/fioles-solver.ts';
 
@@ -21,7 +20,6 @@ function view(overrides: Partial<GameState> = {}): GameView {
       { id: OTHER, name: 'Ami', created: 2 },
     ],
     progress: [],
-    contents: [],
     records: {},
     ...overrides,
   };
@@ -37,35 +35,20 @@ describe('catalogue', () => {
         'c:7': [{ player: OTHER, value: 30, run: 'r3' }],
       },
     });
-    expect(highestCampaignLevel(v)).toBe(3);
+    expect(highestLevel(v)).toBe(3);
     const [campaign] = fiolesClient.catalog(v);
     expect(campaign?.entries.map((e) => e.key)).toEqual(['c:4', 'c:3', 'c:2', 'c:1']);
     expect(campaign?.entries[0]).toMatchObject({ status: 'open', detail: 'À jouer' });
     expect(campaign?.entries[3]).toMatchObject({ status: 'done', detail: 'Ton record : 9 coups' });
   });
 
-  it('liste les niveaux des joueurs avec leur auteur', () => {
-    const v = view({
-      contents: [{ id: 'lvl001', game: 'fioles', data: 'abab.baba..', title: '', author: OTHER, created: 1 }],
-    });
-    const groups = fiolesClient.catalog(v);
-    expect(groups[1]).toEqual({
-      title: 'Niveaux des joueurs',
-      contents: true,
-      entries: [{ key: 'l:lvl001', label: 'Sans titre', detail: 'par Ami · À jouer', status: 'open' }],
-    });
-  });
-
   it('nomme les clés et propose le niveau suivant', () => {
-    const v = view({
-      contents: [{ id: 'lvl001', game: 'fioles', data: 'abab.baba..', title: 'Défi', author: OTHER, created: 1 }],
-    });
-    expect(fiolesClient.keyLabel('c:5', 'fr', null)).toBe('Niveau 5');
-    expect(fiolesClient.keyLabel('c:5', 'zh', null)).toBe('第 5 关');
-    expect(fiolesClient.keyLabel('l:lvl001', 'fr', v)).toBe('Défi');
-    expect(fiolesClient.keyLabel('l:lvl001', 'fr', null)).toBe('Niveau créé');
+    const v = view();
+    expect(fiolesClient.keyLabel('c:5', 'fr')).toBe('Niveau 5');
+    expect(fiolesClient.keyLabel('c:5', 'zh')).toBe('第 5 关');
+    expect(fiolesClient.keyLabel('x:1', 'fr')).toBe('x:1');
     expect(fiolesClient.nextKey('c:5', v)).toBe('c:6');
-    expect(fiolesClient.nextKey('l:lvl001', v)).toBeNull();
+    expect(fiolesClient.nextKey('x:1', v)).toBeNull();
     expect(fiolesClient.formatValue(1, 'fr')).toBe('1 coup');
   });
 
@@ -80,8 +63,8 @@ describe('catalogue', () => {
 });
 
 describe('partie', () => {
-  const data = 'aaab.bbba..';
-  const start = parseBoard(data) ?? [];
+  const start = campaignBoard(1);
+  const data = boardToString(start);
   const tubes = (host: HTMLElement) => [...host.querySelectorAll<HTMLElement>('.tube')];
 
   it('joue au toucher, signale chaque coup et produit un replay gagnant valide', () => {
@@ -96,7 +79,7 @@ describe('partie', () => {
     }
     expect(onWin).toHaveBeenCalledOnce();
     const replay = onWin.mock.calls[0]?.[0] as string;
-    expect(fioles.replay('l:abcdef', data, replay)).toMatchObject({ finished: true });
+    expect(fioles.replay('c:1', replay)).toMatchObject({ finished: true });
     expect(onProgress).toHaveBeenLastCalledWith(expect.objectContaining({ replay }));
     unmount();
   });
@@ -105,11 +88,15 @@ describe('partie', () => {
     const host = document.createElement('div');
     const onProgress = vi.fn();
     mountFiolesPlay(host, { start, strings: FIOLES_STRINGS.fr, onProgress, onWin: vi.fn() });
-    tubes(host)[0]?.click();
-    tubes(host)[2]?.click();
+    const first = solve(start)?.[0];
+    if (first?.type !== 'pour') throw new Error('premier coup attendu');
+    tubes(host)[first.from]?.click();
+    tubes(host)[first.to]?.click();
     const [undo, restart] = [...host.querySelectorAll('.controls button')] as HTMLButtonElement[];
     undo?.click();
-    expect(onProgress).toHaveBeenLastCalledWith(expect.objectContaining({ value: 2, replay: '02u' }));
+    expect(onProgress).toHaveBeenLastCalledWith(
+      expect.objectContaining({ value: 2, replay: `${encodeActions([first])}u` }),
+    );
     expect(host.querySelector('.counter')?.textContent).toBe('2 coups');
     restart?.click();
     expect(onProgress).toHaveBeenLastCalledWith({ state: data, value: 0, replay: '' });
@@ -136,25 +123,5 @@ describe('replay', () => {
     const buttons = [...host.querySelectorAll<HTMLButtonElement>('.controls button')];
     buttons[3]?.click();
     expect(host.querySelector('.counter')?.textContent).toBe(`1 coup / ${total}`);
-  });
-});
-
-describe('brouillon de l’éditeur', () => {
-  it('relit un brouillon valide et rejette un brouillon incohérent', () => {
-    const draft = emptyDraft(3, 2, 'Titre');
-    expect(parseDraft(JSON.parse(JSON.stringify(draft)))).toEqual(draft);
-    expect(parseDraft({ ...draft, colors: 1 })).toBeNull();
-    expect(parseDraft({ ...draft, board: [[9], [], [], [], []] })).toBeNull();
-    expect(parseDraft('x')).toBeNull();
-  });
-
-  it('signale un plateau incomplet ou déjà résolu', () => {
-    const draft = emptyDraft(2, 2);
-    expect(draftProblem(draft)).toBe('needFull');
-    draft.board = [[0, 0, 0, 0], [1, 1, 1, 1], [], []];
-    expect(draftProblem(draft)).toBe('alreadySolved');
-    draft.board = [[0, 1, 0, 1], [1, 0, 1, 0], [], []];
-    expect(draftProblem(draft)).toBeNull();
-    expect(countColor(draft.board, 0)).toBe(4);
   });
 });

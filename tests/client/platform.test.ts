@@ -15,7 +15,6 @@ describe('router', () => {
     { name: 'game', game: 'fioles' },
     { name: 'player', game: 'fioles', player: 'abc123' },
     { name: 'play', game: 'fioles', key: 'c:12' },
-    { name: 'create', game: 'fioles' },
     { name: 'run', run: 'abc123' },
   ];
 
@@ -170,7 +169,6 @@ describe('client API', () => {
     const t = PLATFORM_STRINGS.fr;
     expect(errorMessage(new ApiError(NETWORK_ERROR, ''), t)).toBe(t.error_network);
     expect(errorMessage(new ApiError(409, 'name taken'), t)).toBe(t.error_nameTaken);
-    expect(errorMessage(new ApiError(409, 'abc123'), t)).toBe(t.error_duplicate);
     expect(errorMessage(new Error('x'), t)).toBe(t.error_generic);
   });
 });

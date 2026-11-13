@@ -1,9 +1,6 @@
 // Client HTTP typé de l'API. Une méthode par route ; les erreurs deviennent des ApiError.
 
 import {
-  type ContentId,
-  type CreateContentRequest,
-  type CreateContentResponse,
   type CredentialsRequest,
   type ErrorResponse,
   type GameId,
@@ -65,9 +62,6 @@ export class ApiClient {
     this.request<PlayerGameDetail>('GET', ROUTES.playerDetail(game, player));
   submitRun = (game: GameId, body: SubmitRunRequest) =>
     this.request<SubmitRunResponse>('POST', ROUTES.runs(game), body);
-  createContent = (game: GameId, body: CreateContentRequest) =>
-    this.request<CreateContentResponse>('POST', ROUTES.contents(game), body);
-  deleteContent = (game: GameId, id: ContentId) => this.request<true>('DELETE', ROUTES.content(game, id));
   run = (id: RunId) => this.request<Run>('GET', ROUTES.run(id));
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {

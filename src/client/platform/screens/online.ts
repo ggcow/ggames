@@ -13,7 +13,7 @@ export function renderOnline(others: readonly Presence[], ctx: AppContext): HTML
       const game = presence.game ? findClientGame(presence.game) : null;
       const activity =
         game && presence.key
-          ? `${game.icon} ${game.name[ctx.lang]} · ${game.keyLabel(presence.key, ctx.lang, null)}`
+          ? `${game.icon} ${game.name[ctx.lang]} · ${game.keyLabel(presence.key, ctx.lang)}`
           : ctx.t.inMenus;
       const join =
         game && presence.key

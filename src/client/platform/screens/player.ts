@@ -1,6 +1,6 @@
-import type { GameState, PlayerGameDetail, RunSummary } from '../../../shared/platform/protocol.ts';
-import type { ClientGame, GameView } from '../../games/client-game.ts';
-import { type AppContext, createGameView, type ScreenHandle } from '../context.ts';
+import type { PlayerGameDetail, RunSummary } from '../../../shared/platform/protocol.ts';
+import type { ClientGame } from '../../games/client-game.ts';
+import type { AppContext, ScreenHandle } from '../context.ts';
 import { h, replaceChildren } from '../dom.ts';
 import { formatDate, formatDuration } from '../i18n.ts';
 import { errorMessage, loading, screenHeader, section, toast } from '../ui.ts';
@@ -9,13 +9,13 @@ import { errorMessage, loading, screenHeader, section, toast } from '../ui.ts';
 export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame, playerId: string): ScreenHandle {
   const { t, api } = ctx;
   const gameId = game.definition.id;
-  let data: { detail: PlayerGameDetail; view: GameView } | null = null;
+  let detail: PlayerGameDetail | null = null;
 
-  const runRow = (run: RunSummary, view: GameView) =>
+  const runRow = (run: RunSummary) =>
     h(
       'button',
       { class: 'card run', on: { click: () => ctx.navigate({ name: 'run', run: run.id }) } },
-      h('strong', { class: 'grow' }, game.keyLabel(run.key, ctx.lang, view)),
+      h('strong', { class: 'grow' }, game.keyLabel(run.key, ctx.lang)),
       h('small', { class: `status ${run.status}` }, t[`status_${run.status}`]),
       h(
         'small',
@@ -25,8 +25,7 @@ export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame
     );
 
   const render = () => {
-    if (!data) return loading(host, t);
-    const { detail, view } = data;
+    if (!detail) return loading(host, t);
     const progress = detail.progress;
     replaceChildren(
       host,
@@ -51,7 +50,7 @@ export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame
             h(
               'div',
               { class: 'card key-row' },
-              h('strong', { class: 'grow' }, game.keyLabel(key.key, ctx.lang, view)),
+              h('strong', { class: 'grow' }, game.keyLabel(key.key, ctx.lang)),
               h('small', { class: 'muted' }, `${t.attempts} ${key.attempts} · ${t.wins} ${key.wins}`),
               key.best
                 ? h(
@@ -67,14 +66,15 @@ export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame
           ),
         ),
       ),
-      section(t.recent, h('div', { class: 'stack' }, ...detail.recent.map((run) => runRow(run, view)))),
+      section(t.recent, h('div', { class: 'stack' }, ...detail.recent.map(runRow))),
     );
   };
 
   const load = () =>
-    Promise.all([api.playerDetail(gameId, playerId), api.game(gameId)])
-      .then(([detail, state]: [PlayerGameDetail, GameState]) => {
-        data = { detail, view: createGameView(state, ctx.me.id, ctx.lang) };
+    api
+      .playerDetail(gameId, playerId)
+      .then((loaded) => {
+        detail = loaded;
         render();
       })
       .catch((error: unknown) => toast(errorMessage(error, t)));
