@@ -1,70 +1,24 @@
-// Jeu Fioles branché sur la plateforme : niveaux de la campagne, écrans de jeu et de replay.
+// Jeu Fioles branché sur la plateforme : campagne de niveaux, écrans de jeu et de replay.
 
-import {
-  campaignKey,
-  fioles,
-  MAX_LEVEL,
-  parseCampaignKey,
-  startBoard,
-} from '../../../shared/games/fioles/definition.ts';
+import { fioles, startBoard } from '../../../shared/games/fioles/definition.ts';
 import { parseBoard } from '../../../shared/games/fioles/rules.ts';
-import type { PlayerId } from '../../../shared/platform/protocol.ts';
 import { h } from '../../platform/dom.ts';
-import type { Lang } from '../../platform/i18n.ts';
-import type { ClientGame, GameView, LevelTile } from '../client-game.ts';
+import { campaignMethods } from '../campaign.ts';
+import type { ClientGame } from '../client-game.ts';
 import { renderMiniBoard } from './board.ts';
 import { mountFiolesPlay } from './play.ts';
 import { mountFiolesReplay } from './replay.ts';
 import { FIOLES_STRINGS } from './strings.ts';
-
-const formatMoves = (value: number, lang: Lang) => FIOLES_STRINGS[lang].moves(value);
-
-/** Meilleur score du joueur sur une clé, ou undefined s'il ne l'a jamais gagnée. */
-const myBest = (view: GameView, key: string) => view.state.records[key]?.find((r) => r.player === view.me)?.value;
-
-const hasWon = (view: GameView, key: string) => myBest(view, key) !== undefined;
-
-/** Plus haut niveau gagné par un joueur (0 si aucun). */
-export function highestLevel(view: GameView, player: PlayerId): number {
-  let highest = 0;
-  for (const [key, records] of Object.entries(view.state.records)) {
-    const level = parseCampaignKey(key);
-    if (level !== null && records.some((r) => r.player === player)) highest = Math.max(highest, level);
-  }
-  return highest;
-}
 
 export const fiolesClient: ClientGame = {
   definition: fioles,
   name: { fr: FIOLES_STRINGS.fr.name, zh: FIOLES_STRINGS.zh.name },
   tagline: { fr: FIOLES_STRINGS.fr.tagline, zh: FIOLES_STRINGS.zh.tagline },
   icon: '🧪',
-
-  keyLabel(key, lang) {
-    const level = parseCampaignKey(key);
-    return level === null ? key : FIOLES_STRINGS[lang].level(level);
-  },
-
-  formatValue: formatMoves,
-
-  levelProgress(view, player) {
-    return { unlocked: Math.min(highestLevel(view, player) + 1, MAX_LEVEL), total: MAX_LEVEL };
-  },
-
-  levelOf: parseCampaignKey,
-
-  levelTile(level, view): LevelTile {
-    const key = campaignKey(level);
-    const required = fioles.prerequisite(key);
-    const best = myBest(view, key);
-    const status = best !== undefined ? 'done' : required === null || hasWon(view, required) ? 'open' : 'locked';
-    return { key, label: String(level), status, best: best === undefined ? null : formatMoves(best, view.lang) };
-  },
-
-  nextKey(key) {
-    const level = parseCampaignKey(key);
-    return level === null ? null : campaignKey(level + 1);
-  },
+  ...campaignMethods(
+    (level, lang) => FIOLES_STRINGS[lang].level(level),
+    (value, lang) => FIOLES_STRINGS[lang].moves(value),
+  ),
 
   renderLiveState(state) {
     const board = parseBoard(state);

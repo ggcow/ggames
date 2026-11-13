@@ -1,12 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
+import { highestLevel } from '../../src/client/games/campaign.ts';
 import type { GameView } from '../../src/client/games/client-game.ts';
 import { renderBoard } from '../../src/client/games/fioles/board.ts';
-import { fiolesClient, highestLevel } from '../../src/client/games/fioles/index.ts';
+import { fiolesClient } from '../../src/client/games/fioles/index.ts';
 import { mountFiolesPlay } from '../../src/client/games/fioles/play.ts';
 import { mountFiolesReplay } from '../../src/client/games/fioles/replay.ts';
 import { FIOLES_STRINGS } from '../../src/client/games/fioles/strings.ts';
 import { createGameView } from '../../src/client/platform/context.ts';
-import { campaignBoard, encodeActions, fioles, MAX_LEVEL } from '../../src/shared/games/fioles/definition.ts';
+import { MAX_LEVEL } from '../../src/shared/games/campaign.ts';
+import { campaignBoard, encodeActions, fioles } from '../../src/shared/games/fioles/definition.ts';
 import { boardToString, parseBoard } from '../../src/shared/games/fioles/rules.ts';
 import type { GameState } from '../../src/shared/platform/protocol.ts';
 import { solve } from '../support/fioles-solver.ts';

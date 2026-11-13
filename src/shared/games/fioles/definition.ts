@@ -1,5 +1,6 @@
-// Définition du jeu Fioles pour la plateforme : niveaux de la campagne, clés, replays.
+// Définition du jeu Fioles pour la plateforme : génération des niveaux de la campagne, replays.
 
+import { campaignPrerequisite, parseCampaignKey } from '../campaign.ts';
 import type { GameDefinition, ReplayOutcome } from '../game.ts';
 import { type Board, type BoardSpec, cloneBoard, generateBoard, isSolved, MAX_COLORS, pour } from './rules.ts';
 
@@ -41,20 +42,6 @@ export function campaignBoard(level: number): Board {
     campaignCache.set(level, board);
   }
   return cloneBoard(board);
-}
-
-/* ---------- Clés ---------- */
-
-/** Nombre de niveaux de la campagne. */
-export const MAX_LEVEL = 9999;
-
-/** Clé d'un niveau de la campagne : `c:<niveau>`, de 1 à MAX_LEVEL. */
-export const campaignKey = (level: number): string => `c:${level}`;
-
-/** Numéro du niveau désigné par une clé, ou `null` si la clé est invalide. */
-export function parseCampaignKey(key: string): number | null {
-  const match = /^c:([1-9]\d{0,3})$/.exec(key);
-  return match?.[1] ? Number(match[1]) : null;
 }
 
 /* ---------- Replays ---------- */
@@ -120,10 +107,7 @@ export const fioles: GameDefinition = {
   id: FIOLES_ID,
   scoreOrder: 'asc',
   isValidKey: (key) => parseCampaignKey(key) !== null,
-  prerequisite(key) {
-    const level = parseCampaignKey(key);
-    return level !== null && level > 1 ? campaignKey(level - 1) : null;
-  },
+  prerequisite: campaignPrerequisite,
   replay(key, replay): ReplayOutcome | null {
     const start = startBoard(key);
     const actions = decodeActions(replay);

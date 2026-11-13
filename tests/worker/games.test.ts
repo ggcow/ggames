@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  campaignBoard,
-  campaignKey,
-  encodeActions,
-  type FiolesAction,
-} from '../../src/shared/games/fioles/definition.ts';
+import { campaignKey } from '../../src/shared/games/campaign.ts';
+import { campaignBoard, encodeActions, type FiolesAction } from '../../src/shared/games/fioles/definition.ts';
 import type { Board } from '../../src/shared/games/fioles/rules.ts';
 import type {
   GameState,

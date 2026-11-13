@@ -59,7 +59,8 @@ src/
   shared/                  code commun client + serveur, sans DOM ni Cloudflare
     platform/              protocole HTTP/WebSocket (types, routes, validation)
     games/                 interface GameDefinition + registre des jeux
-      fioles/              règles, solveur, génération, clés, replays
+      campaign.ts          campagne de niveaux commune : clés `c:<n>`, déblocage
+      fioles/              règles, solveur, génération, replays
   worker/                  serveur Cloudflare
     index.ts               routeur HTTP -> Durable Object
     http.ts                réponses JSON, lecture du corps, jeton
@@ -68,6 +69,8 @@ src/
     main.ts                point d'entrée
     platform/              coquille : session, routeur, API, temps réel, écrans communs, UI, i18n
     games/                 interface ClientGame + registre + un dossier par jeu
+      campaign.ts          méthodes ClientGame d'une campagne (progression, cases, niveau suivant)
+      puzzle-frame.ts      cadre de partie commun : compteur de coups, Annuler, Recommencer
 pages/                     projet Cloudflare Pages : relaie /api/* vers le Worker (service binding)
 tests/                     Vitest : shared/ (node), client/ (happy-dom), worker/ (runtime Cloudflare réel)
 scripts/build.ts           construction de dist/
@@ -106,7 +109,8 @@ Erreurs attendues : valeurs `Result` renvoyées par le Durable Object, convertie
 ## Ajouter un jeu
 
 1. `src/shared/games/<jeu>/` : règles pures + `definition.ts` qui exporte une `GameDefinition` ;
-   l'enregistrer dans `src/shared/games/registry.ts`.
+   l'enregistrer dans `src/shared/games/registry.ts`. Un jeu à niveaux utilise la campagne commune
+   (`shared/games/campaign.ts`) et `campaignMethods()` côté client.
 2. `src/client/games/<jeu>/` : `index.ts` qui exporte un `ClientGame`, `strings.ts` (fr + zh), écrans ;
    l'enregistrer dans `src/client/games/registry.ts`.
 3. Tests : règles et replays dans `tests/shared/`, interface dans `tests/client/`, une partie complète via

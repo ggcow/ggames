@@ -12,7 +12,7 @@ import {
   pour,
   type ReadonlyBoard,
 } from '../../../shared/games/fioles/rules.ts';
-import { h, replaceChildren } from '../../platform/dom.ts';
+import { mountPuzzleFrame } from '../puzzle-frame.ts';
 import { renderBoard, shake } from './board.ts';
 import type { FiolesStrings } from './strings.ts';
 
@@ -31,16 +31,17 @@ export function mountFiolesPlay(host: HTMLElement, options: FiolesPlayOptions): 
   let selected = -1;
   let finished = false;
 
-  const boardHost = h('div', { class: 'board-host' });
-  const counter = h('span', { class: 'counter' });
-  const undo = h('button', { class: 'btn', on: { click: () => undoLast() } }, strings.undo);
-  const restart = h('button', { class: 'btn', on: { click: () => reset() } }, strings.restart);
-  replaceChildren(
-    host,
-    h('div', { class: 'counter-row' }, counter),
-    h('div', { class: 'table' }, boardHost),
-    h('div', { class: 'controls' }, undo, restart),
-  );
+  const {
+    counter,
+    table: boardHost,
+    undo,
+    restart,
+  } = mountPuzzleFrame(host, {
+    undoLabel: strings.undo,
+    restartLabel: strings.restart,
+    onUndo: () => undoLast(),
+    onRestart: () => reset(),
+  });
 
   const render = (arrived?: { tube: number; count: number }) => {
     counter.textContent = strings.moves(actions.length);

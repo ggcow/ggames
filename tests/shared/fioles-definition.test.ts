@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   campaignBoard,
-  campaignKey,
   campaignSpec,
   decodeActions,
   encodeActions,
   type FiolesAction,
   fioles,
-  parseCampaignKey,
   playActions,
   startBoard,
 } from '../../src/shared/games/fioles/definition.ts';
@@ -46,10 +44,8 @@ describe('campagne', () => {
 
 describe('clés', () => {
   it('reconnaît les niveaux de la campagne', () => {
-    expect(campaignKey(12)).toBe('c:12');
-    expect(parseCampaignKey('c:12')).toBe(12);
-    expect(parseCampaignKey('c:9999')).toBe(9999);
     expect(fioles.isValidKey('c:3')).toBe(true);
+    expect(fioles.isValidKey('c:9999')).toBe(true);
   });
 
   it('exige d’avoir gagné le niveau précédent', () => {
@@ -60,7 +56,6 @@ describe('clés', () => {
   });
 
   it.each(['c:0', 'c:01', 'c:10000', 'l:abc123', 'x:1', ''])('rejette %s', (key) => {
-    expect(parseCampaignKey(key)).toBeNull();
     expect(fioles.isValidKey(key)).toBe(false);
   });
 });
