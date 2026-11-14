@@ -73,6 +73,11 @@ export class LiveClient {
     this.send({ type: 'reaction', game, key, code });
   }
 
+  /** Envoie un message au salon global ; perdu si la connexion est fermée. */
+  chat(text: string): void {
+    this.send({ type: 'chat', text });
+  }
+
   private open(): void {
     if (!this.token) return;
     const socket = this.createSocket(`${this.baseUrl}${ROUTES.live}?token=${encodeURIComponent(this.token)}`);

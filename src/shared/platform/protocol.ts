@@ -14,6 +14,7 @@ export const LIMITS = {
   passwordMin: 4,
   passwordMax: 128,
   key: 40,
+  chat: 500,
   replay: 20_000,
   state: 512,
   value: 1_000_000,
@@ -136,6 +137,7 @@ export const ROUTES = {
   playerDetail: (game: GameId, player: PlayerId) => `/api/games/${game}/players/${player}`,
   runs: (game: GameId) => `/api/games/${game}/runs`,
   run: (id: RunId) => `/api/runs/${id}`,
+  chat: '/api/chat',
 } as const;
 
 /* ---------- Temps réel : WebSocket sur ROUTES.live?token=... ---------- */
@@ -160,14 +162,25 @@ export interface ReactionNotice {
   at: number;
 }
 
+/** Message du salon global, conservé quelques jours côté serveur. */
+export interface ChatMessage {
+  id: string;
+  player: PlayerId;
+  name: string;
+  text: string;
+  at: number;
+}
+
 export type ClientMessage =
   | { type: 'activity'; game: GameId; key: string; state: string; value: number }
   | { type: 'reaction'; game: GameId; key: string; code: ReactionCode }
+  | { type: 'chat'; text: string }
   | { type: 'idle' };
 
 export type ServerMessage =
   | { type: 'presence'; online: Presence[] }
   | { type: 'reaction'; reaction: ReactionNotice }
+  | { type: 'chat'; message: ChatMessage }
   /** Des données ont changé : les clients concernés rechargent. `game` null = données de joueurs. */
   | { type: 'changed'; game: GameId | null };
 
@@ -211,6 +224,10 @@ export function parseClientMessage(raw: string): ClientMessage | null {
     if (!isGameId(game) || !isShortString(key, LIMITS.key) || !isReactionCode(code)) return null;
     return { type: 'reaction', game, key, code };
   }
+  if (msg['type'] === 'chat') {
+    const text = cleanText(msg['text'], LIMITS.chat);
+    return text.length > 0 ? { type: 'chat', text } : null;
+  }
   if (msg['type'] !== 'activity') return null;
   const { game, key, state, value } = msg;
   if (!isGameId(game) || !isShortString(key, LIMITS.key) || !isShortString(state, LIMITS.state) || !isCount(value)) {
@@ -241,6 +258,17 @@ function parseReaction(value: unknown): ReactionNotice | null {
   return { game, key, player, name, code, at };
 }
 
+function parseChatMessage(value: unknown): ChatMessage | null {
+  if (!isRecord(value)) return null;
+  const { id, player, name, text } = value;
+  const at = value['at'];
+  if (!isId(id) || !isId(player) || !isShortString(name, LIMITS.name) || !isShortString(text, LIMITS.chat)) {
+    return null;
+  }
+  if (text.length === 0 || !isTimestamp(at)) return null;
+  return { id, player, name, text, at };
+}
+
 export function parseServerMessage(raw: string): ServerMessage | null {
   const msg = parseJson(raw);
   if (!isRecord(msg)) return null;
@@ -251,6 +279,10 @@ export function parseServerMessage(raw: string): ServerMessage | null {
   if (msg['type'] === 'reaction') {
     const reaction = parseReaction(msg['reaction']);
     return reaction ? { type: 'reaction', reaction } : null;
+  }
+  if (msg['type'] === 'chat') {
+    const message = parseChatMessage(msg['message']);
+    return message ? { type: 'chat', message } : null;
   }
   if (msg['type'] === 'presence' && Array.isArray(msg['online'])) {
     return { type: 'presence', online: msg['online'].map(parsePresence).filter((p): p is Presence => p !== null) };

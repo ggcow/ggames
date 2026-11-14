@@ -64,6 +64,7 @@ describe('champs du protocole', () => {
   it('construit les routes', () => {
     expect(ROUTES.playerDetail('fioles', 'abc123')).toBe('/api/games/fioles/players/abc123');
     expect(ROUTES.run('abc123')).toBe('/api/runs/abc123');
+    expect(ROUTES.chat).toBe('/api/chat');
   });
 });
 
@@ -92,6 +93,18 @@ describe('messages temps réel', () => {
     expect(parseClientMessage('{"type":"reaction","game":"fioles","code":"thumbs"}')).toBeNull();
   });
 
+  it('nettoie et borne un message de salon, et rejette le vide', () => {
+    expect(parseClientMessage('{"type":"chat","text":"  bonjour   à tous  "}')).toEqual({
+      type: 'chat',
+      text: 'bonjour à tous',
+    });
+    expect(parseClientMessage('{"type":"chat","text":"   "}')).toBeNull();
+    expect(parseClientMessage(JSON.stringify({ type: 'chat', text: 'x'.repeat(600) }))).toEqual({
+      type: 'chat',
+      text: 'x'.repeat(LIMITS.chat),
+    });
+  });
+
   it('parse les messages serveur et filtre les présences invalides', () => {
     expect(parseServerMessage('{"type":"changed","game":null}')).toEqual({ type: 'changed', game: null });
     const good = { player: 'abc123', name: 'Léa', game: null, key: null, state: null, value: 0 };
@@ -108,6 +121,14 @@ describe('messages temps réel', () => {
     ).toBeNull();
     expect(parseServerMessage(JSON.stringify({ type: 'reaction', reaction: { ...reaction, at: 0 } }))).toBeNull();
     expect(parseServerMessage('{"type":"reaction"}')).toBeNull();
+  });
+
+  it('parse un message de salon et rejette ses champs invalides', () => {
+    const message = { id: 'abc123', player: 'def456', name: 'Léa', text: 'bonjour', at: 123 };
+    expect(parseServerMessage(JSON.stringify({ type: 'chat', message }))).toEqual({ type: 'chat', message });
+    expect(parseServerMessage(JSON.stringify({ type: 'chat', message: { ...message, text: '' } }))).toBeNull();
+    expect(parseServerMessage(JSON.stringify({ type: 'chat', message: { ...message, id: 'X' } }))).toBeNull();
+    expect(parseServerMessage('{"type":"chat"}')).toBeNull();
   });
 });
 

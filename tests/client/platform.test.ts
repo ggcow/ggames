@@ -12,6 +12,8 @@ describe('router', () => {
   const routes: Route[] = [
     { name: 'login' },
     { name: 'hub' },
+    { name: 'chat' },
+    { name: 'chat', game: 'fioles' },
     { name: 'game', game: 'fioles' },
     { name: 'player', game: 'fioles', player: 'abc123' },
     { name: 'play', game: 'fioles', key: 'c:12' },
@@ -27,7 +29,7 @@ describe('router', () => {
     expect(parseRoute('#/')).toEqual({ name: 'hub' });
   });
 
-  it.each(['#/nope', '#/g/', '#/g/Fioles', '#/g/fioles/p', '#/g/fioles/play/%E0%A4%A', '#/run/a/b'])(
+  it.each(['#/nope', '#/g/', '#/g/Fioles', '#/g/fioles/p', '#/g/fioles/play/%E0%A4%A', '#/run/a/b', '#/chat/g/'])(
     'rejette %s',
     (hash) => {
       expect(parseRoute(hash)).toBeNull();

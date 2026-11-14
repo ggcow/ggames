@@ -30,6 +30,28 @@ export class LoginThrottle {
   }
 }
 
+/** Limite les messages d'un joueur sur une fenêtre glissante, en mémoire du Durable Object. */
+export class ChatThrottle {
+  private readonly sent = new Map<string, number[]>();
+  private readonly max: number;
+  private readonly windowMs: number;
+
+  constructor(max: number, windowMs: number) {
+    this.max = max;
+    this.windowMs = windowMs;
+  }
+
+  allow(player: string, now: number): boolean {
+    const recent = (this.sent.get(player) ?? []).filter((at) => now - at < this.windowMs);
+    if (recent.length >= this.max) {
+      this.sent.set(player, recent);
+      return false;
+    }
+    this.sent.set(player, [...recent, now]);
+    return true;
+  }
+}
+
 /** Laisse passer au plus une réaction par joueur et par intervalle, en mémoire du Durable Object. */
 export class ReactionThrottle {
   private readonly last = new Map<string, number>();

@@ -8,7 +8,12 @@ export type GameRoute =
   | { name: 'player'; game: GameId; player: PlayerId }
   | { name: 'play'; game: GameId; key: string };
 
-export type Route = { name: 'login' } | { name: 'hub' } | { name: 'run'; run: RunId } | GameRoute;
+export type Route =
+  | { name: 'login' }
+  | { name: 'hub' }
+  | { name: 'chat'; game?: GameId }
+  | { name: 'run'; run: RunId }
+  | GameRoute;
 
 const SEGMENT = /^[a-z0-9-]{1,40}$/;
 
@@ -18,6 +23,8 @@ export function formatRoute(route: Route): string {
       return '#/login';
     case 'hub':
       return '#/';
+    case 'chat':
+      return route.game ? `#/chat/g/${route.game}` : '#/chat';
     case 'game':
       return `#/g/${route.game}`;
     case 'player':
@@ -35,6 +42,12 @@ export function parseRoute(hash: string): Route | null {
   const [first, game, kind, value] = parts;
   if (parts.length === 0) return { name: 'hub' };
   if (first === 'login' && parts.length === 1) return { name: 'login' };
+  if (first === 'chat') {
+    if (parts.length === 1) return { name: 'chat' };
+    const from = parts[2];
+    if (parts.length === 3 && parts[1] === 'g' && from && SEGMENT.test(from)) return { name: 'chat', game: from };
+    return null;
+  }
   if (first === 'run' && game && SEGMENT.test(game) && parts.length === 2) return { name: 'run', run: game };
   if (first !== 'g' || !game || !SEGMENT.test(game)) return null;
   if (parts.length === 2) return { name: 'game', game };

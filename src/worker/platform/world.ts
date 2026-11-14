@@ -6,6 +6,7 @@ import { DurableObject } from 'cloudflare:workers';
 import type { GameDefinition } from '../../shared/games/game.ts';
 import { findGame, GAMES } from '../../shared/games/registry.ts';
 import {
+  type ChatMessage,
   type ClientMessage,
   cleanName,
   type GameId,
@@ -32,10 +33,13 @@ import { createId, createToken, hashPassword, sha256, verifyPassword } from './c
 import { fail, ok, type Result } from './result.ts';
 import { migrate } from './schema.ts';
 import { nameKey, PlatformStore } from './store.ts';
-import { LoginThrottle, ReactionThrottle } from './throttle.ts';
+import { ChatThrottle, LoginThrottle, ReactionThrottle } from './throttle.ts';
 
 /** Garde-fous : plateforme entre amis à inscription libre. */
 export const QUOTAS = { players: 200 } as const;
+
+const CHAT_HISTORY = 50;
+const CHAT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** Données attachées à chaque WebSocket ; conservées pendant l'hibernation. */
 interface Attachment extends Presence {
@@ -49,6 +53,7 @@ export class World extends DurableObject<Env> {
   private readonly store: PlatformStore;
   private readonly throttle = new LoginThrottle(10, 10 * 60 * 1000);
   private readonly reactionThrottle = new ReactionThrottle(1000);
+  private readonly chatThrottle = new ChatThrottle(5, 10_000);
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -130,6 +135,14 @@ export class World extends DurableObject<Env> {
       progress: this.store.progress(game.id),
       records: this.store.records(game.id, game.scoreOrder),
     });
+  }
+
+  /** Derniers messages du salon global, limités à la fenêtre de conservation. */
+  async getChat(token: unknown): Promise<Result<ChatMessage[]>> {
+    if (!(await this.authenticate(token))) return unauthorized();
+    const now = Date.now();
+    this.store.pruneChat(now - CHAT_RETENTION_MS);
+    return ok(this.store.recentChat(CHAT_HISTORY, now - CHAT_RETENTION_MS));
   }
 
   async getPlayerDetail(token: unknown, gameId: unknown, playerId: unknown): Promise<Result<PlayerGameDetail>> {
@@ -216,6 +229,10 @@ export class World extends DurableObject<Env> {
       this.react(ws, msg);
       return;
     }
+    if (msg.type === 'chat') {
+      this.chat(ws, msg);
+      return;
+    }
     const current = readAttachment(ws);
     const now = Date.now();
     const next: Attachment =
@@ -281,6 +298,23 @@ export class World extends DurableObject<Env> {
       replay,
       ended: Date.now(),
     };
+  }
+
+  /** Message du salon global : limité en débit, conservé quelques jours, diffusé à tous les connectés. */
+  private chat(ws: WebSocket, msg: Extract<ClientMessage, { type: 'chat' }>): void {
+    const current = readAttachment(ws);
+    const now = Date.now();
+    if (!this.chatThrottle.allow(current.player, now)) return;
+    const message: ChatMessage = {
+      id: createId(),
+      player: current.player,
+      name: current.name,
+      text: msg.text,
+      at: now,
+    };
+    this.store.insertChat(message);
+    this.store.pruneChat(now - CHAT_RETENTION_MS);
+    this.broadcast({ type: 'chat', message });
   }
 
   /**

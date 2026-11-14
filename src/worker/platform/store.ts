@@ -1,6 +1,7 @@
 // Accès aux données SQLite du Durable Object. Aucune règle métier ici : uniquement des requêtes typées.
 
 import type {
+  ChatMessage,
   GameId,
   GameSummary,
   KeyProgress,
@@ -30,6 +31,7 @@ type RunWithReplayRow = RunRow & { replay: string };
 type ProgressRow = { player: string; completed: number; runs: number; play_time: number; last_played: number };
 type RecordRow = { key: string; player: string; value: number; run: string };
 type KeyRow = { key: string; attempts: number; wins: number; best: string | null };
+type ChatRow = { id: string; player: string; name: string; text: string; created: number };
 
 const RUN_COLUMNS = 'id, game, key, player, status, value, duration_ms, ended';
 
@@ -248,6 +250,44 @@ export class PlatformStore {
       wins: row.wins,
       best: row.best ? this.findRunSummary(row.best) : null,
     }));
+  }
+
+  /* ---------- Salon ---------- */
+
+  insertChat(message: ChatMessage): void {
+    this.sql.exec(
+      'INSERT INTO chat_messages (id, player, text, created) VALUES (?, ?, ?, ?)',
+      message.id,
+      message.player,
+      message.text,
+      message.at,
+    );
+  }
+
+  /** Derniers messages du salon, du plus ancien au plus récent. */
+  recentChat(limit: number, since: number): ChatMessage[] {
+    const rows = this.sql
+      .exec<ChatRow>(
+        `SELECT c.id, c.player, p.name, c.text, c.created
+         FROM chat_messages c JOIN players p ON p.id = c.player
+         WHERE c.created >= ?
+         ORDER BY c.created DESC
+         LIMIT ?`,
+        since,
+        limit,
+      )
+      .toArray();
+    return rows.reverse().map((row) => ({
+      id: row.id,
+      player: row.player,
+      name: row.name,
+      text: row.text,
+      at: row.created,
+    }));
+  }
+
+  pruneChat(before: number): void {
+    this.sql.exec('DELETE FROM chat_messages WHERE created < ?', before);
   }
 
   gameSummaries(): Map<GameId, Omit<GameSummary, 'id'>> {

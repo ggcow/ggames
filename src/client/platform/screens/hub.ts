@@ -1,6 +1,7 @@
 import type { GameSummary } from '../../../shared/platform/protocol.ts';
 import { CLIENT_GAMES } from '../../games/registry.ts';
 import { avatar } from '../avatar.ts';
+import { chatButton } from '../chat-button.ts';
 import type { AppContext, ScreenHandle } from '../context.ts';
 import { h, replaceChildren } from '../dom.ts';
 import { chip, errorMessage, loading, section, toast } from '../ui.ts';
@@ -11,6 +12,7 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
   const { t, api } = ctx;
   let summaries: GameSummary[] | null = null;
   const onlineHost = h('div');
+  const chat = chatButton(ctx);
 
   const renderPresence = () => {
     replaceChildren(
@@ -37,6 +39,7 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
       { class: 'account' },
       avatar(ctx.me.id, ctx.me.name, 'md'),
       h('div', { class: 'account-text' }, h('small', null, t.welcome), h('strong', null, ctx.me.name)),
+      chat.element,
       h('button', { class: 'round small', attrs: { 'aria-label': t.rename }, on: { click: rename } }, '✎'),
       h(
         'button',
@@ -103,5 +106,9 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
 
   render();
   void load();
-  return { onDataChanged: () => void load(), onPresenceChanged: renderPresence };
+  return {
+    onDataChanged: () => void load(),
+    onPresenceChanged: renderPresence,
+    dispose: chat.dispose,
+  };
 }

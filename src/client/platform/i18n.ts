@@ -44,3 +44,10 @@ export function formatDate(timestamp: number, lang: Lang): string {
     minute: '2-digit',
   }).format(timestamp);
 }
+
+export function formatTime(timestamp: number, lang: Lang): string {
+  return new Intl.DateTimeFormat(lang === 'zh' ? 'zh-CN' : 'fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(timestamp);
+}

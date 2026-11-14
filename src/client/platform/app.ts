@@ -4,10 +4,12 @@ import type { PlayerInfo, ServerMessage, SessionResponse } from '../../shared/pl
 import { isId, isRecord } from '../../shared/platform/validate.ts';
 import { findClientGame } from '../games/registry.ts';
 import { ApiClient } from './api.ts';
+import { ChatStore } from './chat.ts';
 import type { AppContext, ScreenHandle } from './context.ts';
 import { detectLang, isLang, type Lang } from './i18n.ts';
 import { LiveClient } from './live.ts';
 import { formatRoute, type GameRoute, parseRoute, type Route } from './router.ts';
+import { mountChat } from './screens/chat.ts';
 import { mountGame } from './screens/game.ts';
 import { mountHub } from './screens/hub.ts';
 import { mountLogin } from './screens/login.ts';
@@ -45,6 +47,7 @@ export class App {
   private readonly store: LocalStore;
   private readonly api: ApiClient;
   private readonly live: LiveClient;
+  private chat: ChatStore | null = null;
   private lang: Lang;
   private session: SessionResponse | null;
   private screen: ScreenHandle | null = null;
@@ -72,6 +75,8 @@ export class App {
     this.store.set(SESSION_KEY, session);
     this.api.setToken(session.token);
     this.live.connect(session.token);
+    this.chat = new ChatStore(this.api, this.store, session.player.id);
+    void this.chat.load().catch(() => undefined);
     void this.api
       .me()
       .then((me) => this.updateMe(me))
@@ -80,6 +85,7 @@ export class App {
 
   private endSession(): void {
     this.session = null;
+    this.chat = null;
     this.store.remove(SESSION_KEY);
     this.api.setToken(null);
     this.live.disconnect();
@@ -99,9 +105,11 @@ export class App {
   }
 
   private context(me: PlayerInfo): AppContext {
+    if (!this.chat) throw new Error('salon indisponible');
     return {
       api: this.api,
       live: this.live,
+      chat: this.chat,
       lang: this.lang,
       t: PLATFORM_STRINGS[this.lang],
       me,
@@ -157,6 +165,8 @@ export class App {
       case 'login':
       case 'hub':
         return mountHub(this.root, ctx);
+      case 'chat':
+        return mountChat(this.root, ctx, route.game);
       case 'run':
         return mountRun(this.root, ctx, route.run);
       case 'game':
@@ -187,6 +197,10 @@ export class App {
     }
     if (message.type === 'reaction') {
       this.screen?.onReaction?.(message.reaction);
+      return;
+    }
+    if (message.type === 'chat') {
+      this.chat?.receive(message.message);
       return;
     }
     const game = routeGame(this.route);

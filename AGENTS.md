@@ -41,6 +41,8 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   autres joueurs en petit ; record et compteur de coups en badges compacts.
 - Pendant une course, chaque joueur envoie des réactions rapides (emojis ou phrases courtes traduites) aux
   joueurs du même niveau. Elles ne sont pas conservées et ne concernent que la course en cours.
+- Un salon global, accessible depuis l'accueil et la page d'un jeu, permet d'échanger des messages texte.
+  L'historique est court (50 derniers messages, 7 jours) et les messages sont limités en longueur et en débit.
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct.
 - Interface en français et en chinois.
@@ -76,7 +78,7 @@ src/
     platform/              Durable Object World, stockage SQLite, migrations, mots de passe, quotas
   client/                  application navigateur (TypeScript compilé par esbuild en dist/app.js)
     main.ts                point d'entrée
-    platform/              coquille : session, routeur, API, temps réel, écrans communs, UI, i18n
+    platform/              coquille : session, routeur, API, temps réel, salon, écrans communs, UI, i18n
     games/                 interface ClientGame + registre + un dossier par jeu
       campaign.ts          méthodes ClientGame d'une campagne (progression, cases, niveau suivant)
       puzzle-frame.ts      cadre de partie commun : compteur de coups, Annuler, Recommencer
@@ -102,11 +104,12 @@ niveau débloqué).
 
 ### Modèle de données (SQLite du Durable Object `World`)
 
-| Table      | Contenu                                                              |
-| ---------- | -------------------------------------------------------------------- |
-| `players`  | compte : id, pseudo (unique sans casse), hash PBKDF2 du mot de passe |
-| `sessions` | jetons de session (hash SHA-256), un par appareil connecté           |
-| `runs`     | chaque partie : jeu, clé, joueur, statut, score, durée, replay, date |
+| Table           | Contenu                                                              |
+| --------------- | -------------------------------------------------------------------- |
+| `players`       | compte : id, pseudo (unique sans casse), hash PBKDF2 du mot de passe |
+| `sessions`      | jetons de session (hash SHA-256), un par appareil connecté           |
+| `runs`          | chaque partie : jeu, clé, joueur, statut, score, durée, replay, date |
+| `chat_messages` | messages du salon global : joueur, texte, date                       |
 
 Progression, classements et statistiques sont calculés à partir de `runs` (requêtes dans `store.ts`).
 La présence en temps réel vit dans les WebSockets en hibernation, pas en base.

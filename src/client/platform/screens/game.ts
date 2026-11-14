@@ -1,6 +1,7 @@
 import type { GameState, PlayerProgress } from '../../../shared/platform/protocol.ts';
 import type { ClientGame } from '../../games/client-game.ts';
 import { avatar } from '../avatar.ts';
+import { chatButton } from '../chat-button.ts';
 import { type AppContext, createGameView, type ScreenHandle } from '../context.ts';
 import { h, replaceChildren } from '../dom.ts';
 import { formatDuration } from '../i18n.ts';
@@ -16,6 +17,7 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
   let page: number | null = null;
   const onlineHost = h('div');
   const gridHost = h('div');
+  const chat = chatButton(ctx, gameId);
 
   const others = () => ctx.live.presence.filter((p) => p.player !== ctx.me.id && p.game === gameId);
 
@@ -100,7 +102,7 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
     if (!state) return loading(host, t);
     replaceChildren(
       host,
-      screenHeader('', () => ctx.navigate({ name: 'hub' }), t),
+      screenHeader('', () => ctx.navigate({ name: 'hub' }), t, chat.element),
       hero(state),
       section(t.levels, gridHost),
       section(t.online, onlineHost),
@@ -120,5 +122,9 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
 
   render();
   void load();
-  return { onDataChanged: () => void load(), onPresenceChanged: renderPresence };
+  return {
+    onDataChanged: () => void load(),
+    onPresenceChanged: renderPresence,
+    dispose: chat.dispose,
+  };
 }

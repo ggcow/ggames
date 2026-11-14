@@ -15,7 +15,7 @@
 - [x] Étape 1 — réactions de course : un seul catalogue, chaque entrée étant soit un emoji, soit un
   texte (jamais les deux) ; le dictionnaire `defineStrings` ne contient que les textes (fr + zh,
   rendus dans la langue de chacun). Envoi en un clic, sans texte libre ni historique.
-- [ ] Étape 2 — salon texte global : accessible depuis l'accueil et la page d'un jeu, historique court
+- [x] Étape 2 — salon texte global : accessible depuis l'accueil et la page d'un jeu, historique court
   (50 derniers messages, 7 jours), texte libre limité.
 - [ ] Étape 3 — notes vocales : enregistrement court, lecture au clic ; la bulle disparaît pour chaque
   destinataire après écoute, reste pour ceux qui n'ont pas écouté, suppression après expiration.

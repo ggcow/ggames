@@ -8,6 +8,7 @@ import type {
 } from '../../shared/platform/protocol.ts';
 import type { GameView } from '../games/client-game.ts';
 import type { ApiClient } from './api.ts';
+import type { ChatStore } from './chat.ts';
 import type { Lang } from './i18n.ts';
 import type { LiveClient } from './live.ts';
 import type { Route } from './router.ts';
@@ -17,6 +18,7 @@ import type { PlatformStrings } from './strings.ts';
 export interface AppContext {
   readonly api: ApiClient;
   readonly live: LiveClient;
+  readonly chat: ChatStore;
   readonly lang: Lang;
   readonly t: PlatformStrings;
   readonly me: PlayerInfo;

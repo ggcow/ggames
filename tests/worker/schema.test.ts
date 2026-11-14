@@ -15,7 +15,7 @@ describe('schéma', () => {
   it('applique toutes les migrations au démarrage', async () => {
     await runInDurableObject(world(), (_instance, state) => {
       const { sql } = state.storage;
-      expect(tables(sql)).toEqual(['players', 'runs', 'schema_version', 'sessions']);
+      expect(tables(sql)).toEqual(['chat_messages', 'players', 'runs', 'schema_version', 'sessions']);
       expect(sql.exec<{ version: number }>('SELECT version FROM schema_version').one().version).toBe(SCHEMA_VERSION);
     });
   });
@@ -28,13 +28,14 @@ describe('schéma', () => {
     });
   });
 
-  it('remet à zéro les parties Fioles en passant à la version 3 (nouvelle campagne)', async () => {
+  it('remet à zéro les parties Fioles en repassant par les migrations', async () => {
     await runInDurableObject(world(), (_instance, state) => {
       const { sql } = state.storage;
       sql.exec("INSERT INTO players (id, name, name_key, password_hash, created) VALUES ('abc123', 'A', 'a', 'x', 1)");
       sql.exec(
         "INSERT INTO runs (id, game, key, player, status, value, duration_ms, replay, ended) VALUES ('run001', 'fioles', 'c:1', 'abc123', 'won', 5, 1, '', 1)",
       );
+      sql.exec('DROP TABLE chat_messages');
       sql.exec('UPDATE schema_version SET version = 2');
       migrate(sql);
       expect(sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM runs').one().n).toBe(0);

@@ -1,6 +1,7 @@
 // Client HTTP typé de l'API. Une méthode par route ; les erreurs deviennent des ApiError.
 
 import {
+  type ChatMessage,
   type CredentialsRequest,
   type ErrorResponse,
   type GameId,
@@ -57,6 +58,7 @@ export class ApiClient {
   me = () => this.request<PlayerInfo>('GET', ROUTES.me);
   rename = (name: string) => this.request<PlayerInfo>('PATCH', ROUTES.me, { name });
   games = () => this.request<GameSummary[]>('GET', ROUTES.games);
+  chat = () => this.request<ChatMessage[]>('GET', ROUTES.chat);
   game = (game: GameId) => this.request<GameState>('GET', ROUTES.game(game));
   playerDetail = (game: GameId, player: PlayerId) =>
     this.request<PlayerGameDetail>('GET', ROUTES.playerDetail(game, player));

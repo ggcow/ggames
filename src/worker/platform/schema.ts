@@ -49,6 +49,15 @@ const MIGRATIONS: readonly string[] = [
   `
   DELETE FROM runs WHERE game = 'fioles';
   `,
+  `
+  CREATE TABLE chat_messages (
+    id TEXT PRIMARY KEY,
+    player TEXT NOT NULL REFERENCES players(id),
+    text TEXT NOT NULL,
+    created INTEGER NOT NULL
+  );
+  CREATE INDEX chat_messages_created ON chat_messages (created);
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

@@ -82,6 +82,14 @@ describe('LiveClient', () => {
     });
   });
 
+  it('envoie un message de salon', () => {
+    const live = create();
+    live.connect('t');
+    latest().open();
+    live.chat('bonjour');
+    expect(JSON.parse(latest().sent.at(-1) ?? '')).toEqual({ type: 'chat', text: 'bonjour' });
+  });
+
   it('envoie un ping régulier', () => {
     const live = create();
     live.connect('t');

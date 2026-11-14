@@ -66,6 +66,11 @@ const ROUTE_TABLE: readonly Route[] = [
   },
   {
     method: 'GET',
+    pattern: /^\/api\/chat$/,
+    handler: async ({ world, token }) => toResponse(await world.getChat(token)),
+  },
+  {
+    method: 'GET',
     pattern: new RegExp(`^/api/games/${GAME}/players/${ID}$`),
     handler: async ({ world, token, params }) => toResponse(await world.getPlayerDetail(token, params[0], params[1])),
   },
