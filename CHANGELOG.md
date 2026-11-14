@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.4.4](https://github.com/ggcow/ggames/compare/v0.4.3...v0.4.4) (2026-11-14)
+
+### Fonctionnalités
+
+* **platform:** ajouter les réactions de course ([a3a6bae](https://github.com/ggcow/ggames/commit/a3a6bae65862678b0ca00b21e60350e33af198fb))
+
+### Corrections
+
+* **ci:** préciser la branche Pages au déploiement ([e227a29](https://github.com/ggcow/ggames/commit/e227a297ec797f0eed62cf970581028ba316b6ae))
+
+### Documentation
+
+* ajouter le suivi des tâches ([209d627](https://github.com/ggcow/ggames/commit/209d6275187821efaea8be86789c810c016f0754))
+* noter l'environnement de test ([9c4cbdb](https://github.com/ggcow/ggames/commit/9c4cbdb64a5665a8de5a1bd04653a0a5c206e424))
+
 ## [0.4.3](///compare/v0.4.2...v0.4.3) (2026-11-14)
 
 ### Fonctionnalités
