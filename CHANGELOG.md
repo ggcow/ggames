@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.4.3](///compare/v0.4.2...v0.4.3) (2026-11-14)
+
+### Fonctionnalités
+
+* **platform:** limiter les replays aux niveaux réussis 24dcb0c
+
 ## [0.4.2](///compare/v0.4.1...v0.4.2) (2026-11-14)
 
 ### Fonctionnalités
