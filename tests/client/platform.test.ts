@@ -171,6 +171,48 @@ describe('client API', () => {
     expect(errorMessage(new ApiError(409, 'name taken'), t)).toBe(t.error_nameTaken);
     expect(errorMessage(new Error('x'), t)).toBe(t.error_generic);
   });
+
+  it('télécharge et envoie une note vocale', async () => {
+    const audio = new Blob([new Uint8Array([1, 2])], { type: 'audio/webm' });
+    const note = {
+      id: 'v2',
+      player: 'abc123',
+      name: 'Léa',
+      durationMs: 1000,
+      mime: 'audio/webm',
+      at: 1,
+      readCount: 0,
+      total: 1,
+      read: false,
+    };
+    const fetch = vi.fn(async (input: string) =>
+      input === '/api/voices/v1'
+        ? new Response(audio, { status: 200 })
+        : new Response(JSON.stringify(note), { status: 200 }),
+    );
+    const api = new ApiClient(fetch);
+    api.setToken('secret');
+
+    expect((await api.voice('v1')).type).toBe('audio/webm');
+    expect((await api.uploadVoice(audio, 1000)).id).toBe('v2');
+    await api.markVoiceRead('v1');
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/voices',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer secret',
+          'content-type': 'audio/webm',
+          'x-voice-duration': '1000',
+        }),
+      }),
+    );
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/voices/v1/read',
+      expect.objectContaining({ method: 'POST', headers: { Authorization: 'Bearer secret' } }),
+    );
+  });
 });
 
 describe('fenêtres modales', () => {

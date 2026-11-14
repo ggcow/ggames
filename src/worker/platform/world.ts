@@ -28,6 +28,7 @@ import {
   type ServerMessage,
   type SessionResponse,
   type SubmitRunResponse,
+  type VoiceNote,
 } from '../../shared/platform/protocol.ts';
 import { createId, createToken, hashPassword, sha256, verifyPassword } from './crypto.ts';
 import { fail, ok, type Result } from './result.ts';
@@ -39,7 +40,14 @@ import { ChatThrottle, LoginThrottle, ReactionThrottle } from './throttle.ts';
 export const QUOTAS = { players: 200 } as const;
 
 const CHAT_HISTORY = 50;
-const CHAT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+const SALON_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+const VOICE_MIMES = ['audio/webm', 'audio/mp4', 'audio/ogg'] as const;
+
+const voiceMime = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+  const base = value.split(';')[0]?.trim();
+  return base && (VOICE_MIMES as readonly string[]).includes(base) ? base : null;
+};
 
 /** Données attachées à chaque WebSocket ; conservées pendant l'hibernation. */
 interface Attachment extends Presence {
@@ -141,8 +149,80 @@ export class World extends DurableObject<Env> {
   async getChat(token: unknown): Promise<Result<ChatMessage[]>> {
     if (!(await this.authenticate(token))) return unauthorized();
     const now = Date.now();
-    this.store.pruneChat(now - CHAT_RETENTION_MS);
-    return ok(this.store.recentChat(CHAT_HISTORY, now - CHAT_RETENTION_MS));
+    this.store.pruneChat(now - SALON_RETENTION_MS);
+    return ok(this.store.recentChat(CHAT_HISTORY, now - SALON_RETENTION_MS));
+  }
+
+  /** Notes vocales récentes, avec l'état de lecture du joueur. */
+  async getVoices(token: unknown): Promise<Result<VoiceNote[]>> {
+    const me = await this.authenticate(token);
+    if (!me) return unauthorized();
+    const now = Date.now();
+    this.store.pruneVoices(now - SALON_RETENTION_MS);
+    return ok(this.store.recentVoices(me.id, now - SALON_RETENTION_MS));
+  }
+
+  /** Enregistre une note vocale et la diffuse à tous les connectés. */
+  async uploadVoice(token: unknown, mime: unknown, durationMs: unknown, data: unknown): Promise<Result<VoiceNote>> {
+    const me = await this.authenticate(token);
+    if (!me) return unauthorized();
+    const type = voiceMime(mime);
+    if (!type) return fail(400, 'invalid voice');
+    if (
+      typeof durationMs !== 'number' ||
+      !Number.isInteger(durationMs) ||
+      durationMs <= 0 ||
+      durationMs > LIMITS.voiceDurationMs
+    ) {
+      return fail(400, 'invalid voice');
+    }
+    if (!(data instanceof ArrayBuffer) || data.byteLength === 0 || data.byteLength > LIMITS.voiceBytes) {
+      return fail(400, 'invalid voice');
+    }
+    const now = Date.now();
+    const note: VoiceNote = {
+      id: createId(),
+      player: me.id,
+      name: me.name,
+      durationMs,
+      mime: type,
+      at: now,
+      readCount: 0,
+      total: this.store.countOtherPlayers(me.id),
+      read: false,
+    };
+    this.store.insertVoice(note, data);
+    this.store.pruneVoices(now - SALON_RETENTION_MS);
+    this.broadcast({ type: 'voice', note });
+    return ok(note);
+  }
+
+  /** Audio d'une note, réservé aux joueurs connectés. */
+  async getVoice(token: unknown, id: unknown): Promise<Result<{ mime: string; data: Uint8Array }>> {
+    if (!(await this.authenticate(token))) return unauthorized();
+    if (typeof id !== 'string') return fail(404, 'unknown voice');
+    const meta = this.store.findVoiceMeta(id);
+    if (!meta || meta.created < Date.now() - SALON_RETENTION_MS) return fail(404, 'unknown voice');
+    const audio = this.store.findVoice(id);
+    return audio ? ok(audio) : fail(404, 'unknown voice');
+  }
+
+  /** Marque une note comme écoutée pour ce joueur et met à jour le compteur de l'auteur. */
+  async markVoiceRead(token: unknown, id: unknown): Promise<Result<{ readCount: number; total: number }>> {
+    const me = await this.authenticate(token);
+    if (!me) return unauthorized();
+    if (typeof id !== 'string') return fail(404, 'unknown voice');
+    const meta = this.store.findVoiceMeta(id);
+    if (!meta || meta.created < Date.now() - SALON_RETENTION_MS) return fail(404, 'unknown voice');
+    if (meta.player === me.id) return ok(this.store.voiceReadCounts(id));
+    this.store.insertVoiceRead(id, me.id, Date.now());
+    const counts = this.store.voiceReadCounts(id);
+    this.broadcast({
+      type: 'voice_read',
+      read: { id, player: me.id, readCount: counts.readCount, total: counts.total },
+    });
+    if (counts.total > 0 && counts.readCount >= counts.total) this.store.deleteVoice(id);
+    return ok(counts);
   }
 
   async getPlayerDetail(token: unknown, gameId: unknown, playerId: unknown): Promise<Result<PlayerGameDetail>> {
@@ -313,7 +393,7 @@ export class World extends DurableObject<Env> {
       at: now,
     };
     this.store.insertChat(message);
-    this.store.pruneChat(now - CHAT_RETENTION_MS);
+    this.store.pruneChat(now - SALON_RETENTION_MS);
     this.broadcast({ type: 'chat', message });
   }
 

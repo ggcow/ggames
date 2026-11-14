@@ -17,6 +17,6 @@
   rendus dans la langue de chacun). Envoi en un clic, sans texte libre ni historique.
 - [x] Étape 2 — salon texte global : intégré à l'accueil et à la page d'un jeu, historique court
   (50 derniers messages, 7 jours), texte libre limité.
-- [ ] Étape 3 — notes vocales : enregistrement court, lecture au clic ; la bulle disparaît pour chaque
+- [x] Étape 3 — notes vocales : enregistrement court, lecture au clic ; la bulle disparaît pour chaque
   destinataire après écoute, reste pour ceux qui n'ont pas écouté, suppression après expiration.
   À valider d'abord sur le WebView de WeChat.

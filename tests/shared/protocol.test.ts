@@ -65,6 +65,9 @@ describe('champs du protocole', () => {
     expect(ROUTES.playerDetail('fioles', 'abc123')).toBe('/api/games/fioles/players/abc123');
     expect(ROUTES.run('abc123')).toBe('/api/runs/abc123');
     expect(ROUTES.chat).toBe('/api/chat');
+    expect(ROUTES.voices).toBe('/api/voices');
+    expect(ROUTES.voice('abc123')).toBe('/api/voices/abc123');
+    expect(ROUTES.voiceRead('abc123')).toBe('/api/voices/abc123/read');
   });
 });
 
@@ -129,6 +132,29 @@ describe('messages temps réel', () => {
     expect(parseServerMessage(JSON.stringify({ type: 'chat', message: { ...message, text: '' } }))).toBeNull();
     expect(parseServerMessage(JSON.stringify({ type: 'chat', message: { ...message, id: 'X' } }))).toBeNull();
     expect(parseServerMessage('{"type":"chat"}')).toBeNull();
+  });
+
+  it('parse une note vocale et un accusé de lecture', () => {
+    const note = {
+      id: 'abc123',
+      player: 'def456',
+      name: 'Léa',
+      durationMs: 1200,
+      mime: 'audio/webm',
+      at: 123,
+      readCount: 0,
+      total: 2,
+      read: false,
+    };
+    expect(parseServerMessage(JSON.stringify({ type: 'voice', note }))).toEqual({ type: 'voice', note });
+    expect(parseServerMessage(JSON.stringify({ type: 'voice', note: { ...note, mime: 'text/plain' } }))).toBeNull();
+    expect(
+      parseServerMessage(JSON.stringify({ type: 'voice', note: { ...note, durationMs: LIMITS.voiceDurationMs + 1 } })),
+    ).toBeNull();
+
+    const read = { id: 'abc123', player: 'def456', readCount: 1, total: 2 };
+    expect(parseServerMessage(JSON.stringify({ type: 'voice_read', read }))).toEqual({ type: 'voice_read', read });
+    expect(parseServerMessage(JSON.stringify({ type: 'voice_read', read: { ...read, total: -1 } }))).toBeNull();
   });
 });
 

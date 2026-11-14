@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ChatStore } from '../../src/client/platform/chat.ts';
 import type { LocalStore } from '../../src/client/platform/storage.ts';
-import type { ChatMessage } from '../../src/shared/platform/protocol.ts';
+import type { ChatMessage, VoiceNote } from '../../src/shared/platform/protocol.ts';
 
 const message = (id: string, at: number, text = 'salut'): ChatMessage => ({
   id,
@@ -9,6 +9,18 @@ const message = (id: string, at: number, text = 'salut'): ChatMessage => ({
   name: 'Léa',
   text,
   at,
+});
+
+const voice = (id: string, at: number, player = 'p1'): VoiceNote => ({
+  id,
+  player,
+  name: player === 'p1' ? 'Léa' : 'Tom',
+  durationMs: 1200,
+  mime: 'audio/webm',
+  at,
+  readCount: 0,
+  total: 1,
+  read: false,
 });
 
 function memoryStore(): LocalStore {
@@ -27,7 +39,10 @@ function memoryStore(): LocalStore {
   };
 }
 
-const api = (messages: ChatMessage[]) => ({ chat: vi.fn(async () => messages) });
+const api = (messages: ChatMessage[], voices: VoiceNote[] = []) => ({
+  chat: vi.fn(async () => messages),
+  voices: vi.fn(async () => voices),
+});
 
 describe('salon côté client', () => {
   it('charge l’historique et compte les messages non lus', async () => {
@@ -78,6 +93,28 @@ describe('salon côté client', () => {
     chat.receive(message('live', 1000));
     expect(chat.messages).toHaveLength(50);
     expect(chat.messages[49]?.id).toBe('live');
+  });
+
+  it('charge et reçoit les notes vocales', async () => {
+    const chat = new ChatStore(api([], [voice('v1', 100)]), memoryStore(), 'p1');
+    await chat.load();
+    expect(chat.voices.map((note) => note.id)).toEqual(['v1']);
+
+    chat.receiveVoice(voice('v2', 200, 'p2'));
+    chat.receiveVoice(voice('v2', 200, 'p2'));
+    expect(chat.voices.map((note) => note.id)).toEqual(['v1', 'v2']);
+  });
+
+  it('masque une note lue par le destinataire et la retire chez l’auteur quand tous ont lu', async () => {
+    const chat = new ChatStore(api([], [voice('v1', 100, 'p2')]), memoryStore(), 'p1');
+    await chat.load();
+    chat.receiveVoiceRead({ id: 'v1', player: 'p1', readCount: 1, total: 1 });
+    expect(chat.voices[0]?.read).toBe(true);
+
+    const author = new ChatStore(api([], [voice('v2', 100, 'p1')]), memoryStore(), 'p1');
+    await author.load();
+    author.receiveVoiceRead({ id: 'v2', player: 'p2', readCount: 1, total: 1 });
+    expect(author.voices).toEqual([]);
   });
 
   it('prévient les abonnés et s’arrête après désabonnement', async () => {

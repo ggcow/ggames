@@ -44,6 +44,8 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - Un salon global est intégré à l'accueil et à la page d'un jeu : on échange des messages texte directement
   dans la page. L'historique est court (50 derniers messages, 7 jours) et les messages sont limités en
   longueur et en débit.
+- Le salon accepte aussi des notes vocales courtes. Une note disparaît pour chaque destinataire après son
+  écoute, reste visible pour ceux qui ne l'ont pas encore écoutée, et expire avec l'historique.
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct.
 - Interface en français et en chinois.
@@ -111,6 +113,8 @@ niveau débloqué).
 | `sessions`      | jetons de session (hash SHA-256), un par appareil connecté           |
 | `runs`          | chaque partie : jeu, clé, joueur, statut, score, durée, replay, date |
 | `chat_messages` | messages du salon global : joueur, texte, date                       |
+| `voice_notes`   | notes vocales : joueur, durée, type MIME, audio, date                |
+| `voice_reads`   | lecture d'une note par un joueur                                     |
 
 Progression, classements et statistiques sont calculés à partir de `runs` (requêtes dans `store.ts`).
 La présence en temps réel vit dans les WebSockets en hibernation, pas en base.

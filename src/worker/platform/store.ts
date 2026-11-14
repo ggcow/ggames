@@ -11,6 +11,7 @@ import type {
   RecordEntry,
   Run,
   RunSummary,
+  VoiceNote,
 } from '../../shared/platform/protocol.ts';
 
 export type ScoreOrder = 'asc' | 'desc';
@@ -32,6 +33,18 @@ type ProgressRow = { player: string; completed: number; runs: number; play_time:
 type RecordRow = { key: string; player: string; value: number; run: string };
 type KeyRow = { key: string; attempts: number; wins: number; best: string | null };
 type ChatRow = { id: string; player: string; name: string; text: string; created: number };
+type VoiceRow = {
+  id: string;
+  player: string;
+  name: string;
+  duration_ms: number;
+  mime: string;
+  created: number;
+  read_count: number;
+  total: number;
+  read: number;
+};
+type VoiceDataRow = { mime: string; data: ArrayBuffer };
 
 const RUN_COLUMNS = 'id, game, key, player, status, value, duration_ms, ended';
 
@@ -288,6 +301,93 @@ export class PlatformStore {
 
   pruneChat(before: number): void {
     this.sql.exec('DELETE FROM chat_messages WHERE created < ?', before);
+  }
+
+  /* ---------- Notes vocales ---------- */
+
+  countOtherPlayers(player: PlayerId): number {
+    return this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM players WHERE id != ?', player).one().n;
+  }
+
+  insertVoice(note: VoiceNote, data: ArrayBuffer): void {
+    this.sql.exec(
+      'INSERT INTO voice_notes (id, player, duration_ms, mime, data, created) VALUES (?, ?, ?, ?, ?, ?)',
+      note.id,
+      note.player,
+      note.durationMs,
+      note.mime,
+      data,
+      note.at,
+    );
+  }
+
+  /** Notes vocales récentes, avec l'état de lecture du joueur qui demande. */
+  recentVoices(viewer: PlayerId, since: number): VoiceNote[] {
+    const rows = this.sql
+      .exec<VoiceRow>(
+        `SELECT v.id, v.player, p.name, v.duration_ms, v.mime, v.created,
+                (SELECT COUNT(*) FROM voice_reads r WHERE r.note = v.id) AS read_count,
+                (SELECT COUNT(*) FROM players x WHERE x.id != v.player) AS total,
+                EXISTS(SELECT 1 FROM voice_reads r WHERE r.note = v.id AND r.player = ?) AS read
+         FROM voice_notes v JOIN players p ON p.id = v.player
+         WHERE v.created >= ?
+         ORDER BY v.created DESC
+         LIMIT 50`,
+        viewer,
+        since,
+      )
+      .toArray();
+    return rows.reverse().map((row) => ({
+      id: row.id,
+      player: row.player,
+      name: row.name,
+      durationMs: row.duration_ms,
+      mime: row.mime,
+      at: row.created,
+      readCount: row.read_count,
+      total: row.total,
+      read: row.read !== 0,
+    }));
+  }
+
+  findVoice(id: string): { mime: string; data: Uint8Array } | null {
+    const row = this.sql.exec<VoiceDataRow>('SELECT mime, data FROM voice_notes WHERE id = ?', id).toArray()[0];
+    if (!row) return null;
+    return { mime: row.mime, data: new Uint8Array(row.data) };
+  }
+
+  findVoiceMeta(id: string): { player: PlayerId; created: number } | null {
+    return (
+      this.sql
+        .exec<{ player: string; created: number }>('SELECT player, created FROM voice_notes WHERE id = ?', id)
+        .toArray()[0] ?? null
+    );
+  }
+
+  insertVoiceRead(note: string, player: PlayerId, at: number): void {
+    this.sql.exec('INSERT OR IGNORE INTO voice_reads (note, player, read_at) VALUES (?, ?, ?)', note, player, at);
+  }
+
+  voiceReadCounts(note: string): { readCount: number; total: number } {
+    const row = this.sql
+      .exec<{ read_count: number; total: number }>(
+        `SELECT (SELECT COUNT(*) FROM voice_reads WHERE note = ?) AS read_count,
+                (SELECT COUNT(*) FROM players WHERE id != (SELECT player FROM voice_notes WHERE id = ?)) AS total`,
+        note,
+        note,
+      )
+      .one();
+    return { readCount: row.read_count, total: row.total };
+  }
+
+  deleteVoice(id: string): void {
+    this.sql.exec('DELETE FROM voice_reads WHERE note = ?', id);
+    this.sql.exec('DELETE FROM voice_notes WHERE id = ?', id);
+  }
+
+  pruneVoices(before: number): void {
+    this.sql.exec('DELETE FROM voice_reads WHERE note IN (SELECT id FROM voice_notes WHERE created < ?)', before);
+    this.sql.exec('DELETE FROM voice_notes WHERE created < ?', before);
   }
 
   gameSummaries(): Map<GameId, Omit<GameSummary, 'id'>> {

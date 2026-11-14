@@ -58,6 +58,24 @@ const MIGRATIONS: readonly string[] = [
   );
   CREATE INDEX chat_messages_created ON chat_messages (created);
   `,
+  `
+  CREATE TABLE voice_notes (
+    id TEXT PRIMARY KEY,
+    player TEXT NOT NULL REFERENCES players(id),
+    duration_ms INTEGER NOT NULL,
+    mime TEXT NOT NULL,
+    data BLOB NOT NULL,
+    created INTEGER NOT NULL
+  );
+  CREATE INDEX voice_notes_created ON voice_notes (created);
+  CREATE TABLE voice_reads (
+    note TEXT NOT NULL REFERENCES voice_notes(id) ON DELETE CASCADE,
+    player TEXT NOT NULL REFERENCES players(id),
+    read_at INTEGER NOT NULL,
+    PRIMARY KEY (note, player)
+  );
+  CREATE INDEX voice_reads_player ON voice_reads (player);
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

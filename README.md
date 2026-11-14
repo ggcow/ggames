@@ -22,6 +22,8 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
   disparaissent après quelques secondes et ne sont pas conservées.
 - Un salon global est intégré à l'accueil et à la page d'un jeu. Les 50 derniers messages sont conservés
   7 jours.
+- Le salon accepte aussi des notes vocales courtes : une note disparaît pour chaque joueur après écoute,
+  reste visible pour les autres, et expire avec l'historique. L'enregistrement dépend du navigateur.
 - Interface en français et en chinois (bouton 中 / Fr en haut de l’écran).
 
 ### Jeux

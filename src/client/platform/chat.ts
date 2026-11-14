@@ -1,6 +1,6 @@
 // Salon global côté client : historique court, messages reçus en direct et compteur de non-lus.
 
-import type { ChatMessage } from '../../shared/platform/protocol.ts';
+import type { ChatMessage, VoiceNote, VoiceReadNotice } from '../../shared/platform/protocol.ts';
 import type { ApiClient } from './api.ts';
 import type { LocalStore } from './storage.ts';
 
@@ -8,19 +8,22 @@ const HISTORY_LIMIT = 50;
 const READ_KEY_PREFIX = 'chatRead:';
 
 export class ChatStore {
-  private readonly api: Pick<ApiClient, 'chat'>;
+  private readonly api: Pick<ApiClient, 'chat' | 'voices'>;
   private readonly store: LocalStore;
+  private readonly player: string;
   private readonly readKey: string;
   private readonly listeners = new Set<() => void>();
   private items: ChatMessage[] = [];
+  private voiceItems: VoiceNote[] = [];
   private lastRead: number;
   private unreadCount = 0;
   private loaded = false;
   private loading: Promise<void> | null = null;
 
-  constructor(api: Pick<ApiClient, 'chat'>, store: LocalStore, player: string) {
+  constructor(api: Pick<ApiClient, 'chat' | 'voices'>, store: LocalStore, player: string) {
     this.api = api;
     this.store = store;
+    this.player = player;
     this.readKey = `${READ_KEY_PREFIX}${player}`;
     this.lastRead =
       store.get(this.readKey, (value) => (typeof value === 'number' && Number.isFinite(value) ? value : null)) ?? 0;
@@ -28,6 +31,10 @@ export class ChatStore {
 
   get messages(): readonly ChatMessage[] {
     return this.items;
+  }
+
+  get voices(): readonly VoiceNote[] {
+    return this.voiceItems;
   }
 
   get unread(): number {
@@ -46,12 +53,15 @@ export class ChatStore {
   /** Recharge l'historique et le fusionne avec les messages reçus en direct. */
   load(): Promise<void> {
     if (this.loading) return this.loading;
-    const request = this.api
-      .chat()
-      .then((messages) => {
+    const startedAt = Date.now();
+    const request = Promise.all([this.api.chat(), this.api.voices()])
+      .then(([messages, voices]) => {
         const byId = new Map<string, ChatMessage>();
         for (const message of [...this.items, ...messages]) byId.set(message.id, message);
         this.items = [...byId.values()].sort((a, b) => a.at - b.at).slice(-HISTORY_LIMIT);
+        const known = new Set(voices.map((note) => note.id));
+        const live = this.voiceItems.filter((note) => note.at > startedAt - 60_000 && !known.has(note.id));
+        this.voiceItems = [...voices, ...live].sort((a, b) => a.at - b.at).slice(-HISTORY_LIMIT);
         this.unreadCount = this.items.filter((message) => message.at > this.lastRead).length;
         this.loaded = true;
         this.emit();
@@ -68,6 +78,31 @@ export class ChatStore {
     if (this.items.some((item) => item.id === message.id)) return;
     this.items = [...this.items, message].slice(-HISTORY_LIMIT);
     if (message.at > this.lastRead) this.unreadCount += 1;
+    this.emit();
+  }
+
+  /** Note vocale reçue en direct. */
+  receiveVoice(note: VoiceNote): void {
+    if (this.voiceItems.some((item) => item.id === note.id)) return;
+    this.voiceItems = [...this.voiceItems, note].sort((a, b) => a.at - b.at).slice(-HISTORY_LIMIT);
+    this.emit();
+  }
+
+  /** Lecture d'une note : mise à jour du compteur et disparition chez le lecteur. */
+  receiveVoiceRead(read: VoiceReadNotice): void {
+    const note = this.voiceItems.find((item) => item.id === read.id);
+    if (!note) return;
+    const updated = {
+      ...note,
+      readCount: read.readCount,
+      total: read.total,
+      read: note.read || read.player === this.player,
+    };
+    if (updated.player === this.player && updated.total > 0 && updated.readCount >= updated.total) {
+      this.voiceItems = this.voiceItems.filter((item) => item.id !== read.id);
+    } else {
+      this.voiceItems = this.voiceItems.map((item) => (item.id === read.id ? updated : item));
+    }
     this.emit();
   }
 

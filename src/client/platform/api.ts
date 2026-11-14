@@ -16,6 +16,7 @@ import {
   type SessionResponse,
   type SubmitRunRequest,
   type SubmitRunResponse,
+  type VoiceNote,
 } from '../../shared/platform/protocol.ts';
 import { isRecord } from '../../shared/platform/validate.ts';
 
@@ -59,6 +60,20 @@ export class ApiClient {
   rename = (name: string) => this.request<PlayerInfo>('PATCH', ROUTES.me, { name });
   games = () => this.request<GameSummary[]>('GET', ROUTES.games);
   chat = () => this.request<ChatMessage[]>('GET', ROUTES.chat);
+  voices = () => this.request<VoiceNote[]>('GET', ROUTES.voices);
+  voice = async (id: string): Promise<Blob> => {
+    const response = await this.send('GET', ROUTES.voice(id));
+    if (!response.ok) await this.fail(response);
+    return response.blob();
+  };
+  uploadVoice = async (blob: Blob, durationMs: number): Promise<VoiceNote> => {
+    const response = await this.send('POST', ROUTES.voices, blob, {
+      'content-type': blob.type || 'application/octet-stream',
+      'x-voice-duration': String(durationMs),
+    });
+    return this.parseJson<VoiceNote>(response);
+  };
+  markVoiceRead = (id: string) => this.request<{ readCount: number; total: number }>('POST', ROUTES.voiceRead(id));
   game = (game: GameId) => this.request<GameState>('GET', ROUTES.game(game));
   playerDetail = (game: GameId, player: PlayerId) =>
     this.request<PlayerGameDetail>('GET', ROUTES.playerDetail(game, player));
@@ -67,25 +82,43 @@ export class ApiClient {
   run = (id: RunId) => this.request<Run>('GET', ROUTES.run(id));
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const headers: Record<string, string> = {};
-    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
-    const init: RequestInit = { method, headers };
-    if (body !== undefined) {
-      headers['content-type'] = 'application/json';
-      init.body = JSON.stringify(body);
-    }
+    const headers = body !== undefined ? { 'content-type': 'application/json' } : {};
+    const response = await this.send(method, path, body !== undefined ? JSON.stringify(body) : undefined, headers);
+    return this.parseJson<T>(response);
+  }
+
+  private async send(
+    method: string,
+    path: string,
+    body?: BodyInit,
+    headers: Record<string, string> = {},
+  ): Promise<Response> {
+    const requestHeaders = { ...headers };
+    if (this.token) requestHeaders['Authorization'] = `Bearer ${this.token}`;
+    const init: RequestInit = { method, headers: requestHeaders };
+    if (body !== undefined) init.body = body;
     let response: Response;
     try {
       response = await this.fetchImpl(path, init);
     } catch {
       throw new ApiError(NETWORK_ERROR, 'network');
     }
-    const payload: unknown = await response.json().catch(() => null);
     if (response.status === 401 && this.token) this.unauthorizedHandler?.();
+    return response;
+  }
+
+  private async parseJson<T>(response: Response): Promise<T> {
+    const payload: unknown = await response.json().catch(() => null);
     if (!response.ok) {
       const message = isRecord(payload) ? String((payload as Partial<ErrorResponse>).error ?? '') : '';
       throw new ApiError(response.status, message || response.statusText);
     }
     return payload as T;
+  }
+
+  private async fail(response: Response): Promise<never> {
+    const payload: unknown = await response.json().catch(() => null);
+    const message = isRecord(payload) ? String((payload as Partial<ErrorResponse>).error ?? '') : '';
+    throw new ApiError(response.status, message || response.statusText);
   }
 }

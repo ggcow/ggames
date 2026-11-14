@@ -2,6 +2,7 @@
 // Les autres chemins sont servis depuis dist/ (développement local) ; en production, les fichiers
 // statiques sont servis par Cloudflare Pages, qui relaie /api/* vers ce Worker.
 
+import { LIMITS } from '../shared/platform/protocol.ts';
 import { bearerToken, errorResponse, readJsonBody, toResponse } from './http.ts';
 import { World } from './platform/world.ts';
 
@@ -68,6 +69,44 @@ const ROUTE_TABLE: readonly Route[] = [
     method: 'GET',
     pattern: /^\/api\/chat$/,
     handler: async ({ world, token }) => toResponse(await world.getChat(token)),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/voices$/,
+    handler: async ({ world, token }) => toResponse(await world.getVoices(token)),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/voices$/,
+    handler: async ({ world, token, request }) => {
+      const declared = Number(request.headers.get('content-length') ?? 0);
+      if (Number.isFinite(declared) && declared > LIMITS.voiceBytes) return errorResponse(400, 'invalid voice');
+      const data = await request.arrayBuffer();
+      return toResponse(
+        await world.uploadVoice(
+          token,
+          request.headers.get('content-type'),
+          Number(request.headers.get('x-voice-duration')),
+          data,
+        ),
+      );
+    },
+  },
+  {
+    method: 'GET',
+    pattern: new RegExp(`^/api/voices/${ID}$`),
+    handler: async ({ world, token, params }) => {
+      const result = await world.getVoice(token, params[0]);
+      if (!result.ok) return errorResponse(result.status, result.error);
+      return new Response(result.value.data, {
+        headers: { 'content-type': result.value.mime, 'cache-control': 'no-store' },
+      });
+    },
+  },
+  {
+    method: 'POST',
+    pattern: new RegExp(`^/api/voices/${ID}/read$`),
+    handler: async ({ world, token, params }) => toResponse(await world.markVoiceRead(token, params[0])),
   },
   {
     method: 'GET',

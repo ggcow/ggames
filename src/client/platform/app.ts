@@ -200,6 +200,14 @@ export class App {
       this.chat?.receive(message.message);
       return;
     }
+    if (message.type === 'voice') {
+      this.chat?.receiveVoice(message.note);
+      return;
+    }
+    if (message.type === 'voice_read') {
+      this.chat?.receiveVoiceRead(message.read);
+      return;
+    }
     const game = routeGame(this.route);
     if (message.game === null || game === null || message.game === game) this.screen?.onDataChanged?.();
   }

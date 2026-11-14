@@ -15,6 +15,8 @@ export const LIMITS = {
   passwordMax: 128,
   key: 40,
   chat: 500,
+  voiceDurationMs: 30_000,
+  voiceBytes: 1_000_000,
   replay: 20_000,
   state: 512,
   value: 1_000_000,
@@ -138,6 +140,9 @@ export const ROUTES = {
   runs: (game: GameId) => `/api/games/${game}/runs`,
   run: (id: RunId) => `/api/runs/${id}`,
   chat: '/api/chat',
+  voices: '/api/voices',
+  voice: (id: string) => `/api/voices/${id}`,
+  voiceRead: (id: string) => `/api/voices/${id}/read`,
 } as const;
 
 /* ---------- Temps réel : WebSocket sur ROUTES.live?token=... ---------- */
@@ -171,6 +176,27 @@ export interface ChatMessage {
   at: number;
 }
 
+/** Note vocale du salon. `read` est vrai quand le lecteur l'a déjà écoutée. */
+export interface VoiceNote {
+  id: string;
+  player: PlayerId;
+  name: string;
+  durationMs: number;
+  mime: string;
+  at: number;
+  readCount: number;
+  total: number;
+  read: boolean;
+}
+
+/** Lecture d'une note par un joueur, pour mettre à jour le compteur de l'auteur. */
+export interface VoiceReadNotice {
+  id: string;
+  player: PlayerId;
+  readCount: number;
+  total: number;
+}
+
 export type ClientMessage =
   | { type: 'activity'; game: GameId; key: string; state: string; value: number }
   | { type: 'reaction'; game: GameId; key: string; code: ReactionCode }
@@ -181,6 +207,8 @@ export type ServerMessage =
   | { type: 'presence'; online: Presence[] }
   | { type: 'reaction'; reaction: ReactionNotice }
   | { type: 'chat'; message: ChatMessage }
+  | { type: 'voice'; note: VoiceNote }
+  | { type: 'voice_read'; read: VoiceReadNotice }
   /** Des données ont changé : les clients concernés rechargent. `game` null = données de joueurs. */
   | { type: 'changed'; game: GameId | null };
 
@@ -269,6 +297,27 @@ function parseChatMessage(value: unknown): ChatMessage | null {
   return { id, player, name, text, at };
 }
 
+function parseVoiceNote(value: unknown): VoiceNote | null {
+  if (!isRecord(value)) return null;
+  const { id, player, name, mime, read } = value;
+  const durationMs = value['durationMs'];
+  const at = value['at'];
+  const readCount = value['readCount'];
+  const total = value['total'];
+  if (!isId(id) || !isId(player) || !isShortString(name, LIMITS.name)) return null;
+  if (!isCount(durationMs) || durationMs <= 0 || durationMs > LIMITS.voiceDurationMs) return null;
+  if (typeof mime !== 'string' || !mime.startsWith('audio/') || mime.length > 40) return null;
+  if (!isTimestamp(at) || !isCount(readCount) || !isCount(total) || typeof read !== 'boolean') return null;
+  return { id, player, name, durationMs, mime, at, readCount, total, read };
+}
+
+function parseVoiceRead(value: unknown): VoiceReadNotice | null {
+  if (!isRecord(value)) return null;
+  const { id, player, readCount, total } = value;
+  if (!isId(id) || !isId(player) || !isCount(readCount) || !isCount(total)) return null;
+  return { id, player, readCount, total };
+}
+
 export function parseServerMessage(raw: string): ServerMessage | null {
   const msg = parseJson(raw);
   if (!isRecord(msg)) return null;
@@ -283,6 +332,14 @@ export function parseServerMessage(raw: string): ServerMessage | null {
   if (msg['type'] === 'chat') {
     const message = parseChatMessage(msg['message']);
     return message ? { type: 'chat', message } : null;
+  }
+  if (msg['type'] === 'voice') {
+    const note = parseVoiceNote(msg['note']);
+    return note ? { type: 'voice', note } : null;
+  }
+  if (msg['type'] === 'voice_read') {
+    const read = parseVoiceRead(msg['read']);
+    return read ? { type: 'voice_read', read } : null;
   }
   if (msg['type'] === 'presence' && Array.isArray(msg['online'])) {
     return { type: 'presence', online: msg['online'].map(parsePresence).filter((p): p is Presence => p !== null) };
