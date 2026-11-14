@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.4.6](https://github.com/ggcow/ggames/compare/v0.4.5...v0.4.6) (2026-11-14)
+
+### Fonctionnalités
+
+* **platform:** ajouter les notes vocales ([6e5a304](https://github.com/ggcow/ggames/commit/6e5a30487a3c31889c6f27d710c7683530548478))
+
+### Corrections
+
+* **platform:** séparer les notes du salon et de la course ([b06cd0b](https://github.com/ggcow/ggames/commit/b06cd0b83f562fd6a166db67514e09d84e40dbc6))
+
 ## [0.4.5](https://github.com/ggcow/ggames/compare/v0.4.4...v0.4.5) (2026-11-14)
 
 ### Fonctionnalités
