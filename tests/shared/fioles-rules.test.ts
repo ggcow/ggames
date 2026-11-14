@@ -4,7 +4,6 @@ import {
   boardToString,
   CAP,
   canPour,
-  createRandom,
   generateBoard,
   isSolvable,
   isSolved,
@@ -13,23 +12,6 @@ import {
   pour,
   solverEffort,
 } from '../../src/shared/games/fioles/rules.ts';
-
-describe('createRandom', () => {
-  it('produit la même suite pour une même graine', () => {
-    const a = createRandom(42);
-    const b = createRandom(42);
-    expect(Array.from({ length: 5 }, a)).toEqual(Array.from({ length: 5 }, b));
-  });
-
-  it('produit des valeurs dans [0, 1[', () => {
-    const random = createRandom(7);
-    for (let i = 0; i < 1000; i++) {
-      const value = random();
-      expect(value).toBeGreaterThanOrEqual(0);
-      expect(value).toBeLessThan(1);
-    }
-  });
-});
 
 describe('versement', () => {
   it('verse toutes les boules du dessus de même couleur', () => {

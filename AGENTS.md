@@ -75,6 +75,7 @@ src/
     platform/              protocole HTTP/WebSocket (types, routes, validation), catalogue de réactions
     games/                 interface GameDefinition + registre des jeux
       campaign.ts          campagne de niveaux commune : clés `c:<n>`, déblocage
+      random.ts            hasard reproductible pour générer les niveaux (graine, mélange)
       fioles/              règles, solveur, génération, replays
   worker/                  serveur Cloudflare
     index.ts               routeur HTTP -> Durable Object

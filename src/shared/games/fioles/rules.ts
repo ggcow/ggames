@@ -1,6 +1,8 @@
 // Règles du jeu Fioles : verser des boules de couleur jusqu'à ce que chaque fiole soit d'une seule couleur.
 // Code pur, sans DOM ni Cloudflare : utilisé par le client, le serveur et les tests.
 
+import { createRandom, shuffle } from '../random.ts';
+
 /** Nombre de boules par fiole. */
 export const CAP = 4;
 
@@ -37,17 +39,6 @@ export type ReadonlyBoard = readonly (readonly Color[])[];
 /* ---------- Utilitaires ---------- */
 
 export const cloneBoard = (board: ReadonlyBoard): Board => board.map((tube) => [...tube]);
-
-/** Générateur pseudo-aléatoire mulberry32 : même suite sur tous les appareils pour une graine donnée. */
-export function createRandom(seed: number): () => number {
-  let state = seed | 0;
-  return () => {
-    state = (state + 0x6d2b79f5) | 0;
-    let t = Math.imul(state ^ (state >>> 15), 1 | state);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 /* ---------- Règles ---------- */
 
@@ -140,10 +131,7 @@ const hasAdjacentPair = (tube: readonly Color[]): boolean => tube.some((color, i
 function shuffledBoard(colors: number, empty: number, random: () => number): Board {
   const balls: Color[] = [];
   for (let color = 0; color < colors; color++) for (let k = 0; k < CAP; k++) balls.push(color);
-  for (let i = balls.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [balls[i], balls[j]] = [balls[j] as Color, balls[i] as Color];
-  }
+  shuffle(balls, random);
   const board: Board = [];
   for (let i = 0; i < colors; i++) board.push(balls.slice(i * CAP, i * CAP + CAP));
   for (let i = 0; i < empty; i++) board.push([]);
