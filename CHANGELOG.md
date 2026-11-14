@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.4.8](https://github.com/ggcow/ggames/compare/v0.4.7...v0.4.8) (2026-11-14)
+
+### Corrections
+
+* **fioles:** rendre les aperçus des autres joueurs lisibles ([44c92c2](https://github.com/ggcow/ggames/commit/44c92c2e70ac7427e0b4e42c27e6a7a50977b21d))
+
 ## [0.4.7](https://github.com/ggcow/ggames/compare/v0.4.6...v0.4.7) (2026-11-14)
 
 ### Corrections
