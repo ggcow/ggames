@@ -1,6 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FLOWER_ART, ICON } from '../../src/client/games/bouquets/art.ts';
 import {
+  FRONT_PLACES,
   livePots,
   MIN_POT,
   MINI_WIDTH,
@@ -10,7 +11,7 @@ import {
   renderMiniBoard,
 } from '../../src/client/games/bouquets/board.ts';
 import { bouquetsClient } from '../../src/client/games/bouquets/index.ts';
-import { mountBouquetsPlay, nearestFreePlace } from '../../src/client/games/bouquets/play.ts';
+import { mountBouquetsPlay, nearestFreePlace, pointedPlace } from '../../src/client/games/bouquets/play.ts';
 import { mountBouquetsReplay } from '../../src/client/games/bouquets/replay.ts';
 import { potsStatus } from '../../src/client/games/bouquets/status.ts';
 import { BOUQUETS_STRINGS } from '../../src/client/games/bouquets/strings.ts';
@@ -133,8 +134,19 @@ describe('plateau', () => {
   });
 });
 
-describe('place libre la plus proche', () => {
+describe('places visées', () => {
   const rect = new DOMRect(100, 0, 100, 200);
+
+  it('vise la place dont le centre est le plus proche, sur toute la largeur du pot', () => {
+    expect(pointedPlace(rect, 100)).toBe(0);
+    expect(pointedPlace(rect, 134)).toBe(0);
+    expect(pointedPlace(rect, 136)).toBe(1);
+    expect(pointedPlace(rect, 150)).toBe(1);
+    expect(pointedPlace(rect, 164)).toBe(1);
+    expect(pointedPlace(rect, 166)).toBe(2);
+    expect(pointedPlace(rect, 230)).toBe(2);
+    expect(pointedPlace(new DOMRect(), 50)).toBe(0);
+  });
 
   it('choisit la place libre la plus proche du doigt', () => {
     expect(nearestFreePlace([_, _, _], rect, 105)).toBe(0);
@@ -153,6 +165,25 @@ describe('place libre la plus proche', () => {
 
 describe('partie', () => {
   const start = bouquetsLevel(1);
+
+  // Pots de 100 px de large posés côte à côte : le pot n occupe les x de 100n à 100n + 100.
+  beforeEach(() => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const pot = this.getAttribute('data-pot');
+      return pot === null ? new DOMRect() : new DOMRect(Number(pot) * 100, 0, 100, 200);
+    });
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const xOf = (pot: number, place: number) => pot * 100 + (FRONT_PLACES[place]?.[0] ?? 0.5) * 100;
+  /** Touche le pot `pot` à la position `x`, mesurée depuis son bord gauche. */
+  const tapPot = (host: HTMLElement, pot: number, x: number) =>
+    pots(host)[pot]?.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: pot * 100 + x }));
+  /** Touche le pot `pot` au-dessus de sa place `place`. */
+  const tapAt = (host: HTMLElement, pot: number, place: number) => tapPot(host, pot, xOf(0, place));
+  const liftedPlace = (host: HTMLElement) => host.querySelector('.bq-slot.lifted')?.getAttribute('data-place');
 
   const mount = () => {
     const host = document.createElement('div');
@@ -173,8 +204,8 @@ describe('partie', () => {
     const { host, onProgress, onWin, unmount } = mount();
     for (const action of bouquetsWin(1)) {
       if (action.type !== 'move') continue;
-      flowerIn(host, action.from, action.slot)?.click();
-      pots(host)[action.to]?.click();
+      tapAt(host, action.from, action.slot);
+      tapAt(host, action.to, action.place);
     }
     expect(onWin).toHaveBeenCalledOnce();
     const replay = onWin.mock.calls[0]?.[0] as string;
@@ -185,10 +216,10 @@ describe('partie', () => {
 
   it('soulève une fleur, puis la repose en la touchant de nouveau', () => {
     const { host, unmount } = mount();
-    flowerIn(host, 0, 0)?.click();
-    expect(host.querySelector('.bq-slot.lifted')).not.toBeNull();
-    flowerIn(host, 0, 0)?.click();
-    expect(host.querySelector('.bq-slot.lifted')).toBeNull();
+    tapAt(host, 0, 0);
+    expect(liftedPlace(host)).toBe('0');
+    tapAt(host, 0, 0);
+    expect(liftedPlace(host)).toBeUndefined();
     unmount();
   });
 
@@ -196,8 +227,8 @@ describe('partie', () => {
     const { host, onProgress, unmount } = mount();
     const first = bouquetsWin(1)[0];
     if (first?.type !== 'move') throw new Error('premier coup attendu');
-    flowerIn(host, first.from, first.slot)?.click();
-    pots(host)[first.to]?.click();
+    tapAt(host, first.from, first.slot);
+    tapAt(host, first.to, first.place);
     const [undo, restart] = [...host.querySelectorAll<HTMLButtonElement>('.controls button')];
     undo?.click();
     expect(onProgress).toHaveBeenLastCalledWith(
@@ -209,15 +240,44 @@ describe('partie', () => {
     unmount();
   });
 
-  it('secoue un pot plein et garde la fleur soulevée', () => {
+  const mountBoard = (start: Board) => {
     const host = document.createElement('div');
-    const full: Board = [[[0, 1, _]], [[2, 1, 0]], [[2, 0, 2]], [[1, _, _]]];
     const onProgress = vi.fn();
-    mountBouquetsPlay(host, { start: full, strings: fr, onProgress, onWin: vi.fn() });
-    flowerIn(host, 0, 0)?.click();
-    pots(host)[1]?.click();
-    expect(pots(host)[1]?.classList.contains('shake')).toBe(true);
-    expect(pots(host)[0]?.querySelector('.bq-slot.lifted')).not.toBeNull();
+    mountBouquetsPlay(host, { start, strings: fr, onProgress, onWin: vi.fn() });
+    return { host, onProgress };
+  };
+
+  it('prend la fleur de la place visée, même là où les images voisines se chevauchent', () => {
+    const { host } = mountBoard([[[0, 1, 2]], [[_, _, _]]]);
+    expect(host.querySelector('.bq-play .bq-pot')).not.toBeNull();
+    tapPot(host, 0, 50);
+    expect(liftedPlace(host)).toBe('1');
+    tapPot(host, 0, 34);
+    expect(liftedPlace(host)).toBe('0');
+    tapPot(host, 0, 90);
+    expect(liftedPlace(host)).toBe('2');
+  });
+
+  it('ne prend rien en visant une place libre', () => {
+    const { host } = mountBoard([[[0, _, 2]], [[_, _, _]]]);
+    tapPot(host, 0, 50);
+    expect(liftedPlace(host)).toBeUndefined();
+  });
+
+  it('prend la fleur visée d’un pot plein plutôt que d’y poser la fleur soulevée', () => {
+    const { host, onProgress } = mountBoard([[[0, 1, _]], [[2, 1, 0]], [[2, 0, 2]], [[1, _, _]]]);
+    tapAt(host, 0, 0);
+    tapAt(host, 1, 2);
+    expect(pots(host)[1]?.querySelector('.bq-slot.lifted')?.getAttribute('data-place')).toBe('2');
+    expect(onProgress).toHaveBeenCalledOnce();
+  });
+
+  it('secoue le pot de la fleur soulevée quand on vise une de ses places libres', () => {
+    const { host, onProgress } = mountBoard([[[0, 1, _]], [[2, 1, 0]], [[2, 0, 2]], [[1, _, _]]]);
+    tapAt(host, 0, 0);
+    tapAt(host, 0, 2);
+    expect(pots(host)[0]?.classList.contains('shake')).toBe(true);
+    expect(liftedPlace(host)).toBe('0');
     expect(onProgress).toHaveBeenCalledOnce();
   });
 
@@ -238,16 +298,16 @@ describe('partie', () => {
 
   it('ignore le clic qui suit un glisser', () => {
     const { host, onProgress, unmount } = mount();
-    const flower = flowerIn(host, 0, 0);
-    if (!flower) throw new Error('fleur attendue');
+    const pot = pots(host)[0];
+    if (!pot) throw new Error('pot attendu');
     const calls = onProgress.mock.calls.length;
-    flower.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 10 }));
+    pot.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: xOf(0, 0), clientY: 10 }));
     window.dispatchEvent(new PointerEvent('pointermove', { clientX: 60, clientY: 60 }));
     expect(document.querySelector('.bq-ghost')).not.toBeNull();
     window.dispatchEvent(new PointerEvent('pointerup', { clientX: 60, clientY: 60 }));
     expect(document.querySelector('.bq-ghost')).toBeNull();
-    flowerIn(host, 0, 0)?.click();
-    expect(host.querySelector('.bq-slot.lifted')).toBeNull();
+    tapAt(host, 0, 0);
+    expect(liftedPlace(host)).toBeUndefined();
     expect(onProgress.mock.calls.length).toBe(calls);
     unmount();
   });

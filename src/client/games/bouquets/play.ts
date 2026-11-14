@@ -1,6 +1,7 @@
 // Partie de Bouquets : on fait glisser une fleur jusqu'à un pot (ou on la touche, puis on touche le pot) ; elle se
-// pose à la place libre la plus proche du doigt. Chaque action est mémorisée pour produire le replay envoyé au
-// serveur.
+// pose à la place libre la plus proche du doigt. La fleur prise est celle de la place visée dans la largeur du pot,
+// pas celle dont l'image est sous le doigt : les images voisines se chevauchent. Chaque action est mémorisée pour
+// produire le replay envoyé au serveur.
 
 import { type BouquetsAction, encodeActions } from '../../../shared/games/bouquets/definition.ts';
 import {
@@ -34,30 +35,58 @@ const BURST_MS = 800;
 /** Durée du vol d'une fleur vers sa place, en millisecondes. */
 const FLIGHT_MS = 260;
 
+/** Parmi `places`, celle dont le centre est le plus proche de `clientX` dans la largeur du pot. */
+function closestPlace(places: readonly number[], potRect: DOMRect, clientX: number): number | null {
+  const fraction = (clientX - potRect.left) / potRect.width;
+  const distance = (place: number) => Math.abs((FRONT_PLACES[place]?.[0] ?? 0.5) - fraction);
+  let best: number | null = null;
+  for (const place of places) if (best === null || distance(place) < distance(best)) best = place;
+  return best;
+}
+
+/**
+ * Place du devant visée par le doigt : chaque place couvre la partie du pot la plus proche de son centre, sur toute
+ * sa hauteur. La première place si la position est inconnue.
+ */
+export function pointedPlace(potRect: DOMRect, clientX: number): number {
+  if (potRect.width === 0) return 0;
+  return (
+    closestPlace(
+      FRONT_PLACES.map((_, place) => place),
+      potRect,
+      clientX,
+    ) ?? 0
+  );
+}
+
 /**
  * Place libre du pot la plus proche de `clientX` (position du doigt), ou la première place libre si la position
  * est inconnue. `null` si le pot est plein.
  */
 export function nearestFreePlace(front: readonly (number | null)[], potRect: DOMRect, clientX: number): number | null {
   const free = front.flatMap((slot, place) => (slot === null ? [place] : []));
-  if (free.length === 0) return null;
   if (potRect.width === 0) return free[0] ?? null;
-  const fraction = (clientX - potRect.left) / potRect.width;
-  const distance = (place: number) => Math.abs((FRONT_PLACES[place]?.[0] ?? 0.5) - fraction);
-  return free.reduce((best, place) => (distance(place) < distance(best) ? place : best));
+  return closestPlace(free, potRect, clientX);
 }
 
 const reducedMotion = (): boolean =>
   typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/** Pot (et place du devant, si on a visé une fleur) sous un élément du plateau. */
-function locate(target: EventTarget | null): { pot: number; slot: number | null; element: HTMLElement } | null {
+interface Hit {
+  pot: number;
+  element: HTMLElement;
+  /** Fleur de la place visée, `null` si cette place est libre. */
+  flower: { slot: number; image: HTMLElement } | null;
+}
+
+/** Pot sous un élément du plateau, et fleur de la place visée à la position `clientX`. */
+function locate(target: EventTarget | null, clientX: number): Hit | null {
   if (!(target instanceof Element)) return null;
-  const potElement = target.closest<HTMLElement>('.bq-pot');
-  if (!potElement) return null;
-  const slotElement = target.closest<HTMLElement>('.bq-slot.front');
-  const flower = slotElement?.querySelector('.bq-flower') ? Number(slotElement.getAttribute('data-place')) : null;
-  return { pot: Number(potElement.getAttribute('data-pot')), slot: flower, element: potElement };
+  const element = target.closest<HTMLElement>('.bq-pot');
+  if (!element) return null;
+  const slot = pointedPlace(element.getBoundingClientRect(), clientX);
+  const image = element.querySelector<HTMLElement>(`.bq-slot.front[data-place="${slot}"] .bq-flower`);
+  return { pot: Number(element.getAttribute('data-pot')), element, flower: image ? { slot, image } : null };
 }
 
 export function mountBouquetsPlay(host: HTMLElement, options: BouquetsPlayOptions): () => void {
@@ -81,6 +110,7 @@ export function mountBouquetsPlay(host: HTMLElement, options: BouquetsPlayOption
     onUndo: () => undoLast(),
     onRestart: () => reset(),
   });
+  boardHost.classList.add('bq-play');
   const hint = h('p', { class: 'bq-hint' }, strings.stuck);
   host.append(hint);
 
@@ -184,10 +214,10 @@ export function mountBouquetsPlay(host: HTMLElement, options: BouquetsPlayOption
 
   const tap = (event: MouseEvent) => {
     if (finished) return;
-    const hit = locate(event.target);
+    const hit = locate(event.target, event.clientX);
     if (!hit) return;
     if (lifted) {
-      if (hit.pot === lifted.pot && hit.slot === lifted.slot) {
+      if (hit.pot === lifted.pot && hit.flower?.slot === lifted.slot) {
         lifted = null;
         return render();
       }
@@ -196,8 +226,8 @@ export function mountBouquetsPlay(host: HTMLElement, options: BouquetsPlayOption
         return;
       }
     }
-    if (hit.slot !== null) {
-      lifted = { pot: hit.pot, slot: hit.slot };
+    if (hit.flower) {
+      lifted = { pot: hit.pot, slot: hit.flower.slot };
       return render();
     }
     if (lifted) shake(hit.element);
@@ -211,10 +241,10 @@ export function mountBouquetsPlay(host: HTMLElement, options: BouquetsPlayOption
 
   const onPointerDown = (event: PointerEvent) => {
     dragged = false;
-    if (finished || !(event.target instanceof HTMLElement) || !event.target.classList.contains('bq-flower')) return;
-    const hit = locate(event.target);
-    if (!hit || hit.slot === null) return;
-    pending = { pot: hit.pot, slot: hit.slot, x: event.clientX, y: event.clientY, image: event.target };
+    if (finished) return;
+    const hit = locate(event.target, event.clientX);
+    if (!hit?.flower) return;
+    pending = { pot: hit.pot, slot: hit.flower.slot, x: event.clientX, y: event.clientY, image: hit.flower.image };
   };
 
   const onPointerMove = (event: PointerEvent) => {
@@ -245,7 +275,7 @@ export function mountBouquetsPlay(host: HTMLElement, options: BouquetsPlayOption
     ghost.element.remove();
     ghost = null;
     source.image.classList.remove('dragging');
-    const target = locate(document.elementFromPoint(event.clientX, event.clientY));
+    const target = locate(document.elementFromPoint(event.clientX, event.clientY), event.clientX);
     if (!target || event.type === 'pointercancel' || !drop(source, target, event.clientX, from)) render();
   };
 

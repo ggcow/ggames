@@ -1355,6 +1355,15 @@ input[type="range"] {
   width: var(--pw);
   height: calc(var(--top) + var(--ph));
 }
+/*
+ * Les fleurs voisines se chevauchent : c'est le pot entier qui reçoit le doigt, et la place visée se déduit de sa
+ * position dans la largeur du pot.
+ */
+.bq-play .bq-pot {
+  cursor: grab;
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
 .bq-clay {
   position: absolute;
   left: 0;
@@ -1403,24 +1412,16 @@ input[type="range"] {
   display: block;
   height: calc(var(--pw) * 0.88);
   max-width: none;
-  pointer-events: auto;
-  cursor: grab;
-  touch-action: none;
+  pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
-  -webkit-touch-callout: none;
   /* Le pied de la tige s'efface en entrant dans le terreau. */
   -webkit-mask-image: linear-gradient(to top, transparent 0, #000 7%);
   mask-image: linear-gradient(to top, transparent 0, #000 7%);
   transition: transform var(--bq-lift, 0.15s);
 }
-.mini .bq-flower {
-  pointer-events: none;
-  cursor: default;
-}
 .bq-slot.next .bq-flower {
   height: calc(var(--pw) * 0.82);
-  pointer-events: none;
 }
 .bq-slot.lifted .bq-flower {
   transform: translateY(calc(var(--pw) * -0.18));
