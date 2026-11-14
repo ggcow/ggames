@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.4.7](https://github.com/ggcow/ggames/compare/v0.4.6...v0.4.7) (2026-11-14)
+
+### Corrections
+
+* **client:** alléger la grille des niveaux ([f18e1cf](https://github.com/ggcow/ggames/commit/f18e1cfd93ae6d3d9c099e99d11cfa5a4572c644))
+* **client:** compacter l'enregistrement vocal en course ([7ef0a0c](https://github.com/ggcow/ggames/commit/7ef0a0c98ca688a010ca544df12cdc190b9a0297))
+
 ## [0.4.6](https://github.com/ggcow/ggames/compare/v0.4.5...v0.4.6) (2026-11-14)
 
 ### Fonctionnalités
