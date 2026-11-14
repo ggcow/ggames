@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.0](https://github.com/ggcow/ggames/compare/v0.4.8...v0.5.0) (2026-11-14)
+
+### ⚠ BREAKING CHANGES
+
+* **platform:** une campagne compte 100 niveaux ; les clés c:101 et au-delà sont refusées.
+
+### Fonctionnalités
+
+* **bouquets:** ajouter le jeu à la plateforme avec ses illustrations ([3feff40](https://github.com/ggcow/ggames/commit/3feff40017c151aa6a7289151a385badbbcd79ad))
+* **bouquets:** ajouter les règles et les 100 niveaux ([4cdcfec](https://github.com/ggcow/ggames/commit/4cdcfecb29a5ccc93c333aa9dad8b0f6368ce804))
+* **platform:** accepter une icône de jeu en image ([5751beb](https://github.com/ggcow/ggames/commit/5751beb4fe1ea158749858a6d8dc271986d227f2))
+* **platform:** afficher l'avancement de la génération des niveaux ([a64099b](https://github.com/ggcow/ggames/commit/a64099b8264677cf3ad65fa8f48fa80fce33f90d))
+* **platform:** enregistrer 100 niveaux par campagne ([82a35e6](https://github.com/ggcow/ggames/commit/82a35e68b5c64c396cb51a843622d1fe97f9670c))
+
+### Corrections
+
+* **bouquets:** prendre la fleur de la place visée dans le pot ([2e0328a](https://github.com/ggcow/ggames/commit/2e0328a48ba1d2b8d95e1f82437c02c905f037c2))
+* **fioles:** remplacer les niveaux en double ([5856e88](https://github.com/ggcow/ggames/commit/5856e885d3dfbad1873b58928eb27be19347f963))
+* **platform:** espacer les sections de l'accueil et de la page d'un jeu ([5611165](https://github.com/ggcow/ggames/commit/5611165b5abfd9aab05a5cd329f294286a6c1892))
+
+### Refactorisation
+
+* **shared:** extraire le hasard reproductible dans un module commun ([1cf57af](https://github.com/ggcow/ggames/commit/1cf57afae2d71834264eb8abe7998faee478a244))
+
 ## [0.4.8](https://github.com/ggcow/ggames/compare/v0.4.7...v0.4.8) (2026-11-14)
 
 ### Corrections
