@@ -35,6 +35,8 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
     accessible depuis la Chine.
   - Un Worker Cloudflare répond à l'API ; Pages lui relaie les requêtes `/api/*`.
   - Un Durable Object stocke toutes les données (SQLite) et gère le temps réel (WebSocket).
+  - Environnement de test séparé : Worker `ggames-api-staging` + site `https://ggames-staging.pages.dev`,
+    avec sa propre base. Rien n'est partagé avec la production.
 - **Anti-triche** : chaque partie est envoyée avec son replay ; le serveur la rejoue et calcule le score.
 - **Langage** : TypeScript strict partout (client, serveur, code partagé).
 
@@ -52,6 +54,17 @@ npm run check        # lint, types, build et tests
 
 Pour tester sur un téléphone du même réseau wifi : `http://<adresse-IP-du-PC>:8787`.
 
+### Test avant production
+
+```sh
+npm run deploy:staging
+```
+
+Déploie le Worker `ggames-api-staging` et le site `https://ggames-staging.pages.dev`. Cet environnement a
+sa propre base Durable Object : les comptes et les parties de test ne touchent jamais la production.
+Le workflow `staging.yml` fait ce déploiement à chaque push sur `main` ; la production reste réservée aux
+tags de version.
+
 ## Mise en place sur un compte Cloudflare
 
 Déjà fait pour le compte actuel ; à refaire uniquement sur un nouveau compte.
@@ -62,14 +75,16 @@ Déjà fait pour le compte actuel ; à refaire uniquement sur un nouveau compte.
 3. `npm run build && npx wrangler deploy` : crée le Worker `ggames-api` et sa base.
 4. `cd pages && npx wrangler pages project create ggames --production-branch main` : crée le projet Pages
    et affiche son adresse `*.pages.dev`.
-5. `npm run deploy` : publie le site et l'API.
+5. `cd pages-staging && npx wrangler pages project create ggames-staging --production-branch main` : crée
+   le projet Pages de test.
+6. `npm run deploy` : publie la production ; `npm run deploy:staging` publie l'environnement de test.
 
 ## Livraisons
 
 ```sh
 npm run release            # calcule la version, met à jour CHANGELOG.md, crée le commit et le tag
-git push --follow-tags     # la CI vérifie puis déploie le tag
+git push --follow-tags     # la CI vérifie puis déploie le tag en production
 ```
 
-Le déploiement automatique demande deux secrets dans le dépôt GitHub : `CLOUDFLARE_API_TOKEN` et
-`CLOUDFLARE_ACCOUNT_ID`.
+Chaque push sur `main` déploie aussi l'environnement de test. Le déploiement automatique demande deux
+secrets dans le dépôt GitHub : `CLOUDFLARE_API_TOKEN` et `CLOUDFLARE_ACCOUNT_ID`.

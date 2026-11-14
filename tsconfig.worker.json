@@ -8,6 +8,7 @@
     "src/worker",
     "src/shared",
     "pages/functions",
+    "pages-staging/functions",
     "tests/worker",
     "tests/support",
     "worker-configuration.d.ts"

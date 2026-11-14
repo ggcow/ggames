@@ -81,6 +81,7 @@ src/
       campaign.ts          méthodes ClientGame d'une campagne (progression, cases, niveau suivant)
       puzzle-frame.ts      cadre de partie commun : compteur de coups, Annuler, Recommencer
 pages/                     projet Cloudflare Pages : relaie /api/* vers le Worker (service binding)
+pages-staging/             même relais pour l'environnement de test
 tests/                     Vitest : shared/ (node), client/ (happy-dom), worker/ (runtime Cloudflare réel)
 scripts/build.ts           construction de dist/
 ```
@@ -142,15 +143,16 @@ Aucune modification de la plateforme ne doit être nécessaire. Si elle l'est, c
 
 ## Commandes
 
-| Commande             | Rôle                                                                         |
-| -------------------- | ---------------------------------------------------------------------------- |
-| `npm run dev`        | serveur local complet (site + API + temps réel) sur http://localhost:8787    |
-| `npm run check`      | lint + types + build + tous les tests : doit passer avant chaque commit      |
-| `npm run test:watch` | tests en continu                                                             |
-| `npm run format`     | formatage et corrections automatiques Biome                                  |
-| `npm run types`      | régénère `worker-configuration.d.ts` après un changement de `wrangler.jsonc` |
-| `npm run release`    | nouvelle version : CHANGELOG, numéro de version, commit et tag               |
-| `npm run deploy`     | déploiement manuel (normalement fait par la CI sur un tag)                   |
+| Commande                 | Rôle                                                                         |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| `npm run dev`            | serveur local complet (site + API + temps réel) sur http://localhost:8787    |
+| `npm run check`          | lint + types + build + tous les tests : doit passer avant chaque commit      |
+| `npm run test:watch`     | tests en continu                                                             |
+| `npm run format`         | formatage et corrections automatiques Biome                                  |
+| `npm run types`          | régénère `worker-configuration.d.ts` après un changement de `wrangler.jsonc` |
+| `npm run release`        | nouvelle version : CHANGELOG, numéro de version, commit et tag               |
+| `npm run deploy`         | déploiement manuel de la production (normalement fait par la CI sur un tag)  |
+| `npm run deploy:staging` | déploiement de l'environnement de test (Worker + Pages staging)              |
 
 ## Git
 
@@ -168,6 +170,8 @@ Aucune modification de la plateforme ne doit être nécessaire. Si elle l'est, c
 - Un commit = un changement cohérent qui passe `npm run check`. Pas de commit « wip » ni « fix typo » isolé
   d'un changement qu'il corrige.
 - Hook `pre-commit` : Biome sur les fichiers indexés + vérification des types.
+- Environnement de test : chaque push sur `main` déploie `ggames-staging` via `staging.yml`, avec sa propre
+  base Durable Object.
 - Livraison : `npm run release` sur `main` (met à jour `CHANGELOG.md` et `package.json`, crée le tag `vX.Y.Z`),
-  puis `git push --follow-tags`. Le workflow `deploy.yml` déploie le tag.
+  puis `git push --follow-tags`. Le workflow `deploy.yml` déploie le tag en production.
 - Jamais de `--no-verify`, de réécriture d'historique publié ni de force push sur `main`.

@@ -15,6 +15,7 @@
     "check": "npm run lint && npm run typecheck && npm run build && npm run test",
     "release": "commit-and-tag-version",
     "deploy": "npm run build && wrangler deploy && cd pages && wrangler pages deploy",
+    "deploy:staging": "npm run build && wrangler deploy --env staging && cd pages-staging && wrangler pages deploy",
     "prepare": "husky"
   },
   "devDependencies": {

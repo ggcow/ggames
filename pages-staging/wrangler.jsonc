@@ -1,0 +1,9 @@
+// Projet Cloudflare Pages de test "ggames-staging" : mêmes fichiers statiques que la production,
+// mais relié au Worker "ggames-api-staging" et à ses propres données.
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "ggames-staging",
+  "pages_build_output_dir": "../dist",
+  "compatibility_date": "2026-10-01",
+  "services": [{ "binding": "API", "service": "ggames-api-staging" }]
+}
