@@ -99,7 +99,8 @@ La plateforme ne connaît aucune règle de jeu. Un jeu fournit :
 
 - côté partagé, une `GameDefinition` (`src/shared/games/game.ts`) : ordre des scores, validation des clés de
   partie, déblocage par la progression (`isUnlocked()`), et `replay()` qui rejoue une partie et calcule son score ;
-- côté client, un `ClientGame` (`src/client/games/client-game.ts`) : nom, libellés, avancement de chaque joueur
+- côté client, un `ClientGame` (`src/client/games/client-game.ts`) : nom, icône (emoji ou image servie par le
+  site), libellés, avancement de chaque joueur
   et case de chaque niveau (`levelProgress()`, `levelOf()`, `levelTile()`), écrans de jeu et de replay, et `formatValue` pour afficher un score
   (`null` si seule la réussite compte : la plateforme masque alors scores et classements par score).
 

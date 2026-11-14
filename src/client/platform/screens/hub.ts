@@ -4,6 +4,7 @@ import { avatar } from '../avatar.ts';
 import { chatPanel } from '../chat-panel.ts';
 import type { AppContext, ScreenHandle } from '../context.ts';
 import { h, replaceChildren } from '../dom.ts';
+import { gameIcon } from '../game-icon.ts';
 import { chip, errorMessage, loading, section, toast } from '../ui.ts';
 import { renderOnline } from './online.ts';
 
@@ -68,7 +69,7 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
         class: `game-card theme-${summary.id}`,
         on: { click: () => ctx.navigate({ name: 'game', game: summary.id }) },
       },
-      h('span', { class: 'game-icon' }, game.icon),
+      h('span', { class: 'game-icon' }, gameIcon(game.icon)),
       h(
         'span',
         { class: 'game-text' },

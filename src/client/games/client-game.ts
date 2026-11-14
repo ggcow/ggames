@@ -56,11 +56,14 @@ export interface ReplayContext {
 /** Démonte un écran et libère ses ressources. */
 export type Unmount = () => void;
 
+/** Icône d'un jeu : un emoji, ou une image servie par le site (chemin absolu, ex. `/games/x/icon.webp`). */
+export type GameIcon = { kind: 'emoji'; emoji: string } | { kind: 'image'; src: string };
+
 export interface ClientGame {
   readonly definition: GameDefinition;
   readonly name: Localized<string>;
   readonly tagline: Localized<string>;
-  readonly icon: string;
+  readonly icon: GameIcon;
   /** Nom lisible d'une clé, ex. « Niveau 12 ». */
   keyLabel(key: string, lang: Lang): string;
   /**

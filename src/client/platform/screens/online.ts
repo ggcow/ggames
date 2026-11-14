@@ -4,6 +4,7 @@ import { findClientGame } from '../../games/registry.ts';
 import { avatar } from '../avatar.ts';
 import type { AppContext } from '../context.ts';
 import { h } from '../dom.ts';
+import { gameIcon } from '../game-icon.ts';
 import type { PlatformStrings } from '../strings.ts';
 
 /** Libellé de l'indicateur d'avancement, dans la langue de l'interface. */
@@ -29,7 +30,7 @@ export function renderOnline(others: readonly Presence[], ctx: AppContext): HTML
     ...others.map((presence) => {
       const game = presence.game ? findClientGame(presence.game) : null;
       const key = presence.key;
-      const activity = game && key ? `${game.icon} ${game.keyLabel(key, ctx.lang)}` : ctx.t.inMenus;
+      const activity = game && key ? [gameIcon(game.icon), ` ${game.keyLabel(key, ctx.lang)}`] : [ctx.t.inMenus];
       const join = game && key ? () => ctx.navigate({ name: 'play', game: game.definition.id, key }) : undefined;
       return h(
         'button',
@@ -40,7 +41,7 @@ export function renderOnline(others: readonly Presence[], ctx: AppContext): HTML
           avatar(presence.player, presence.name, 'md'),
           h('span', { class: 'dot' }),
         ),
-        h('span', { class: 'online-text' }, h('strong', null, presence.name), h('small', null, activity)),
+        h('span', { class: 'online-text' }, h('strong', null, presence.name), h('small', null, ...activity)),
       );
     }),
   );

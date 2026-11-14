@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ApiClient, ApiError, NETWORK_ERROR } from '../../src/client/platform/api.ts';
 import { parseSession } from '../../src/client/platform/app.ts';
 import { append, h } from '../../src/client/platform/dom.ts';
+import { gameIcon } from '../../src/client/platform/game-icon.ts';
 import { detectLang, formatDuration, isLang } from '../../src/client/platform/i18n.ts';
 import { formatRoute, parseRoute, type Route } from '../../src/client/platform/router.ts';
 import { createLocalStore } from '../../src/client/platform/storage.ts';
@@ -61,6 +62,23 @@ describe('dom', () => {
     const parent = h('div');
     append(parent, undefined, 'a', h('span'));
     expect(parent.childNodes).toHaveLength(2);
+  });
+});
+
+describe('icône de jeu', () => {
+  it('affiche un emoji en texte, masqué des lecteurs d’écran', () => {
+    const icon = gameIcon({ kind: 'emoji', emoji: '🧪' });
+    expect(icon.tagName).toBe('SPAN');
+    expect(icon.textContent).toBe('🧪');
+    expect(icon.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('affiche une image décorative servie par le site', () => {
+    const icon = gameIcon({ kind: 'image', src: '/games/x/icon.webp' });
+    expect(icon.tagName).toBe('IMG');
+    expect(icon.getAttribute('src')).toBe('/games/x/icon.webp');
+    expect(icon.getAttribute('alt')).toBe('');
+    expect(icon.className).toBe('game-glyph');
   });
 });
 

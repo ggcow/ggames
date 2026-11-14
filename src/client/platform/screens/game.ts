@@ -4,6 +4,7 @@ import { avatar } from '../avatar.ts';
 import { chatPanel } from '../chat-panel.ts';
 import { type AppContext, createGameView, type ScreenHandle } from '../context.ts';
 import { h, replaceChildren } from '../dom.ts';
+import { gameIcon } from '../game-icon.ts';
 import { formatDuration } from '../i18n.ts';
 import { currentPage, playerPositions, renderLevelGrid } from '../level-grid.ts';
 import { errorMessage, loading, screenHeader, section, toast } from '../ui.ts';
@@ -63,7 +64,7 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
     return h(
       'div',
       { class: `game-hero theme-${gameId}` },
-      h('span', { class: 'game-icon' }, game.icon),
+      h('span', { class: 'game-icon' }, gameIcon(game.icon)),
       h(
         'div',
         { class: 'game-text' },

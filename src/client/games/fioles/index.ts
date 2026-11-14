@@ -15,7 +15,7 @@ export const fiolesClient: ClientGame = {
   definition: fioles,
   name: { fr: FIOLES_STRINGS.fr.name, zh: FIOLES_STRINGS.zh.name },
   tagline: { fr: FIOLES_STRINGS.fr.tagline, zh: FIOLES_STRINGS.zh.tagline },
-  icon: '🧪',
+  icon: { kind: 'emoji', emoji: '🧪' },
   ...campaignMethods(
     (level, lang) => FIOLES_STRINGS[lang].level(level),
     (value, lang) => FIOLES_STRINGS[lang].moves(value),
