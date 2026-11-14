@@ -24,6 +24,10 @@ describe('campagne', () => {
     }
   });
 
+  it('n’a aucun niveau en double', () => {
+    expect(new Set(LEVELS).size).toBe(MAX_LEVEL);
+  });
+
   it('n’a pas de niveau hors de la campagne', () => {
     expect(levelBoard(0)).toBeNull();
     expect(levelBoard(MAX_LEVEL + 1)).toBeNull();

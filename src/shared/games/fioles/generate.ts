@@ -124,6 +124,29 @@ export function campaignSpec(level: number): BoardSpec {
   };
 }
 
-/** Niveaux 1 à `count` de la campagne, encodés comme dans levels.ts. */
-export const generateLevels = (count: number): string[] =>
-  Array.from({ length: count }, (_, i) => boardToString(generateBoard(campaignSpec(i + 1), i + 1)));
+/**
+ * Graines de remplacement, bien au-delà de celles des niveaux. Espacées de 4 : un tirage essaie au plus
+ * MAX_ATTEMPTS graines consécutives (graine × 131 + essai), et 4 × 131 dépasse MAX_ATTEMPTS.
+ */
+const RETRY_SEED = 10_000;
+const RETRY_SPACING = 4;
+
+/**
+ * Niveaux 1 à `count` de la campagne, encodés comme dans levels.ts. Les tirages de niveaux voisins se
+ * chevauchent et peuvent donner le même plateau : un plateau déjà vu est retiré avec des graines de
+ * remplacement jusqu'à en obtenir un inédit.
+ */
+export function generateLevels(count: number): string[] {
+  const levels: string[] = [];
+  const seen = new Set<string>();
+  for (let level = 1; level <= count; level++) {
+    const spec = campaignSpec(level);
+    let text = boardToString(generateBoard(spec, level));
+    for (let retry = 0; seen.has(text); retry++) {
+      text = boardToString(generateBoard(spec, RETRY_SEED + RETRY_SPACING * (level * 100 + retry)));
+    }
+    seen.add(text);
+    levels.push(text);
+  }
+  return levels;
+}

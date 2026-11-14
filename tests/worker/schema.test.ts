@@ -57,4 +57,26 @@ describe('schéma', () => {
       expect(sql.exec<{ version: number }>('SELECT version FROM schema_version').one().version).toBe(SCHEMA_VERSION);
     });
   });
+
+  it('supprime seulement les parties des niveaux de Fioles remplacés', async () => {
+    await runInDurableObject(world(), (_instance, state) => {
+      const { sql } = state.storage;
+      sql.exec("INSERT INTO players (id, name, name_key, password_hash, created) VALUES ('def456', 'B', 'b', 'x', 1)");
+      const insert = (id: string, game: string, key: string) =>
+        sql.exec(
+          "INSERT INTO runs (id, game, key, player, status, value, duration_ms, replay, ended) VALUES (?, ?, ?, 'def456', 'won', 5, 1, '', 1)",
+          id,
+          game,
+          key,
+        );
+      insert('run101', 'fioles', 'c:24');
+      insert('run102', 'fioles', 'c:100');
+      insert('run103', 'fioles', 'c:23');
+      insert('run104', 'autre', 'c:24');
+      sql.exec('UPDATE schema_version SET version = ?', SCHEMA_VERSION - 1);
+      migrate(sql);
+      const left = sql.exec<{ id: string }>('SELECT id FROM runs ORDER BY id').toArray();
+      expect(left.map((row) => row.id)).toEqual(['run103', 'run104']);
+    });
+  });
 });

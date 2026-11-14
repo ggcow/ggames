@@ -17,8 +17,11 @@ describe('campagne', () => {
     expect(campaignSpec(7).empty).toBe(2);
   });
 
-  it('reproduit les niveaux enregistrés', () => {
-    expect(generateLevels(12)).toEqual(LEVELS.slice(0, 12));
+  it('reproduit les niveaux enregistrés, y compris un niveau tiré à nouveau pour éviter un doublon', () => {
+    // Le niveau 24 sortait identique au 23 : il est tiré avec une graine de remplacement.
+    const levels = generateLevels(24);
+    expect(levels).toEqual(LEVELS.slice(0, 24));
+    expect(new Set(levels).size).toBe(24);
   });
 });
 

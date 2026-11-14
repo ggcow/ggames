@@ -103,6 +103,13 @@ const MIGRATIONS: readonly string[] = [
   );
   CREATE INDEX race_voice_reads_player ON race_voice_reads (player);
   `,
+  `
+  DELETE FROM runs WHERE game = 'fioles' AND key IN (
+    'c:24', 'c:34', 'c:35', 'c:38', 'c:41', 'c:42', 'c:46', 'c:47', 'c:50', 'c:51', 'c:54',
+    'c:56', 'c:57', 'c:59', 'c:60', 'c:65', 'c:66', 'c:68', 'c:70', 'c:72', 'c:73', 'c:75',
+    'c:79', 'c:80', 'c:82', 'c:83', 'c:84', 'c:89', 'c:91', 'c:92', 'c:94', 'c:95', 'c:100'
+  );
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
