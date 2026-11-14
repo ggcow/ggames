@@ -39,6 +39,7 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
           players: state.players,
           online: ctx.live.presence,
           gameId,
+          me: ctx.me.id,
           unlockedOf: (player) => game.levelProgress(view, player).unlocked,
           levelOf: (key) => game.levelOf(key),
         }),

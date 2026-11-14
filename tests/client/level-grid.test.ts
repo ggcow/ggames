@@ -40,8 +40,8 @@ describe('grille', () => {
     return { key: `c:${level}`, label: String(level), status: 'locked', best: null };
   };
   const positions: PlayerPosition[] = [
-    { player: 'abc123', name: 'léa', level: 2, live: true },
-    { player: 'def456', name: 'Tom', level: 3, live: false },
+    { player: 'abc123', name: 'léa', level: 2, live: true, me: true },
+    { player: 'def456', name: 'Tom', level: 3, live: false, me: false },
   ];
 
   const render = (page = 0, onPage = vi.fn(), onPlay = vi.fn()) =>
@@ -89,7 +89,7 @@ describe('grille', () => {
       progress: { unlocked: 3, total: 9999 },
       page: 0,
       tile,
-      positions: [{ player: 'abc123', name: 'Léa', level: 8, live: true }],
+      positions: [{ player: 'abc123', name: 'Léa', level: 8, live: true, me: false }],
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay,
@@ -99,9 +99,7 @@ describe('grille', () => {
     expect(cell?.disabled).toBe(false);
     expect(cell?.textContent).toContain('Rejoindre');
     cell?.click();
-    grid.querySelector<HTMLButtonElement>('.position')?.click();
-    expect(onPlay).toHaveBeenNthCalledWith(1, 'c:8');
-    expect(onPlay).toHaveBeenNthCalledWith(2, 'c:8');
+    expect(onPlay).toHaveBeenCalledWith('c:8');
   });
 
   it('ne propose pas de rejoindre une course déjà complète', () => {
@@ -109,7 +107,7 @@ describe('grille', () => {
       progress: { unlocked: 3, total: 9999 },
       page: 0,
       tile,
-      positions: ['a1', 'b2', 'c3'].map((player) => ({ player, name: player, level: 8, live: true })),
+      positions: ['a1', 'b2', 'c3'].map((player) => ({ player, name: player, level: 8, live: true, me: false })),
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay: vi.fn(),
@@ -124,29 +122,12 @@ describe('grille', () => {
       progress: { unlocked: 3, total: 9999 },
       page: 0,
       tile,
-      positions: [{ player: 'abc123', name: 'Léa', level: 45, live: false }],
+      positions: [{ player: 'abc123', name: 'Léa', level: 45, live: false, me: false }],
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay: vi.fn(),
     });
     expect(grid.querySelector('.pager-label small')?.textContent).toBe('page 1 / 3');
-  });
-
-  it('résume les positions et ouvre la page du niveau d’un joueur', () => {
-    const onPage = vi.fn();
-    const grid = renderLevelGrid({
-      progress: { unlocked: 3, total: 9999 },
-      page: 0,
-      tile,
-      positions: [{ player: 'abc123', name: 'Léa', level: 45, live: false }],
-      t: PLATFORM_STRINGS.fr,
-      onPage,
-      onPlay: vi.fn(),
-    });
-    const chip = grid.querySelector<HTMLButtonElement>('.position');
-    expect(chip?.textContent).toContain('Niv. 45');
-    chip?.click();
-    expect(onPage).toHaveBeenCalledWith(2);
   });
 
   it('limite les avatars d’une case et affiche le nombre restant', () => {
@@ -155,6 +136,7 @@ describe('grille', () => {
       name: id,
       level: 1,
       live: false,
+      me: false,
     }));
     const grid = renderLevelGrid({
       progress: { unlocked: 3, total: 9999 },
@@ -235,13 +217,14 @@ describe('positions des joueurs', () => {
       players,
       online: [presence('ccc333', 'fioles', 'c:2'), presence('aaa111', 'autre', 'c:40')],
       gameId: 'fioles',
+      me: 'aaa111',
       unlockedOf: (id) => unlocked[id] ?? 1,
       levelOf: (key) => Number(key.slice(2)),
     });
     expect(positions).toEqual([
-      { player: 'bbb222', name: 'Tom', level: 12, live: false },
-      { player: 'aaa111', name: 'Léa', level: 5, live: false },
-      { player: 'ccc333', name: 'Zoé', level: 2, live: true },
+      { player: 'bbb222', name: 'Tom', level: 12, live: false, me: false },
+      { player: 'aaa111', name: 'Léa', level: 5, live: false, me: true },
+      { player: 'ccc333', name: 'Zoé', level: 2, live: true, me: false },
     ]);
   });
 
@@ -250,10 +233,11 @@ describe('positions des joueurs', () => {
       players: [players[0] as (typeof players)[number]],
       online: [presence('aaa111', 'fioles', 'menu')],
       gameId: 'fioles',
+      me: 'aaa111',
       unlockedOf: () => 3,
       levelOf: () => null,
     });
-    expect(position).toMatchObject({ level: 3, live: false });
+    expect(position).toMatchObject({ level: 3, live: false, me: true });
   });
 
   it('trouve la page d’un niveau', () => {

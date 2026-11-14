@@ -44,12 +44,16 @@ export interface PlayerPosition {
   level: number;
   /** En train de jouer ce niveau en ce moment. */
   live: boolean;
+  /** Le joueur qui regarde la grille. */
+  me: boolean;
 }
 
 export interface PositionsInput {
   players: readonly PlayerInfo[];
   online: readonly Presence[];
   gameId: string;
+  /** Joueur qui regarde la grille. */
+  me: PlayerId;
   /** Plus haut niveau jouable d'un joueur. */
   unlockedOf: (player: PlayerId) => number;
   /** Niveau désigné par une clé, ou null. */
@@ -70,6 +74,7 @@ export function playerPositions(input: PositionsInput): PlayerPosition[] {
         name: player.name,
         level: liveLevel ?? input.unlockedOf(player.id),
         live: liveLevel !== null,
+        me: player.id === input.me,
       };
     })
     .sort((a, b) => b.level - a.level || a.name.localeCompare(b.name));
@@ -85,42 +90,15 @@ export interface LevelGridOptions {
   onPlay: (key: string) => void;
 }
 
-const marker = (position: PlayerPosition): HTMLElement => {
+const marker = (position: PlayerPosition, t: PlatformStrings): HTMLElement => {
   const element = avatar(position.player, position.name, 'xs');
   if (position.live) element.classList.add('live');
+  if (position.me) element.classList.add('me');
+  const status = position.live ? t.inGame : t.levelShort(position.level);
+  element.title = `${position.name} — ${status}`;
+  element.setAttribute('aria-label', `${position.name} — ${status}`);
   return element;
 };
-
-/** Bande des joueurs avec leur niveau ; toucher un joueur en direct le rejoint, sinon ouvre la page de son niveau. */
-function renderPositions(options: LevelGridOptions): HTMLElement {
-  const { t } = options;
-  return h(
-    'div',
-    { class: 'positions' },
-    ...options.positions.map((position) =>
-      h(
-        'button',
-        {
-          class: position.live ? 'position live' : 'position',
-          attrs: { 'aria-label': `${position.name} ${t.levelShort(position.level)}` },
-          on: {
-            click: () =>
-              position.live
-                ? options.onPlay(options.tile(position.level).key)
-                : options.onPage(pageOfLevel(position.level)),
-          },
-        },
-        avatar(position.player, position.name, 'sm'),
-        h(
-          'span',
-          { class: 'position-text' },
-          h('strong', null, position.name),
-          h('small', null, t.levelShort(position.level)),
-        ),
-      ),
-    ),
-  );
-}
 
 function renderPager(options: LevelGridOptions, first: number, last: number): HTMLElement {
   const { page, t } = options;
@@ -161,12 +139,13 @@ function renderTile(options: LevelGridOptions, level: number): HTMLElement {
   // Un niveau verrouillé qu'un ami joue en ce moment peut être rejoint, tant que la course n'est pas complète.
   const joinable = canJoinRace(here.filter((p) => p.live).length);
   const state = tile.status === 'locked' && joinable ? 'join' : tile.status;
+  const players = here.map((p) => `${p.name}${p.live ? ` (${t.inGame})` : ''}`).join(', ');
   return h(
     'button',
     {
       class: `level ${state}`,
       disabled: state === 'locked',
-      attrs: { 'aria-label': `${tile.label} ${t[`level_${state}`]}` },
+      attrs: { 'aria-label': `${tile.label} ${t[`level_${state}`]}${players ? ` — ${players}` : ''}` },
       on: { click: () => options.onPlay(tile.key) },
     },
     h('span', { class: 'level-number' }, state === 'locked' ? '🔒' : tile.label),
@@ -177,7 +156,7 @@ function renderTile(options: LevelGridOptions, level: number): HTMLElement {
       ? h(
           'span',
           { class: 'level-live' },
-          ...here.slice(0, MAX_MARKERS).map(marker),
+          ...here.slice(0, MAX_MARKERS).map((position) => marker(position, t)),
           extra > 0 ? h('span', { class: 'avatar xs more' }, `+${extra}`) : null,
         )
       : null,
@@ -191,7 +170,6 @@ export function renderLevelGrid(options: LevelGridOptions): HTMLElement {
   return h(
     'div',
     { class: 'levels' },
-    renderPositions(options),
     renderPager(options, first, last),
     h('div', { class: 'level-grid' }, ...levels.map((level) => renderTile(options, level))),
   );
