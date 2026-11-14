@@ -6,8 +6,13 @@ import { writeFileSync } from 'node:fs';
 import { MAX_LEVEL } from '../src/shared/games/campaign.ts';
 import { generateLevels as fioles } from '../src/shared/games/fioles/generate.ts';
 
-/** Générateur de chaque jeu : les niveaux 1 à `count`, encodés comme le jeu les relit. */
-const GENERATORS: Record<string, (count: number) => string[]> = { fioles };
+/**
+ * Générateur de chaque jeu : les niveaux 1 à `count`, encodés comme le jeu les relit. `progress` reçoit le
+ * numéro de chaque niveau terminé (la génération peut prendre longtemps).
+ */
+const GENERATORS: Record<string, (count: number, progress: (level: number) => void) => string[]> = {
+  fioles,
+};
 
 const game = process.argv[2] ?? '';
 const generate = GENERATORS[game];
@@ -16,7 +21,10 @@ if (!generate) {
   process.exit(1);
 }
 
-const levels = generate(MAX_LEVEL);
+const started = Date.now();
+const levels = generate(MAX_LEVEL, (level) =>
+  process.stdout.write(`niveau ${level}/${MAX_LEVEL} (${Math.round((Date.now() - started) / 1000)} s)\n`),
+);
 const file = `src/shared/games/${game}/levels.ts`;
 writeFileSync(
   file,

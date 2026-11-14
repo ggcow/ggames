@@ -134,9 +134,9 @@ const RETRY_SPACING = 4;
 /**
  * Niveaux 1 à `count` de la campagne, encodés comme dans levels.ts. Les tirages de niveaux voisins se
  * chevauchent et peuvent donner le même plateau : un plateau déjà vu est retiré avec des graines de
- * remplacement jusqu'à en obtenir un inédit.
+ * remplacement jusqu'à en obtenir un inédit. `progress` est appelé après chaque niveau.
  */
-export function generateLevels(count: number): string[] {
+export function generateLevels(count: number, progress?: (level: number) => void): string[] {
   const levels: string[] = [];
   const seen = new Set<string>();
   for (let level = 1; level <= count; level++) {
@@ -147,6 +147,7 @@ export function generateLevels(count: number): string[] {
     }
     seen.add(text);
     levels.push(text);
+    progress?.(level);
   }
   return levels;
 }
