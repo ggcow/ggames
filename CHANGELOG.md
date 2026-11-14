@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.4.2](///compare/v0.4.1...v0.4.2) (2026-11-14)
+
+### Fonctionnalités
+
+* **platform:** aperçus en direct plus compacts et indicateur d'avancement 26ee0f2
+
 ## [0.4.1](///compare/v0.4.0...v0.4.1) (2026-11-14)
 
 ### Fonctionnalités
