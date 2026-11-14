@@ -6,7 +6,11 @@
 export default {
   extends: ['@commitlint/config-conventional'],
   rules: {
-    'scope-enum': [2, 'always', ['platform', 'worker', 'client', 'shared', 'fioles', 'ci', 'deps', 'release']],
+    'scope-enum': [
+      2,
+      'always',
+      ['platform', 'worker', 'client', 'shared', 'fioles', 'bouquets', 'ci', 'deps', 'release'],
+    ],
     'subject-case': [0],
     'body-max-line-length': [2, 'always', 100],
   },
