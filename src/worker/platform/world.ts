@@ -33,7 +33,7 @@ import { nameKey, PlatformStore } from './store.ts';
 import { LoginThrottle } from './throttle.ts';
 
 /** Garde-fous : plateforme entre amis à inscription libre. */
-export const QUOTAS = { players: 200, recentRuns: 30 } as const;
+export const QUOTAS = { players: 200 } as const;
 
 /** Données attachées à chaque WebSocket ; conservées pendant l'hibernation. */
 interface Attachment extends Presence {
@@ -139,14 +139,15 @@ export class World extends DurableObject<Env> {
       player,
       progress: this.store.progress(game.id, player.id)[0] ?? null,
       keys: this.store.keyProgress(game.id, player.id, game.scoreOrder),
-      recent: this.store.recentRuns(game.id, player.id, QUOTAS.recentRuns),
     });
   }
 
+  /** Replay d'une partie gagnée : une partie perdue ou abandonnée n'est pas consultable. */
   async getRun(token: unknown, runId: unknown): Promise<Result<Run>> {
     if (!(await this.authenticate(token))) return unauthorized();
     const run = typeof runId === 'string' ? this.store.findRun(runId) : null;
-    return run ? ok(run) : fail(404, 'unknown run');
+    if (run?.status !== 'won') return fail(404, 'unknown run');
+    return ok(run);
   }
 
   /**

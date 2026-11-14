@@ -91,7 +91,12 @@ describe('parties', () => {
   it('calcule progression, détail par niveau et replay consultable', async () => {
     const me = await newPlayer();
     const other = await newPlayer();
-    await submit(me.token, { key: 'c:1', status: 'abandoned', durationMs: 3000, replay: WIN_1.slice(0, 2) });
+    const abandoned = await submit(me.token, {
+      key: 'c:1',
+      status: 'abandoned',
+      durationMs: 3000,
+      replay: WIN_1.slice(0, 2),
+    });
     const won = await submit(me.token, { key: 'c:1', status: 'won', durationMs: 9000, replay: WIN_1 });
 
     const state = await call<GameState>('/api/games/fioles', { token: other.token });
@@ -103,13 +108,40 @@ describe('parties', () => {
 
     const detail = await call<PlayerGameDetail>(`/api/games/fioles/players/${me.player.id}`, { token: other.token });
     expect(detail.body.keys).toEqual([{ key: 'c:1', attempts: 2, wins: 1, best: won.body.run }]);
-    expect(detail.body.recent).toHaveLength(2);
 
+    expect((await call(`/api/runs/${abandoned.body.run.id}`, { token: other.token })).status).toBe(404);
     const run = await call<Run>(`/api/runs/${won.body.run.id}`, { token: other.token });
     expect(run.body).toEqual({ ...won.body.run, replay: WIN_1 });
 
     const games = await call<GameSummary[]>('/api/games', { token: other.token });
     expect(games.body[0]).toMatchObject({ id: 'fioles', players: 1, runs: 2 });
+  });
+
+  it('ne sert le replay que des parties gagnées', async () => {
+    const me = await newPlayer();
+    const lost = await submit(me.token, { key: 'c:1', status: 'lost', durationMs: 1000, replay: WIN_1.slice(0, 2) });
+    expect(lost.status).toBe(200);
+    expect((await call(`/api/runs/${lost.body.run.id}`, { token: me.token })).status).toBe(404);
+
+    const abandoned = await submit(me.token, { key: 'c:1', status: 'abandoned', durationMs: 1, replay: '' });
+    expect(abandoned.status).toBe(200);
+    expect((await call(`/api/runs/${abandoned.body.run.id}`, { token: me.token })).status).toBe(404);
+
+    expect((await call('/api/runs/inconnu', { token: me.token })).status).toBe(404);
+
+    const won = await submit(me.token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });
+    const replay = await call<Run>(`/api/runs/${won.body.run.id}`, { token: me.token });
+    expect(replay.status).toBe(200);
+    expect(replay.body).toEqual({ ...won.body.run, replay: WIN_1 });
+  });
+
+  it('ne propose pas de replay pour un niveau sans victoire', async () => {
+    const me = await newPlayer();
+    const lost = await submit(me.token, { key: 'c:1', status: 'lost', durationMs: 1, replay: WIN_1.slice(0, 2) });
+    expect(lost.status).toBe(200);
+
+    const detail = await call<PlayerGameDetail>(`/api/games/fioles/players/${me.player.id}`, { token: me.token });
+    expect(detail.body.keys).toEqual([{ key: 'c:1', attempts: 1, wins: 0, best: null }]);
   });
 
   it('classe les joueurs par meilleur score et ne garde que le meilleur de chacun', async () => {

@@ -30,7 +30,7 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - Chaque joueur a un compte (pseudo + mot de passe) et se connecte depuis n'importe quel appareil.
 - L'accueil liste les jeux. Pour chaque jeu : la grille des niveaux par pages (réussis, jouable, verrouillés),
   la progression de chaque joueur (niveaux réussis, essais, temps), les classements, et le replay de chaque
-  partie.
+  partie gagnée.
 - Progression individuelle : on joue le premier niveau pas encore gagné (et tous ceux d'avant).
 - Rejoindre : un niveau verrouillé qu'un ami joue en direct peut être rejoint (course sur le même plateau, trois
   joueurs au plus). La victoire compte au classement mais ne fait pas avancer la progression. Le serveur accepte

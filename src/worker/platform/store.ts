@@ -180,18 +180,6 @@ export class PlatformStore {
     return row ? toRunSummary(row) : null;
   }
 
-  recentRuns(game: GameId, player: PlayerId, limit: number): RunSummary[] {
-    return this.sql
-      .exec<RunRow>(
-        `SELECT ${RUN_COLUMNS} FROM runs WHERE game = ? AND player = ? ORDER BY ended DESC LIMIT ?`,
-        game,
-        player,
-        limit,
-      )
-      .toArray()
-      .map(toRunSummary);
-  }
-
   /** Meilleure partie gagnée de chaque joueur, pour chaque clé (ou une seule clé). */
   records(game: GameId, order: ScoreOrder, key?: string): Record<string, RecordEntry[]> {
     const dir = sqlOrder(order);

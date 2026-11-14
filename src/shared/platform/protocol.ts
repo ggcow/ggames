@@ -94,7 +94,6 @@ export interface PlayerGameDetail {
   player: PlayerInfo;
   progress: PlayerProgress | null;
   keys: KeyProgress[];
-  recent: RunSummary[];
 }
 
 /* ---------- HTTP ---------- */

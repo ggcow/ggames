@@ -3,10 +3,10 @@ import type { ClientGame } from '../../games/client-game.ts';
 import { avatar } from '../avatar.ts';
 import type { AppContext, ScreenHandle } from '../context.ts';
 import { h, replaceChildren } from '../dom.ts';
-import { formatDate, formatDuration } from '../i18n.ts';
-import { chip, errorMessage, loading, screenHeader, section, toast } from '../ui.ts';
+import { formatDuration } from '../i18n.ts';
+import { errorMessage, loading, screenHeader, section, toast } from '../ui.ts';
 
-/** Fiche d'un joueur sur un jeu : statistiques, niveaux joués, meilleurs scores, dernières parties. */
+/** Fiche d'un joueur sur un jeu : statistiques, niveaux joués et meilleurs scores. */
 export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame, playerId: string): ScreenHandle {
   const { t, api } = ctx;
   const gameId = game.definition.id;
@@ -30,30 +30,7 @@ export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame
             { class: 'btn small', on: { click: () => key.best && openRun(key.best) } },
             game.formatValue ? `▶ ${game.formatValue(key.best.value, ctx.lang)}` : t.watchReplay,
           )
-        : chip(t.status_abandoned, 'bad'),
-    );
-
-  const runRow = (run: RunSummary) =>
-    h(
-      'button',
-      { class: 'list-row', on: { click: () => openRun(run) } },
-      h(
-        'span',
-        { class: 'list-text' },
-        h('strong', null, game.keyLabel(run.key, ctx.lang)),
-        h(
-          'small',
-          null,
-          [
-            game.formatValue?.(run.value, ctx.lang),
-            formatDuration(run.durationMs, ctx.lang),
-            formatDate(run.ended, ctx.lang),
-          ]
-            .filter(Boolean)
-            .join(' · '),
-        ),
-      ),
-      chip(t[`status_${run.status}`], run.status === 'won' ? 'good' : 'bad'),
+        : null,
     );
 
   const render = () => {
@@ -73,7 +50,6 @@ export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame
       detail.keys.length > 0
         ? section(t.levels, h('div', { class: 'list' }, ...detail.keys.map(keyRow)))
         : h('p', { class: 'muted empty-line' }, t.noRuns),
-      detail.recent.length > 0 ? section(t.recent, h('div', { class: 'list' }, ...detail.recent.map(runRow))) : null,
     );
   };
 

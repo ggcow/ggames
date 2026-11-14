@@ -14,7 +14,7 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
 - En partie, ton plateau occupe le bas de l'écran ; au-dessus, les plateaux des deux autres joueurs en petit.
 - Sur la grille, chaque joueur apparaît sur son niveau (celui qu'il joue s'il est en ligne).
 - La progression de chacun (niveaux réussis, parties, temps de jeu), les classements et le replay de chaque
-  partie.
+  partie gagnée.
 - Quand un ami joue, son plateau s'affiche en direct ; toucher son nom permet de jouer le même niveau.
 - Interface en français et en chinois (bouton 中 / Fr en haut de l’écran).
 
