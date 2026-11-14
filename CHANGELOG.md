@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.4.5](https://github.com/ggcow/ggames/compare/v0.4.4...v0.4.5) (2026-11-14)
+
+### Fonctionnalités
+
+* **platform:** ajouter le salon global ([1b87020](https://github.com/ggcow/ggames/commit/1b87020f6748d14e265b9e00427b6b8f619788a2))
+
+### Corrections
+
+* **platform:** intégrer le salon aux pages ([caad1cc](https://github.com/ggcow/ggames/commit/caad1cc1361456b730ffc3ed1d7c9a6bc68b74dd))
+
 ## [0.4.4](https://github.com/ggcow/ggames/compare/v0.4.3...v0.4.4) (2026-11-14)
 
 ### Fonctionnalités
