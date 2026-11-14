@@ -83,8 +83,10 @@ Déjà fait pour le compte actuel ; à refaire uniquement sur un nouveau compte.
 
 ```sh
 npm run release            # calcule la version, met à jour CHANGELOG.md, crée le commit et le tag
-git push --follow-tags     # la CI vérifie puis déploie le tag en production
+git push origin main       # pousse le commit de release
+git push origin vX.Y.Z     # pousse le tag : déclenche le déploiement en production
 ```
 
-Chaque push sur `main` déploie aussi l'environnement de test. Le déploiement automatique demande deux
-secrets dans le dépôt GitHub : `CLOUDFLARE_API_TOKEN` et `CLOUDFLARE_ACCOUNT_ID`.
+Le tag est poussé séparément du commit pour déclencher le workflow `Deploy`. Chaque push sur `main`
+déploie aussi l'environnement de test. Le déploiement automatique demande deux secrets dans le dépôt
+GitHub : `CLOUDFLARE_API_TOKEN` et `CLOUDFLARE_ACCOUNT_ID`.

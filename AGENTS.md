@@ -173,5 +173,6 @@ Aucune modification de la plateforme ne doit être nécessaire. Si elle l'est, c
 - Environnement de test : chaque push sur `main` déploie `ggames-staging` via `staging.yml`, avec sa propre
   base Durable Object.
 - Livraison : `npm run release` sur `main` (met à jour `CHANGELOG.md` et `package.json`, crée le tag `vX.Y.Z`),
-  puis `git push --follow-tags`. Le workflow `deploy.yml` déploie le tag en production.
+  puis `git push origin main` et `git push origin vX.Y.Z`. Le tag est poussé séparément pour déclencher
+  `deploy.yml`, qui déploie la production.
 - Jamais de `--no-verify`, de réécriture d'historique publié ni de force push sur `main`.

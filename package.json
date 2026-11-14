@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "check": "npm run lint && npm run typecheck && npm run build && npm run test",
     "release": "commit-and-tag-version",
-    "deploy": "npm run build && wrangler deploy && cd pages && wrangler pages deploy --branch main",
+    "deploy": "npm run build && wrangler deploy --env=\"\" && cd pages && wrangler pages deploy --branch main",
     "deploy:staging": "npm run build && wrangler deploy --env staging && cd pages-staging && wrangler pages deploy --branch main",
     "prepare": "husky"
   },
