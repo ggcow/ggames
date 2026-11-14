@@ -48,11 +48,10 @@ describe('clés', () => {
     expect(fioles.isValidKey('c:9999')).toBe(true);
   });
 
-  it('exige d’avoir gagné le niveau précédent', () => {
-    expect(fioles.prerequisite('c:1')).toBeNull();
-    expect(fioles.prerequisite('c:2')).toBe('c:1');
-    expect(fioles.prerequisite('c:40')).toBe('c:39');
-    expect(fioles.prerequisite('x:1')).toBeNull();
+  it('utilise la progression de la campagne', () => {
+    expect(fioles.isUnlocked('c:1', new Set())).toBe(true);
+    expect(fioles.isUnlocked('c:3', new Set(['c:1', 'c:2']))).toBe(true);
+    expect(fioles.isUnlocked('c:3', new Set(['c:2']))).toBe(false);
   });
 
   it.each(['c:0', 'c:01', 'c:10000', 'l:abc123', 'x:1', ''])('rejette %s', (key) => {

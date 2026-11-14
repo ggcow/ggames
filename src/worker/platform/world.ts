@@ -14,6 +14,7 @@ import {
   LIMITS,
   PING,
   type PlayerGameDetail,
+  type PlayerId,
   type PlayerInfo,
   PONG,
   type Presence,
@@ -150,7 +151,7 @@ export class World extends DurableObject<Env> {
 
   /**
    * Enregistre une partie après l'avoir rejouée : le score retenu est celui calculé par le serveur.
-   * Refusée si le joueur n'a pas encore débloqué la clé (prérequis non gagné).
+   * Refusée si ni le joueur ni personne d'autre n'a débloqué la clé.
    */
   async submitRun(
     token: unknown,
@@ -169,8 +170,7 @@ export class World extends DurableObject<Env> {
       return fail(400, 'invalid run');
     }
     if (!game.isValidKey(key)) return fail(400, 'invalid key');
-    const required = game.prerequisite(key);
-    if (required !== null && !this.store.hasWon(game.id, me.id, required)) return fail(403, 'locked');
+    if (!this.canPlay(game, me.id, key)) return fail(403, 'locked');
     const run = this.verifiedRun(game, me, key, status, duration, replay);
     if (!run) return fail(400, 'invalid replay');
     this.store.insertRun(run);
@@ -226,6 +226,16 @@ export class World extends DurableObject<Env> {
   private async authenticate(token: unknown): Promise<PlayerInfo | null> {
     if (typeof token !== 'string' || token.length < 32 || token.length > 128) return null;
     return this.store.useSession(await sha256(token), Date.now());
+  }
+
+  /**
+   * Un joueur peut jouer une clé que sa progression a débloquée, ou qu'un autre joueur a débloquée :
+   * c'est ce qui permet de rejoindre un ami sur son niveau.
+   */
+  private canPlay(game: GameDefinition, player: PlayerId, key: string): boolean {
+    const won = this.store.wonKeysByPlayer(game.id);
+    if (game.isUnlocked(key, won.get(player) ?? new Set())) return true;
+    return [...won.values()].some((keys) => game.isUnlocked(key, keys));
   }
 
   /** Rejoue la partie et construit l'enregistrement. `null` si le replay ne correspond pas au statut annoncé. */

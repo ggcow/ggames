@@ -153,17 +153,19 @@ export class PlatformStore {
     );
   }
 
-  hasWon(game: GameId, player: PlayerId, key: string): boolean {
-    return (
-      this.sql
-        .exec(
-          "SELECT 1 FROM runs WHERE game = ? AND player = ? AND key = ? AND status = 'won' LIMIT 1",
-          game,
-          player,
-          key,
-        )
-        .toArray().length > 0
+  /** Clés gagnées au moins une fois, par joueur. */
+  wonKeysByPlayer(game: GameId): Map<PlayerId, Set<string>> {
+    const won = new Map<PlayerId, Set<string>>();
+    const rows = this.sql.exec<{ player: string; key: string }>(
+      "SELECT DISTINCT player, key FROM runs WHERE game = ? AND status = 'won'",
+      game,
     );
+    for (const row of rows) {
+      const keys = won.get(row.player) ?? new Set<string>();
+      keys.add(row.key);
+      won.set(row.player, keys);
+    }
+    return won;
   }
 
   findRun(id: string): Run | null {

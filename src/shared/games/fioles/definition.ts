@@ -1,6 +1,6 @@
 // Définition du jeu Fioles pour la plateforme : génération des niveaux de la campagne, replays.
 
-import { campaignPrerequisite, parseCampaignKey } from '../campaign.ts';
+import { campaignIsUnlocked, parseCampaignKey } from '../campaign.ts';
 import type { GameDefinition, ReplayOutcome } from '../game.ts';
 import { type Board, type BoardSpec, cloneBoard, generateBoard, isSolved, MAX_COLORS, pour } from './rules.ts';
 
@@ -107,7 +107,7 @@ export const fioles: GameDefinition = {
   id: FIOLES_ID,
   scoreOrder: 'asc',
   isValidKey: (key) => parseCampaignKey(key) !== null,
-  prerequisite: campaignPrerequisite,
+  isUnlocked: campaignIsUnlocked,
   replay(key, replay): ReplayOutcome | null {
     const start = startBoard(key);
     const actions = decodeActions(replay);

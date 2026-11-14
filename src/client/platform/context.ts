@@ -26,6 +26,15 @@ export interface ScreenHandle {
   onPresenceChanged?(): void;
 }
 
+/** Clés qu'un joueur a gagnées au moins une fois. */
+export function wonKeys(state: GameState, player: PlayerId): Set<string> {
+  return new Set(
+    Object.entries(state.records)
+      .filter(([, records]) => records.some((r) => r.player === player))
+      .map(([key]) => key),
+  );
+}
+
 export function createGameView(state: GameState, me: PlayerId, lang: Lang): GameView {
   const names = new Map(state.players.map((p) => [p.id, p.name]));
   return { state, me, lang, playerName: (id) => names.get(id) ?? '?' };

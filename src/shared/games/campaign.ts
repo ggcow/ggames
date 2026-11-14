@@ -1,5 +1,5 @@
-// Campagne de niveaux numérotés, commune aux jeux qui en ont une : clés `c:<niveau>` de 1 à MAX_LEVEL,
-// chaque niveau se débloque en gagnant le précédent.
+// Campagne de niveaux numérotés, commune aux jeux qui en ont une : clés `c:<niveau>` de 1 à MAX_LEVEL.
+// Progression individuelle : on joue le premier niveau pas encore gagné et tous ceux d'avant.
 
 /** Nombre de niveaux d'une campagne. */
 export const MAX_LEVEL = 9999;
@@ -13,8 +13,20 @@ export function parseCampaignKey(key: string): number | null {
   return match?.[1] ? Number(match[1]) : null;
 }
 
-/** Clé à gagner pour débloquer `key` : le niveau précédent, ou `null` pour le premier niveau. */
-export function campaignPrerequisite(key: string): string | null {
+/**
+ * Niveau à jouer d'un joueur : le premier qu'il n'a pas gagné en partant du niveau 1. Un niveau gagné plus loin
+ * (en rejoignant un ami) ne fait pas avancer cette progression.
+ */
+export function campaignFrontier(won: ReadonlySet<string>): number {
+  let level = 1;
+  while (level < MAX_LEVEL && won.has(campaignKey(level))) level++;
+  return level;
+}
+
+/** Vrai si `key` est un niveau que la progression du joueur a atteint. */
+export function campaignIsUnlocked(key: string, won: ReadonlySet<string>): boolean {
   const level = parseCampaignKey(key);
-  return level !== null && level > 1 ? campaignKey(level - 1) : null;
+  if (level === null) return false;
+  for (let previous = 1; previous < level; previous++) if (!won.has(campaignKey(previous))) return false;
+  return true;
 }

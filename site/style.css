@@ -581,6 +581,14 @@ input[type="range"] {
   color: #3b1d00;
   animation: pulse 1.6s ease-in-out infinite;
 }
+.level.join {
+  background: linear-gradient(180deg, var(--cyan), #1c7ed6);
+  box-shadow:
+    0 var(--press) 0 #0b4f7a,
+    inset 0 2px 0 rgba(255, 255, 255, 0.4);
+  color: #fff;
+  animation: pulse 1.6s ease-in-out infinite;
+}
 @keyframes pulse {
   50% {
     filter: brightness(1.12);
@@ -1109,6 +1117,7 @@ input[type="range"] {
 @media (prefers-reduced-motion: reduce) {
   .brand-icons,
   .level.open,
+  .level.join,
   .ball.fill,
   .tube.sealed::before,
   .modal,

@@ -31,7 +31,10 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - L'accueil liste les jeux. Pour chaque jeu : la grille des niveaux par pages (réussis, jouable, verrouillés),
   la progression de chaque joueur (niveaux réussis, essais, temps), les classements, et le replay de chaque
   partie.
-- Un niveau se débloque en gagnant celui qui le précède ; le serveur refuse une partie sur un niveau verrouillé.
+- Progression individuelle : on joue le premier niveau pas encore gagné (et tous ceux d'avant).
+- Rejoindre : un niveau verrouillé qu'un ami joue en direct peut être rejoint (course sur le même plateau). La
+  victoire compte au classement mais ne fait pas avancer la progression. Le serveur accepte une partie sur un
+  niveau débloqué par le joueur ou par n'importe quel autre joueur, et refuse le reste.
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct.
 - Interface en français et en chinois.
@@ -81,7 +84,7 @@ scripts/build.ts           construction de dist/
 La plateforme ne connaît aucune règle de jeu. Un jeu fournit :
 
 - côté partagé, une `GameDefinition` (`src/shared/games/game.ts`) : ordre des scores, validation des clés de
-  partie, prérequis de déblocage (`prerequisite()`), et `replay()` qui rejoue une partie et calcule son score ;
+  partie, déblocage par la progression (`isUnlocked()`), et `replay()` qui rejoue une partie et calcule son score ;
 - côté client, un `ClientGame` (`src/client/games/client-game.ts`) : nom, libellés, avancement de chaque joueur
   et case de chaque niveau (`levelProgress()`, `levelOf()`, `levelTile()`), écrans de jeu et de replay, et `formatValue` pour afficher un score
   (`null` si seule la réussite compte : la plateforme masque alors scores et classements par score).

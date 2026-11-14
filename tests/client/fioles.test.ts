@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import { highestLevel } from '../../src/client/games/campaign.ts';
 import type { GameView } from '../../src/client/games/client-game.ts';
 import { renderBoard } from '../../src/client/games/fioles/board.ts';
 import { fiolesClient } from '../../src/client/games/fioles/index.ts';
@@ -38,14 +37,21 @@ describe('niveaux', () => {
     },
   });
 
-  it('débloque le niveau qui suit le plus haut niveau gagné', () => {
-    expect(highestLevel(v, ME)).toBe(2);
-    expect(highestLevel(v, OTHER)).toBe(7);
+  it('situe chaque joueur au premier niveau qu’il n’a pas gagné', () => {
     expect(fiolesClient.levelProgress(v, ME)).toEqual({ unlocked: 3, total: MAX_LEVEL });
-    expect(fiolesClient.levelProgress(v, OTHER)).toEqual({ unlocked: 8, total: MAX_LEVEL });
+    expect(fiolesClient.levelProgress(v, OTHER)).toEqual({ unlocked: 1, total: MAX_LEVEL });
     expect(fiolesClient.levelProgress(view(), ME)).toEqual({ unlocked: 1, total: MAX_LEVEL });
     expect(fiolesClient.levelOf('c:12')).toBe(12);
     expect(fiolesClient.levelOf('x')).toBeNull();
+  });
+
+  it('marque réussi un niveau gagné en rejoignant un ami, sans débloquer la suite', () => {
+    const joined = view({
+      records: { 'c:1': [{ player: ME, value: 9, run: 'r1' }], 'c:5': [{ player: ME, value: 30, run: 'r2' }] },
+    });
+    expect(fiolesClient.levelProgress(joined, ME).unlocked).toBe(2);
+    expect(fiolesClient.levelTile(5, joined).status).toBe('done');
+    expect(fiolesClient.levelTile(6, joined).status).toBe('locked');
   });
 
   it('donne l’état de chaque case : réussie avec record, jouable, verrouillée', () => {

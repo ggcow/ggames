@@ -83,6 +83,40 @@ describe('grille', () => {
     expect(cells[0]?.querySelector('.avatar')).toBeNull();
   });
 
+  it('propose de rejoindre un niveau verrouillé qu’un ami joue en direct', () => {
+    const onPlay = vi.fn();
+    const grid = renderLevelGrid({
+      progress: { unlocked: 3, total: 9999 },
+      page: 0,
+      tile,
+      positions: [{ player: 'abc123', name: 'Léa', level: 8, live: true }],
+      t: PLATFORM_STRINGS.fr,
+      onPage: vi.fn(),
+      onPlay,
+    });
+    const cell = grid.querySelectorAll<HTMLButtonElement>('.level')[7];
+    expect(cell?.classList.contains('join')).toBe(true);
+    expect(cell?.disabled).toBe(false);
+    expect(cell?.textContent).toContain('Rejoindre');
+    cell?.click();
+    grid.querySelector<HTMLButtonElement>('.position')?.click();
+    expect(onPlay).toHaveBeenNthCalledWith(1, 'c:8');
+    expect(onPlay).toHaveBeenNthCalledWith(2, 'c:8');
+  });
+
+  it('permet d’aller jusqu’à la page du joueur le plus avancé', () => {
+    const grid = renderLevelGrid({
+      progress: { unlocked: 3, total: 9999 },
+      page: 0,
+      tile,
+      positions: [{ player: 'abc123', name: 'Léa', level: 45, live: false }],
+      t: PLATFORM_STRINGS.fr,
+      onPage: vi.fn(),
+      onPlay: vi.fn(),
+    });
+    expect(grid.querySelector('.pager-label small')?.textContent).toBe('page 1 / 3');
+  });
+
   it('résume les positions et ouvre la page du niveau d’un joueur', () => {
     const onPage = vi.fn();
     const grid = renderLevelGrid({

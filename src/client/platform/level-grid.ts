@@ -90,7 +90,7 @@ const marker = (position: PlayerPosition): HTMLElement => {
   return element;
 };
 
-/** Bande des joueurs avec leur niveau ; toucher un joueur affiche la page de son niveau. */
+/** Bande des joueurs avec leur niveau ; toucher un joueur en direct le rejoint, sinon ouvre la page de son niveau. */
 function renderPositions(options: LevelGridOptions): HTMLElement {
   const { t } = options;
   return h(
@@ -102,7 +102,12 @@ function renderPositions(options: LevelGridOptions): HTMLElement {
         {
           class: position.live ? 'position live' : 'position',
           attrs: { 'aria-label': `${position.name} ${t.levelShort(position.level)}` },
-          on: { click: () => options.onPage(pageOfLevel(position.level)) },
+          on: {
+            click: () =>
+              position.live
+                ? options.onPlay(options.tile(position.level).key)
+                : options.onPage(pageOfLevel(position.level)),
+          },
         },
         avatar(position.player, position.name, 'sm'),
         h(
@@ -118,7 +123,8 @@ function renderPositions(options: LevelGridOptions): HTMLElement {
 
 function renderPager(options: LevelGridOptions, first: number, last: number): HTMLElement {
   const { page, t } = options;
-  const pages = pageCount(options.progress);
+  // Assez de pages pour atteindre le niveau du joueur le plus avancé.
+  const pages = Math.max(pageCount(options.progress), ...options.positions.map((p) => pageOfLevel(p.level) + 1));
   return h(
     'div',
     { class: 'pager' },
@@ -151,15 +157,18 @@ function renderTile(options: LevelGridOptions, level: number): HTMLElement {
   const tile = options.tile(level);
   const here = options.positions.filter((p) => p.level === level);
   const extra = here.length - MAX_MARKERS;
+  // Un niveau verrouillé qu'un ami joue en ce moment peut être rejoint.
+  const state = tile.status === 'locked' && here.some((p) => p.live) ? 'join' : tile.status;
   return h(
     'button',
     {
-      class: `level ${tile.status}`,
-      disabled: tile.status === 'locked',
-      attrs: { 'aria-label': `${tile.label} ${t[`level_${tile.status}`]}` },
+      class: `level ${state}`,
+      disabled: state === 'locked',
+      attrs: { 'aria-label': `${tile.label} ${t[`level_${state}`]}` },
       on: { click: () => options.onPlay(tile.key) },
     },
-    h('span', { class: 'level-number' }, tile.status === 'locked' ? '🔒' : tile.label),
+    h('span', { class: 'level-number' }, state === 'locked' ? '🔒' : tile.label),
+    state === 'join' ? h('span', { class: 'level-best' }, t.join) : null,
     tile.status === 'done' ? h('span', { class: 'level-best' }, tile.best ?? '✓') : null,
     tile.status === 'open' ? h('span', { class: 'level-best' }, t.play) : null,
     here.length > 0

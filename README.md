@@ -7,7 +7,10 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
 
 - Crée un compte avec un pseudo et un mot de passe, puis connecte-toi sur n'importe quel appareil.
 - L'accueil liste les jeux et les joueurs en ligne.
-- Pour chaque jeu : une grille de niveaux par pages. Un niveau se débloque en gagnant le précédent.
+- Pour chaque jeu : une grille de niveaux par pages. Chacun avance à son rythme : un niveau se débloque quand
+  tous les précédents sont gagnés.
+- Si un ami joue un niveau que tu n'as pas encore débloqué, tu peux le rejoindre et faire la course avec lui.
+  La victoire compte au classement, mais ta progression reste la tienne.
 - Sur la grille, chaque joueur apparaît sur son niveau (celui qu'il joue s'il est en ligne).
 - La progression de chacun (niveaux réussis, parties, temps de jeu), les classements et le replay de chaque
   partie.

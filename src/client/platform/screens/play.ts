@@ -1,7 +1,7 @@
 import type { GameState, RecordEntry } from '../../../shared/platform/protocol.ts';
 import type { ClientGame, GameView, Unmount } from '../../games/client-game.ts';
 import { avatar } from '../avatar.ts';
-import { type AppContext, createGameView, type ScreenHandle } from '../context.ts';
+import { type AppContext, createGameView, type ScreenHandle, wonKeys } from '../context.ts';
 import { type Child, h, replaceChildren } from '../dom.ts';
 import { chip, errorMessage, loading, screenHeader, showModal, toast } from '../ui.ts';
 import { renderLiveBoards } from './online.ts';
@@ -37,7 +37,9 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     const others = ctx.live.presence.filter((p) => p.player !== ctx.me.id && p.game === gameId && p.key === key);
     replaceChildren(
       liveHost,
-      others.length > 0 ? h('small', { class: 'section-title' }, t.alsoHere) : null,
+      others.length > 0
+        ? h('small', { class: 'section-title' }, t.raceWith(others.map((p) => p.name).join(', ')))
+        : null,
       renderLiveBoards(others, ctx, gameId),
     );
   };
@@ -93,8 +95,16 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     ];
   };
 
+  /** Niveau suivant, proposé seulement si sa propre progression l'a débloqué après cette victoire. */
+  const nextAfterWin = (): string | null => {
+    if (!view) return null;
+    const next = game.nextKey(key, view);
+    const won = wonKeys(view.state, ctx.me.id).add(key);
+    return next !== null && game.definition.isUnlocked(next, won) ? next : null;
+  };
+
   const showResult = (won: boolean, value: number, records: RecordEntry[]) => {
-    const next = view ? game.nextKey(key, view) : null;
+    const next = won ? nextAfterWin() : null;
     showModal(
       [
         h('div', { class: 'modal-emoji' }, won ? '🎉' : '😵'),
@@ -110,10 +120,13 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     );
   };
 
-  /** Le prérequis de la clé est gagné (le serveur refuserait sinon d'enregistrer la partie). */
-  const isUnlocked = (state: GameState) => {
-    const required = game.definition.prerequisite(key);
-    return required === null || (state.records[required] ?? []).some((r) => r.player === ctx.me.id);
+  /** Un ami joue cette clé en ce moment : on peut le rejoindre même si on ne l'a pas encore débloquée. */
+  const friendHere = () => ctx.live.presence.some((p) => p.player !== ctx.me.id && p.game === gameId && p.key === key);
+
+  /** Jouable : débloquée par sa progression, déjà gagnée, ou rejointe en direct. */
+  const canPlay = (state: GameState) => {
+    const won = wonKeys(state, ctx.me.id);
+    return game.definition.isUnlocked(key, won) || won.has(key) || friendHere();
   };
 
   const showLocked = () =>
@@ -137,7 +150,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         view = createGameView(state, ctx.me.id, ctx.lang);
         renderRecord();
         if (!first) return;
-        if (!isUnlocked(state)) return showLocked();
+        if (!canPlay(state)) return showLocked();
         replaceChildren(
           host,
           screenHeader(game.keyLabel(key, ctx.lang), () => ctx.navigate({ name: 'game', game: gameId }), t),

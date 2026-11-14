@@ -68,7 +68,7 @@ describe('parties', () => {
     expect((await submit(token, { key: 'c:0', status: 'abandoned', durationMs: 1, replay: '' })).status).toBe(400);
   });
 
-  it('refuse un niveau verrouillé puis l’accepte une fois le précédent gagné', async () => {
+  it('refuse un niveau que personne n’a débloqué, puis l’accepte une fois le précédent gagné', async () => {
     const { token } = await newPlayer();
     const win2 = encodeActions(solution(campaignBoard(2)));
     expect((await submit(token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(403);
@@ -76,6 +76,16 @@ describe('parties', () => {
     expect((await submit(token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(403);
     await submit(token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });
     expect((await submit(token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(200);
+  });
+
+  it('accepte un niveau débloqué par un autre joueur : on peut le rejoindre', async () => {
+    const leader = await newPlayer();
+    const joiner = await newPlayer();
+    const win2 = encodeActions(solution(campaignBoard(2)));
+    await submit(leader.token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });
+    expect((await submit(joiner.token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(200);
+    const win3 = encodeActions(solution(campaignBoard(3)));
+    expect((await submit(joiner.token, { key: 'c:3', status: 'won', durationMs: 1, replay: win3 })).status).toBe(403);
   });
 
   it('calcule progression, détail par niveau et replay consultable', async () => {
