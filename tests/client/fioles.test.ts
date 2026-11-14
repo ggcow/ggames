@@ -4,6 +4,7 @@ import { MIN_TUBE, MINI_WIDTH, renderBoard, renderMiniBoard, tubeWidth } from '.
 import { fiolesClient } from '../../src/client/games/fioles/index.ts';
 import { mountFiolesPlay } from '../../src/client/games/fioles/play.ts';
 import { mountFiolesReplay } from '../../src/client/games/fioles/replay.ts';
+import { boardStatus } from '../../src/client/games/fioles/status.ts';
 import { FIOLES_STRINGS } from '../../src/client/games/fioles/strings.ts';
 import { createGameView } from '../../src/client/platform/context.ts';
 import { MAX_LEVEL } from '../../src/shared/games/campaign.ts';
@@ -173,11 +174,39 @@ describe('plateau', () => {
     expect(tubeWidth(3, 900)).toBe(56);
   });
 
-  it('dessine un aperçu qui tient dans la moitié d’un écran de téléphone', () => {
+  it('dessine un aperçu compact qui tient dans la moitié d’un écran de téléphone', () => {
     const board = Array.from({ length: 14 }, () => [0, 1]);
     const mini = renderMiniBoard(board);
     const width = Number.parseInt(mini.querySelector<HTMLElement>('.board')?.style.getPropertyValue('--tw') ?? '', 10);
-    // Sept fioles par rangée et leurs écarts (28 % d'une fiole) dans la largeur d'un aperçu.
-    expect(7 * width + 6 * width * 0.28).toBeLessThanOrEqual(MINI_WIDTH);
+    // Une seule rangée : 14 fioles et leurs écarts (28 % d'une fiole) dans la largeur d'un aperçu.
+    expect(14 * width + 13 * width * 0.28).toBeLessThanOrEqual(MINI_WIDTH);
+    expect(mini.querySelectorAll('.board-row')).toHaveLength(1);
+  });
+});
+
+describe('indicateur en direct', () => {
+  it('distingue le début, l’impasse, la fin proche et le reste', () => {
+    const start = parseBoard('aaab.bbba..');
+    expect(start).not.toBeNull();
+    expect(boardStatus(start ?? [], 0)).toBe('start');
+
+    const stuck = [
+      [0, 1, 0, 1],
+      [1, 0, 1, 0],
+      [2, 3, 2, 3],
+      [3, 2, 3, 2],
+    ];
+    expect(boardStatus(stuck, 3)).toBe('stuck');
+
+    const close = [[0, 0, 0, 0], [1, 1, 2, 2], [2, 2, 1, 1], []];
+    expect(boardStatus(close, 2)).toBe('close');
+
+    const far = [[0, 0, 0, 1], [1, 1, 2, 2], [2, 2, 3, 3], [3, 3, 1, 1], []];
+    expect(boardStatus(far, 2)).toBe('far');
+  });
+
+  it('lit un état de jeu valide, et rien d’autre', () => {
+    expect(fiolesClient.liveStatus('abab.baba..', 0)).toBe('start');
+    expect(fiolesClient.liveStatus('n’importe quoi', 0)).toBeNull();
   });
 });

@@ -853,8 +853,11 @@ input[type="range"] {
   gap: 10px;
 }
 .live-board {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   min-width: 0;
-  padding: 6px 8px;
+  padding: 5px 8px;
   border-radius: 16px;
   background: var(--surface);
   box-shadow: 0 4px 0 var(--surface-edge);
@@ -876,6 +879,41 @@ input[type="range"] {
   color: var(--yellow);
   font-weight: 800;
   white-space: nowrap;
+}
+.live-status {
+  align-self: flex-start;
+  padding: 1px 7px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.live-status::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: 1px;
+}
+.live-status.start {
+  color: #74c0fc;
+  background: rgba(116, 192, 252, 0.16);
+}
+.live-status.far {
+  color: #ffd43b;
+  background: rgba(255, 212, 59, 0.16);
+}
+.live-status.close {
+  color: #69db7c;
+  background: rgba(105, 219, 124, 0.18);
+}
+.live-status.stuck {
+  color: #ff8787;
+  background: rgba(255, 135, 135, 0.18);
 }
 
 /* ---------- Plateau (fioles) ---------- */
@@ -986,16 +1024,20 @@ input[type="range"] {
     transform: translateX(6px);
   }
 }
+.mini {
+  display: flex;
+  justify-content: center;
+}
 .mini .board {
-  gap: 8px;
-  padding: 4px 0;
+  gap: 4px;
+  padding: 2px 0;
 }
 .mini .tube {
   padding-top: 0;
   cursor: default;
 }
 .mini .tube .glass {
-  border-width: 2px;
+  border-width: 1px;
   padding: 0 1px 1px;
   box-shadow: none;
 }

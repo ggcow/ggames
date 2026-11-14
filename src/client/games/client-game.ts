@@ -17,6 +17,9 @@ export interface GameView {
 /** `done` : gagné au moins une fois. `open` : jouable. `locked` : prérequis pas encore gagné. */
 export type LevelStatus = 'locked' | 'open' | 'done';
 
+/** Situation d'une partie en cours, pour l'indicateur compact d'un aperçu. */
+export type LiveStatus = 'start' | 'far' | 'close' | 'stuck';
+
 /** Case d'un niveau dans la grille. */
 export interface LevelTile {
   key: string;
@@ -75,6 +78,8 @@ export interface ClientGame {
   nextKey(key: string, view: GameView): string | null;
   /** Aperçu de l'état diffusé par un joueur en train de jouer. */
   renderLiveState(state: string): HTMLElement | null;
+  /** Situation de la partie en cours, ou null si l'état est illisible. */
+  liveStatus(state: string, value: number): LiveStatus | null;
   mountPlay(host: HTMLElement, ctx: PlayContext): Unmount;
   mountReplay(host: HTMLElement, ctx: ReplayContext): Unmount;
 }

@@ -1,8 +1,24 @@
 import type { Presence } from '../../../shared/platform/protocol.ts';
+import type { LiveStatus } from '../../games/client-game.ts';
 import { findClientGame } from '../../games/registry.ts';
 import { avatar } from '../avatar.ts';
 import type { AppContext } from '../context.ts';
 import { h } from '../dom.ts';
+import type { PlatformStrings } from '../strings.ts';
+
+/** Libellé de l'indicateur d'avancement, dans la langue de l'interface. */
+const liveStatusLabel = (status: LiveStatus, t: PlatformStrings): string => {
+  switch (status) {
+    case 'start':
+      return t.live_start;
+    case 'far':
+      return t.live_far;
+    case 'close':
+      return t.live_close;
+    case 'stuck':
+      return t.live_stuck;
+  }
+};
 
 /** Joueurs connectés avec ce qu'ils font ; toucher un joueur en partie rejoint son niveau. */
 export function renderOnline(others: readonly Presence[], ctx: AppContext): HTMLElement {
@@ -37,8 +53,9 @@ export function renderLiveBoards(others: readonly Presence[], ctx: AppContext, g
   return h(
     'div',
     { class: 'live-boards' },
-    ...others.map((presence) =>
-      h(
+    ...others.map((presence) => {
+      const status = presence.state ? game.liveStatus(presence.state, presence.value) : null;
+      return h(
         'div',
         { class: 'live-board' },
         h(
@@ -48,8 +65,9 @@ export function renderLiveBoards(others: readonly Presence[], ctx: AppContext, g
           h('strong', null, presence.name),
           game.formatValue ? h('small', null, game.formatValue(presence.value, ctx.lang)) : null,
         ),
+        status ? h('span', { class: `live-status ${status}` }, liveStatusLabel(status, ctx.t)) : null,
         presence.state ? game.renderLiveState(presence.state) : null,
-      ),
-    ),
+      );
+    }),
   );
 }

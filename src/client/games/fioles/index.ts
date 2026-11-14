@@ -8,6 +8,7 @@ import type { ClientGame } from '../client-game.ts';
 import { renderMiniBoard } from './board.ts';
 import { mountFiolesPlay } from './play.ts';
 import { mountFiolesReplay } from './replay.ts';
+import { boardStatus } from './status.ts';
 import { FIOLES_STRINGS } from './strings.ts';
 
 export const fiolesClient: ClientGame = {
@@ -23,6 +24,11 @@ export const fiolesClient: ClientGame = {
   renderLiveState(state) {
     const board = parseBoard(state);
     return board ? renderMiniBoard(board) : null;
+  },
+
+  liveStatus(state, value) {
+    const board = parseBoard(state);
+    return board ? boardStatus(board, value) : null;
   },
 
   mountPlay(host, ctx) {
