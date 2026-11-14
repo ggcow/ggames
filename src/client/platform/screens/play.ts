@@ -145,6 +145,8 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
 
   const voiceHost = h('div', { class: 'race-voices' });
   voiceHost.hidden = true;
+  const recordingHost = h('div', { class: 'race-recording' });
+  recordingHost.hidden = true;
   const audioCache = new Map<string, string>();
   let raceVoices: RaceVoice[] = [];
   let recording = false;
@@ -229,27 +231,28 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
 
   let recorder: VoiceRecorder | null = null;
   let mic: HTMLButtonElement | null = null;
+  const renderRecording = () => {
+    recordingHost.hidden = !recording;
+    if (!recording) return;
+    replaceChildren(
+      recordingHost,
+      h('span', { class: 'recording-time' }, t.voiceTimer(recordingSeconds)),
+      h(
+        'button',
+        {
+          class: 'round small voice-send',
+          type: 'button',
+          attrs: { 'aria-label': t.voiceSend },
+          on: { click: () => recorder?.send() },
+        },
+        '➤',
+      ),
+    );
+  };
   const renderVoices = () => {
-    if (recording) {
-      voiceHost.hidden = false;
-      replaceChildren(
-        voiceHost,
-        h(
-          'div',
-          { class: 'race-recording' },
-          h('span', { class: 'recording-time' }, t.voiceTimer(recordingSeconds)),
-          h(
-            'button',
-            { class: 'btn primary small', type: 'button', on: { click: () => recorder?.send() } },
-            t.voiceSend,
-          ),
-        ),
-      );
-      return;
-    }
     const visible = raceVoices.filter((note) => note.player === ctx.me.id || !note.read);
     for (const note of visible) preloadRaceVoice(note);
-    voiceHost.hidden = visible.length === 0;
+    voiceHost.hidden = recording || visible.length === 0;
     replaceChildren(voiceHost, ...visible.map(raceVoiceRow));
   };
 
@@ -266,6 +269,9 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         mic.setAttribute('aria-label', active ? t.voiceCancel : t.voiceRecord);
         mic.hidden = rivals().length === 0 && !active;
       }
+      recordHost.hidden = active;
+      reactionButton.hidden = rivals().length === 0 || active;
+      renderRecording();
       renderVoices();
     },
   });
@@ -287,6 +293,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
       )
     : null;
   if (mic) mic.hidden = true;
+  renderRecording();
   renderVoices();
 
   const showRaceVoice = (note: RaceVoice) => {
@@ -317,7 +324,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
 
   const renderLive = () => {
     const others = rivals();
-    reactionButton.hidden = others.length === 0;
+    reactionButton.hidden = others.length === 0 || recording;
     if (mic) mic.hidden = others.length === 0 && !recording;
     if (others.length === 0) closeReactions?.();
     replaceChildren(liveHost, renderLiveBoards(others.slice(0, RACE_SIZE - 1), ctx, gameId));
@@ -438,6 +445,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
             t,
             recordHost,
             reactionButton,
+            recordingHost,
             mic,
           ),
           liveHost,

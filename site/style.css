@@ -495,10 +495,19 @@ input[type="range"] {
   display: none;
 }
 .race-voices {
+  position: fixed;
+  top: max(64px, env(safe-area-inset-top) + 56px);
+  left: 50%;
+  z-index: 7;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
   gap: 6px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.race-voices > * {
+  pointer-events: auto;
 }
 .race-voices[hidden] {
   display: none;
@@ -525,14 +534,23 @@ input[type="range"] {
 }
 .race-recording {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 6px 10px;
-  border-radius: 14px;
+  gap: 6px;
+  padding: 2px 4px 2px 8px;
+  border-radius: 99px;
   background: var(--surface);
   box-shadow: 0 3px 0 var(--surface-edge);
+}
+.race-recording[hidden] {
+  display: none;
+}
+.race-recording .recording-time {
+  font-size: 12px;
+}
+.voice-send {
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
 }
 .chat-form {
   position: sticky;
@@ -944,6 +962,9 @@ input[type="range"] {
   display: flex;
   justify-content: flex-end;
 }
+.record[hidden] {
+  display: none;
+}
 .record-badge {
   padding: 3px 8px 3px 6px;
   color: var(--yellow);
@@ -988,7 +1009,7 @@ input[type="range"] {
 }
 .reaction-bubbles {
   position: fixed;
-  top: max(64px, env(safe-area-inset-top) + 56px);
+  top: max(104px, env(safe-area-inset-top) + 96px);
   left: 50%;
   z-index: 6;
   display: flex;
