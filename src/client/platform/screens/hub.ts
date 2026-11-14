@@ -13,7 +13,7 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
   const { t, api } = ctx;
   let summaries: GameSummary[] | null = null;
   const onlineHost = h('div');
-  const contentHost = h('div');
+  const contentHost = h('div', { class: 'screen-content' });
   const chat = chatPanel(ctx);
   const chatSection = section(t.chat, chat.element);
   let mounted = false;

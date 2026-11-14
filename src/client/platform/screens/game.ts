@@ -18,7 +18,7 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
   let page: number | null = null;
   const onlineHost = h('div');
   const gridHost = h('div');
-  const contentHost = h('div');
+  const contentHost = h('div', { class: 'screen-content' });
   const chat = chatPanel(ctx);
   const chatSection = section(t.chat, chat.element);
   let mounted = false;

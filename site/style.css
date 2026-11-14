@@ -55,6 +55,12 @@ body {
   flex-direction: column;
   gap: 18px;
 }
+/* Partie d'un écran redessinée à chaque changement, au-dessus du salon : mêmes espacements que l'écran. */
+.screen-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
 
 h1,
 h2,
