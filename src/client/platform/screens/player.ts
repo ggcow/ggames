@@ -49,7 +49,11 @@ export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame
       ),
       detail.keys.length > 0
         ? section(t.levels, h('div', { class: 'list' }, ...detail.keys.map(keyRow)))
-        : h('p', { class: 'muted empty-line' }, t.noRuns),
+        : h(
+            'p',
+            { class: 'muted empty-line' },
+            detail.player.id === ctx.me.id || !detail.progress ? t.noRuns : t.noSharedReplays,
+          ),
     );
   };
 

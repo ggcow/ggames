@@ -130,23 +130,35 @@ export class World extends DurableObject<Env> {
   }
 
   async getPlayerDetail(token: unknown, gameId: unknown, playerId: unknown): Promise<Result<PlayerGameDetail>> {
-    if (!(await this.authenticate(token))) return unauthorized();
+    const me = await this.authenticate(token);
+    if (!me) return unauthorized();
     const game = findGame(gameId);
     if (!game) return unknownGame();
     const player = typeof playerId === 'string' ? this.store.findPlayer(playerId) : null;
     if (!player) return fail(404, 'unknown player');
+    const keys = this.store.keyProgress(game.id, player.id, game.scoreOrder);
+    const viewerWon = player.id === me.id ? null : this.store.wonKeys(game.id, me.id);
     return ok({
       player,
       progress: this.store.progress(game.id, player.id)[0] ?? null,
-      keys: this.store.keyProgress(game.id, player.id, game.scoreOrder),
+      // La fiche d'un ami ne liste que les niveaux réussis par les deux : les autres replays révéleraient
+      // une solution, ou n'existent pas.
+      keys: viewerWon ? keys.filter((key) => key.wins > 0 && viewerWon.has(key.key)) : keys,
     });
   }
 
-  /** Replay d'une partie gagnée : une partie perdue ou abandonnée n'est pas consultable. */
+  /**
+   * Replay d'une partie gagnée. Un joueur ne voit que les replays des niveaux qu'il a lui-même réussis :
+   * sinon, le replay donnerait la solution d'un niveau encore à jouer.
+   */
   async getRun(token: unknown, runId: unknown): Promise<Result<Run>> {
-    if (!(await this.authenticate(token))) return unauthorized();
+    const me = await this.authenticate(token);
+    if (!me) return unauthorized();
     const run = typeof runId === 'string' ? this.store.findRun(runId) : null;
     if (run?.status !== 'won') return fail(404, 'unknown run');
+    if (run.player !== me.id && !this.store.wonKeys(run.game, me.id).has(run.key)) {
+      return fail(404, 'unknown run');
+    }
     return ok(run);
   }
 

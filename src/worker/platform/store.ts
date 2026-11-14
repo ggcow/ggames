@@ -153,6 +153,16 @@ export class PlatformStore {
     );
   }
 
+  /** Clés gagnées au moins une fois par un joueur. */
+  wonKeys(game: GameId, player: PlayerId): Set<string> {
+    const rows = this.sql.exec<{ key: string }>(
+      "SELECT DISTINCT key FROM runs WHERE game = ? AND player = ? AND status = 'won'",
+      game,
+      player,
+    );
+    return new Set(rows.toArray().map((row) => row.key));
+  }
+
   /** Clés gagnées au moins une fois, par joueur. */
   wonKeysByPlayer(game: GameId): Map<PlayerId, Set<string>> {
     const won = new Map<PlayerId, Set<string>>();
