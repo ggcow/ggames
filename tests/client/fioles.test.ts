@@ -181,13 +181,16 @@ describe('plateau', () => {
     expect(tubeWidth(3, 900)).toBe(56);
   });
 
-  it('dessine un aperçu compact qui tient dans la moitié d’un écran de téléphone', () => {
+  it('dessine un aperçu lisible sur deux rangées au-delà de six fioles', () => {
     const board = Array.from({ length: 14 }, () => [0, 1]);
     const mini = renderMiniBoard(board);
     const width = Number.parseInt(mini.querySelector<HTMLElement>('.board')?.style.getPropertyValue('--tw') ?? '', 10);
-    // Une seule rangée : 14 fioles et leurs écarts (28 % d'une fiole) dans la largeur d'un aperçu.
-    expect(14 * width + 13 * width * 0.28).toBeLessThanOrEqual(MINI_WIDTH);
-    expect(mini.querySelectorAll('.board-row')).toHaveLength(1);
+    const rows = [...mini.querySelectorAll('.board-row')];
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.children).toHaveLength(7);
+    expect(width).toBeGreaterThanOrEqual(10);
+    // Sept fioles et leurs écarts (28 % d'une fiole) dans la largeur d'un aperçu.
+    expect(7 * width + 6 * width * 0.28).toBeLessThanOrEqual(MINI_WIDTH);
   });
 });
 

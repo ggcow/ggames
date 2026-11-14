@@ -21,7 +21,7 @@ export interface BoardOptions {
 export const MIN_TUBE = 24;
 
 /** Largeur d'un aperçu : deux aperçus tiennent côte à côte sur un écran de 375 px. */
-export const MINI_WIDTH = 120;
+export const MINI_WIDTH = 150;
 
 /** Largeur d'une fiole selon le nombre de fioles par rangée et la place disponible. */
 export function tubeWidth(perRow: number, available: number, min = MIN_TUBE): number {
@@ -68,12 +68,12 @@ function renderTube(tube: readonly number[], index: number, options: BoardOption
 }
 
 /**
- * Petit plateau non interactif (aperçu en direct d'un autre joueur), sur une seule rangée pour rester
- * compact : deux aperçus côte à côte laissent la place au plateau du joueur.
+ * Petit plateau non interactif (aperçu en direct d'un autre joueur). Deux rangées au-delà de six fioles,
+ * comme le plateau jouable, pour que les fioles restent lisibles.
  */
 export function renderMiniBoard(board: ReadonlyBoard): HTMLElement {
   const host = h('div', { class: 'mini' });
-  renderBoard(host, board, { width: MINI_WIDTH, minTube: 6, rows: 1 });
+  renderBoard(host, board, { width: MINI_WIDTH, minTube: 6, rows: board.length <= 6 ? 1 : 2 });
   return host;
 }
 
