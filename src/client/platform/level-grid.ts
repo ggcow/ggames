@@ -4,6 +4,7 @@
 import type { PlayerId, PlayerInfo, Presence } from '../../shared/platform/protocol.ts';
 import type { LevelProgress, LevelTile } from '../games/client-game.ts';
 import { avatar } from './avatar.ts';
+import { canJoinRace } from './context.ts';
 import { h } from './dom.ts';
 import type { PlatformStrings } from './strings.ts';
 
@@ -157,8 +158,9 @@ function renderTile(options: LevelGridOptions, level: number): HTMLElement {
   const tile = options.tile(level);
   const here = options.positions.filter((p) => p.level === level);
   const extra = here.length - MAX_MARKERS;
-  // Un niveau verrouillé qu'un ami joue en ce moment peut être rejoint.
-  const state = tile.status === 'locked' && here.some((p) => p.live) ? 'join' : tile.status;
+  // Un niveau verrouillé qu'un ami joue en ce moment peut être rejoint, tant que la course n'est pas complète.
+  const joinable = canJoinRace(here.filter((p) => p.live).length);
+  const state = tile.status === 'locked' && joinable ? 'join' : tile.status;
   return h(
     'button',
     {

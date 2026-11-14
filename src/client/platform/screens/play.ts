@@ -1,13 +1,45 @@
 import type { GameState, RecordEntry } from '../../../shared/platform/protocol.ts';
 import type { ClientGame, GameView, Unmount } from '../../games/client-game.ts';
 import { avatar } from '../avatar.ts';
-import { type AppContext, createGameView, type ScreenHandle, wonKeys } from '../context.ts';
+import {
+  type AppContext,
+  canJoinRace,
+  createGameView,
+  RACE_SIZE,
+  rivalsOn,
+  type ScreenHandle,
+  wonKeys,
+} from '../context.ts';
 import { type Child, h, replaceChildren } from '../dom.ts';
-import { chip, errorMessage, loading, screenHeader, showModal, toast } from '../ui.ts';
+import type { Lang } from '../i18n.ts';
+import type { PlatformStrings } from '../strings.ts';
+import { errorMessage, loading, screenHeader, showModal, toast } from '../ui.ts';
 import { renderLiveBoards } from './online.ts';
 
+/** Record de la clé en badge compact pour l'en-tête : avatar du détenteur et score, phrase complète en titre. */
+export function recordBadge(
+  view: GameView,
+  key: string,
+  format: ((value: number, lang: Lang) => string) | null,
+  t: PlatformStrings,
+): HTMLElement | null {
+  const best = view.state.records[key]?.[0];
+  if (!best || !format) return null;
+  const name = view.playerName(best.player);
+  const value = format(best.value, view.lang);
+  const text = t.record(name, value);
+  return h(
+    'span',
+    { class: 'chip record-badge', attrs: { title: text, 'aria-label': text } },
+    '🏆',
+    avatar(best.player, name, 'xs'),
+    value,
+  );
+}
+
 /**
- * Cadre d'une partie : en-tête, record, autres joueurs en direct, puis l'écran de jeu fourni par le jeu.
+ * Cadre d'une partie, pensé pour un téléphone : en-tête avec le record, aperçus en petit d'au plus deux
+ * adversaires en direct, puis son propre plateau en grand, fourni par le jeu.
  * Enregistre la partie à la fin, ou comme abandonnée si le joueur quitte en cours de route.
  */
 export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, key: string): ScreenHandle {
@@ -22,27 +54,11 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
   let pending: { replay: string; value: number } | null = null;
 
   const format = game.formatValue;
+  const rivals = () => rivalsOn(ctx.live.presence, ctx.me.id, gameId, key);
 
-  const renderRecord = () => {
-    const best = view?.state.records[key]?.[0];
-    replaceChildren(
-      recordHost,
-      best && view && format
-        ? chip(`🏆 ${t.record(view.playerName(best.player), format(best.value, ctx.lang))}`)
-        : null,
-    );
-  };
+  const renderRecord = () => replaceChildren(recordHost, view ? recordBadge(view, key, format, t) : null);
 
-  const renderLive = () => {
-    const others = ctx.live.presence.filter((p) => p.player !== ctx.me.id && p.game === gameId && p.key === key);
-    replaceChildren(
-      liveHost,
-      others.length > 0
-        ? h('small', { class: 'section-title' }, t.raceWith(others.map((p) => p.name).join(', ')))
-        : null,
-      renderLiveBoards(others, ctx, gameId),
-    );
-  };
+  const renderLive = () => replaceChildren(liveHost, renderLiveBoards(rivals().slice(0, RACE_SIZE - 1), ctx, gameId));
 
   const submitAbandon = () => {
     if (!pending || pending.value === 0) return;
@@ -120,13 +136,13 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     );
   };
 
-  /** Un ami joue cette clé en ce moment : on peut le rejoindre même si on ne l'a pas encore débloquée. */
-  const friendHere = () => ctx.live.presence.some((p) => p.player !== ctx.me.id && p.game === gameId && p.key === key);
-
-  /** Jouable : débloquée par sa progression, déjà gagnée, ou rejointe en direct. */
+  /**
+   * Jouable : débloquée par sa progression, déjà gagnée, ou rejointe en direct auprès d'un ami tant que la
+   * course n'est pas complète.
+   */
   const canPlay = (state: GameState) => {
     const won = wonKeys(state, ctx.me.id);
-    return game.definition.isUnlocked(key, won) || won.has(key) || friendHere();
+    return game.definition.isUnlocked(key, won) || won.has(key) || canJoinRace(rivals().length);
   };
 
   const showLocked = () =>
@@ -138,7 +154,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         { class: 'empty' },
         h('span', { class: 'empty-icon' }, '🔒'),
         h('h2', null, t.locked),
-        h('p', { class: 'muted' }, t.lockedHint),
+        h('p', { class: 'muted' }, rivals().length >= RACE_SIZE ? t.raceFull : t.lockedHint),
       ),
     );
 
@@ -153,8 +169,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         if (!canPlay(state)) return showLocked();
         replaceChildren(
           host,
-          screenHeader(game.keyLabel(key, ctx.lang), () => ctx.navigate({ name: 'game', game: gameId }), t),
-          recordHost,
+          screenHeader(game.keyLabel(key, ctx.lang), () => ctx.navigate({ name: 'game', game: gameId }), t, recordHost),
           liveHost,
           boardHost,
         );

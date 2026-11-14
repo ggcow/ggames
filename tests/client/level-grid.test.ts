@@ -104,6 +104,21 @@ describe('grille', () => {
     expect(onPlay).toHaveBeenNthCalledWith(2, 'c:8');
   });
 
+  it('ne propose pas de rejoindre une course déjà complète', () => {
+    const grid = renderLevelGrid({
+      progress: { unlocked: 3, total: 9999 },
+      page: 0,
+      tile,
+      positions: ['a1', 'b2', 'c3'].map((player) => ({ player, name: player, level: 8, live: true })),
+      t: PLATFORM_STRINGS.fr,
+      onPage: vi.fn(),
+      onPlay: vi.fn(),
+    });
+    const cell = grid.querySelectorAll<HTMLButtonElement>('.level')[7];
+    expect(cell?.classList.contains('locked')).toBe(true);
+    expect(cell?.disabled).toBe(true);
+  });
+
   it('permet d’aller jusqu’à la page du joueur le plus avancé', () => {
     const grid = renderLevelGrid({
       progress: { unlocked: 3, total: 9999 },

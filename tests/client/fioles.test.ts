@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { GameView } from '../../src/client/games/client-game.ts';
-import { renderBoard } from '../../src/client/games/fioles/board.ts';
+import { MIN_TUBE, MINI_WIDTH, renderBoard, renderMiniBoard, tubeWidth } from '../../src/client/games/fioles/board.ts';
 import { fiolesClient } from '../../src/client/games/fioles/index.ts';
 import { mountFiolesPlay } from '../../src/client/games/fioles/play.ts';
 import { mountFiolesReplay } from '../../src/client/games/fioles/replay.ts';
@@ -122,6 +122,15 @@ describe('partie', () => {
     expect(onProgress).toHaveBeenLastCalledWith({ state: data, value: 0, replay: '' });
   });
 
+  it('place le compteur sur le plateau et les boutons dessous, sans rangée à part', () => {
+    const host = document.createElement('div');
+    mountFiolesPlay(host, { start, strings: FIOLES_STRINGS.fr, onProgress: vi.fn(), onWin: vi.fn() });
+    expect([...host.children].map((child) => child.className)).toEqual(['table', 'controls']);
+    expect(host.querySelector('.table > .counter')?.textContent).toBe('0 coups');
+    const buttons = [...(host.querySelector('.controls')?.children ?? [])];
+    expect(buttons.map((child) => child.textContent)).toEqual(['↶ Annuler', '⟲ Recommencer']);
+  });
+
   it('sélectionne puis désélectionne une fiole', () => {
     const host = document.createElement('div');
     mountFiolesPlay(host, { start, strings: FIOLES_STRINGS.fr, onProgress: vi.fn(), onWin: vi.fn() });
@@ -156,5 +165,19 @@ describe('plateau', () => {
     expect(tubes.map((t) => t.classList.contains('sealed'))).toEqual([false, true, false, false]);
     renderBoard(host, board, { width: 390 });
     expect(host.querySelectorAll('.sealed')).toHaveLength(0);
+  });
+
+  it('garde des fioles assez larges pour le doigt, sauf sur un aperçu', () => {
+    expect(tubeWidth(7, 140)).toBe(MIN_TUBE);
+    expect(tubeWidth(7, 140, 8)).toBe(15);
+    expect(tubeWidth(3, 900)).toBe(56);
+  });
+
+  it('dessine un aperçu qui tient dans la moitié d’un écran de téléphone', () => {
+    const board = Array.from({ length: 14 }, () => [0, 1]);
+    const mini = renderMiniBoard(board);
+    const width = Number.parseInt(mini.querySelector<HTMLElement>('.board')?.style.getPropertyValue('--tw') ?? '', 10);
+    // Sept fioles par rangée et leurs écarts (28 % d'une fiole) dans la largeur d'un aperçu.
+    expect(7 * width + 6 * width * 0.28).toBeLessThanOrEqual(MINI_WIDTH);
   });
 });

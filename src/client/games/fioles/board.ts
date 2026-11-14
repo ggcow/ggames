@@ -11,17 +11,26 @@ export interface BoardOptions {
   onTap?: (tube: number, element: HTMLElement) => void;
   /** Largeur disponible en pixels. */
   width: number;
+  /** Largeur minimale d'une fiole : assez large pour le doigt sur un plateau jouable. */
+  minTube?: number;
 }
 
+/** Largeur minimale d'une fiole touchable. */
+export const MIN_TUBE = 24;
+
+/** Largeur d'un aperçu : deux aperçus tiennent côte à côte sur un écran de 375 px. */
+export const MINI_WIDTH = 140;
+
 /** Largeur d'une fiole selon le nombre de fioles par rangée et la place disponible. */
-export function tubeWidth(perRow: number, available: number): number {
-  return Math.max(24, Math.min(56, Math.floor(available / (perRow * 1.3))));
+export function tubeWidth(perRow: number, available: number, min = MIN_TUBE): number {
+  return Math.max(min, Math.min(56, Math.floor(available / (perRow * 1.3))));
 }
 
 export function renderBoard(host: HTMLElement, board: ReadonlyBoard, options: BoardOptions): void {
   const rows = board.length <= 6 ? 1 : 2;
   const perRow = Math.ceil(board.length / rows);
-  const element = h('div', { class: 'board', style: { '--tw': `${tubeWidth(perRow, options.width)}px` } });
+  const width = tubeWidth(perRow, options.width, options.minTube);
+  const element = h('div', { class: 'board', style: { '--tw': `${width}px` } });
   for (let row = 0; row < rows; row++) {
     const line = h('div', { class: 'board-row' });
     for (let index = row * perRow; index < Math.min(board.length, (row + 1) * perRow); index++) {
@@ -56,10 +65,10 @@ function renderTube(tube: readonly number[], index: number, options: BoardOption
   return element;
 }
 
-/** Petit plateau non interactif (aperçu en direct d'un autre joueur). */
+/** Petit plateau non interactif (aperçu en direct d'un autre joueur), qui ne dépasse pas `MINI_WIDTH`. */
 export function renderMiniBoard(board: ReadonlyBoard): HTMLElement {
   const host = h('div', { class: 'mini' });
-  renderBoard(host, board, { width: Math.min(board.length * 18 * 1.3, 220) });
+  renderBoard(host, board, { width: Math.min(board.length * 18 * 1.3, MINI_WIDTH), minTube: 8 });
   return host;
 }
 

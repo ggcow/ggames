@@ -32,9 +32,11 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   la progression de chaque joueur (niveaux réussis, essais, temps), les classements, et le replay de chaque
   partie.
 - Progression individuelle : on joue le premier niveau pas encore gagné (et tous ceux d'avant).
-- Rejoindre : un niveau verrouillé qu'un ami joue en direct peut être rejoint (course sur le même plateau). La
-  victoire compte au classement mais ne fait pas avancer la progression. Le serveur accepte une partie sur un
-  niveau débloqué par le joueur ou par n'importe quel autre joueur, et refuse le reste.
+- Rejoindre : un niveau verrouillé qu'un ami joue en direct peut être rejoint (course sur le même plateau, trois
+  joueurs au plus). La victoire compte au classement mais ne fait pas avancer la progression. Le serveur accepte
+  une partie sur un niveau débloqué par le joueur ou par n'importe quel autre joueur, et refuse le reste.
+- Écran de partie pensé pour un téléphone : son plateau en grand en bas, au-dessus au plus deux aperçus des
+  autres joueurs en petit ; record et compteur de coups en badges compacts.
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct.
 - Interface en français et en chinois.

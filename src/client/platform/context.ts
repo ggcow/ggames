@@ -1,4 +1,4 @@
-import type { GameState, PlayerId, PlayerInfo } from '../../shared/platform/protocol.ts';
+import type { GameId, GameState, PlayerId, PlayerInfo, Presence } from '../../shared/platform/protocol.ts';
 import type { GameView } from '../games/client-game.ts';
 import type { ApiClient } from './api.ts';
 import type { Lang } from './i18n.ts';
@@ -34,6 +34,20 @@ export function wonKeys(state: GameState, player: PlayerId): Set<string> {
       .map(([key]) => key),
   );
 }
+
+/**
+ * Joueurs au plus dans une course, soi compris : sur un écran de téléphone, on n'a la place que pour son
+ * plateau et deux aperçus.
+ */
+export const RACE_SIZE = 3;
+
+/** Autres joueurs en direct sur la même clé, dans l'ordre de la présence. */
+export function rivalsOn(presence: readonly Presence[], me: PlayerId, game: GameId, key: string): Presence[] {
+  return presence.filter((p) => p.player !== me && p.game === game && p.key === key);
+}
+
+/** Une course rejointe a encore de la place pour soi. */
+export const canJoinRace = (liveCount: number): boolean => liveCount > 0 && liveCount < RACE_SIZE;
 
 export function createGameView(state: GameState, me: PlayerId, lang: Lang): GameView {
   const names = new Map(state.players.map((p) => [p.id, p.name]));

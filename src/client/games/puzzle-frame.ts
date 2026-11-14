@@ -1,5 +1,6 @@
-// Cadre commun des jeux de réflexion au tour par tour : compteur de coups, plateau, boutons Annuler et
-// Recommencer. Le jeu remplit `table` et met à jour le compteur et l'état des boutons.
+// Cadre commun des jeux de réflexion au tour par tour : le plateau, avec le compteur de coups en pastille sur
+// son bord pour ne pas lui prendre de hauteur sur un téléphone, puis les boutons Annuler et Recommencer.
+// Le jeu remplit `table` et met à jour le compteur et l'état des boutons.
 
 import { h, replaceChildren } from '../platform/dom.ts';
 
@@ -26,8 +27,7 @@ export function mountPuzzleFrame(host: HTMLElement, options: PuzzleFrameOptions)
   };
   replaceChildren(
     host,
-    h('div', { class: 'counter-row' }, frame.counter),
-    h('div', { class: 'table' }, frame.table),
+    h('div', { class: 'table' }, frame.counter, frame.table),
     h('div', { class: 'controls' }, frame.undo, frame.restart),
   );
   return frame;

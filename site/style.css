@@ -794,13 +794,16 @@ input[type="range"] {
 
 .record {
   display: flex;
-  justify-content: center;
-  min-height: 24px;
+  justify-content: flex-end;
+}
+.record-badge {
+  padding: 3px 8px 3px 6px;
+  color: var(--yellow);
 }
 .play-host {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 .counter-row {
   display: flex;
@@ -815,6 +818,7 @@ input[type="range"] {
   color: var(--yellow);
 }
 .table {
+  position: relative;
   border-radius: 28px;
   padding: 8px 6px;
   background: radial-gradient(100% 80% at 50% 0%, rgba(255, 255, 255, 0.07), transparent 70%), var(--surface);
@@ -831,15 +835,26 @@ input[type="range"] {
   flex: 1;
   max-width: 180px;
 }
+/* Compteur en pastille à cheval sur le bord haut du plateau. */
+.table > .counter {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  padding: 4px 14px;
+  font-size: 15px;
+  white-space: nowrap;
+}
+/* Deux aperçus au plus, côte à côte, sans défilement. */
 .live-boards {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 6px;
 }
 .live-board {
-  flex: none;
-  padding: 8px 10px;
+  min-width: 0;
+  padding: 6px 8px;
   border-radius: 16px;
   background: var(--surface);
   box-shadow: 0 4px 0 var(--surface-edge);
@@ -848,10 +863,19 @@ input[type="range"] {
   display: flex;
   align-items: center;
   gap: 6px;
+  font-size: 13px;
+}
+.live-board-head strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .live-board-head small {
+  margin-left: auto;
   color: var(--yellow);
   font-weight: 800;
+  white-space: nowrap;
 }
 
 /* ---------- Plateau (fioles) ---------- */
@@ -972,6 +996,7 @@ input[type="range"] {
 }
 .mini .tube .glass {
   border-width: 2px;
+  padding: 0 1px 1px;
   box-shadow: none;
 }
 .mini .tube.done::before {
