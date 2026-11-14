@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.4.0](///compare/v0.3.0...v0.4.0) (2026-11-14)
+
+### ⚠ BREAKING CHANGES
+
+* **platform:** GameDefinition.prerequisite est remplacée par isUnlocked(key,
+  won), qui reçoit l'ensemble des clés gagnées par le joueur.
+
+### Fonctionnalités
+
+* **platform:** écran de partie compact pour la course sur téléphone 0d4fd44
+* **platform:** rejoindre un ami sur son niveau, en course f63eb97
+
+### Refactorisation
+
+* **platform:** extraire la campagne de niveaux et le cadre de partie 1ef5b8e
+
 ## [0.3.0](///compare/v0.2.0...v0.3.0) (2026-11-13)
 
 ### ⚠ BREAKING CHANGES
