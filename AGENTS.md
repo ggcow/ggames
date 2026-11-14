@@ -41,8 +41,9 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   autres joueurs en petit ; record et compteur de coups en badges compacts.
 - Pendant une course, chaque joueur envoie des réactions rapides (emojis ou phrases courtes traduites) aux
   joueurs du même niveau. Elles ne sont pas conservées et ne concernent que la course en cours.
-- Un salon global, accessible depuis l'accueil et la page d'un jeu, permet d'échanger des messages texte.
-  L'historique est court (50 derniers messages, 7 jours) et les messages sont limités en longueur et en débit.
+- Un salon global est intégré à l'accueil et à la page d'un jeu : on échange des messages texte directement
+  dans la page. L'historique est court (50 derniers messages, 7 jours) et les messages sont limités en
+  longueur et en débit.
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct.
 - Interface en français et en chinois.

@@ -1,12 +1,18 @@
-import { type ChatMessage, type GameId, LIMITS } from '../../../shared/platform/protocol.ts';
-import { avatar } from '../avatar.ts';
-import type { AppContext, ScreenHandle } from '../context.ts';
-import { h, replaceChildren } from '../dom.ts';
-import { formatTime } from '../i18n.ts';
-import { errorMessage, screenHeader, toast } from '../ui.ts';
+// Salon intégré à une page : historique court et messages en direct, sans écran séparé.
 
-/** Salon global : historique court et messages en direct. */
-export function mountChat(host: HTMLElement, ctx: AppContext, from?: GameId): ScreenHandle {
+import { type ChatMessage, LIMITS } from '../../shared/platform/protocol.ts';
+import { avatar } from './avatar.ts';
+import type { AppContext } from './context.ts';
+import { h, replaceChildren } from './dom.ts';
+import { formatTime } from './i18n.ts';
+import { errorMessage, toast } from './ui.ts';
+
+export interface ChatPanel {
+  element: HTMLElement;
+  dispose(): void;
+}
+
+export function chatPanel(ctx: AppContext): ChatPanel {
   const { t } = ctx;
   const list = h('div', { class: 'chat-list', attrs: { 'aria-live': 'polite' } });
 
@@ -28,7 +34,7 @@ export function mountChat(host: HTMLElement, ctx: AppContext, from?: GameId): Sc
       ),
     );
 
-  const renderMessages = () => {
+  const render = () => {
     if (!ctx.chat.isLoaded) {
       replaceChildren(list, h('p', { class: 'muted empty-line' }, t.loading));
       return;
@@ -69,18 +75,13 @@ export function mountChat(host: HTMLElement, ctx: AppContext, from?: GameId): Sc
     h('button', { class: 'btn primary', type: 'submit' }, t.send),
   );
 
-  replaceChildren(
-    host,
-    screenHeader(t.chat, () => ctx.navigate(from ? { name: 'game', game: from } : { name: 'hub' }), t),
-    list,
-    form,
-  );
-  renderMessages();
-  const unsubscribe = ctx.chat.subscribe(renderMessages);
+  const element = h('div', { class: 'chat-panel' }, list, form);
+  render();
+  const unsubscribe = ctx.chat.subscribe(render);
   void ctx.chat
     .load()
-    .then(renderMessages)
+    .then(render)
     .catch((error: unknown) => toast(errorMessage(error, t)));
 
-  return { dispose: unsubscribe };
+  return { element, dispose: unsubscribe };
 }

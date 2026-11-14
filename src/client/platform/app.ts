@@ -9,7 +9,6 @@ import type { AppContext, ScreenHandle } from './context.ts';
 import { detectLang, isLang, type Lang } from './i18n.ts';
 import { LiveClient } from './live.ts';
 import { formatRoute, type GameRoute, parseRoute, type Route } from './router.ts';
-import { mountChat } from './screens/chat.ts';
 import { mountGame } from './screens/game.ts';
 import { mountHub } from './screens/hub.ts';
 import { mountLogin } from './screens/login.ts';
@@ -165,8 +164,6 @@ export class App {
       case 'login':
       case 'hub':
         return mountHub(this.root, ctx);
-      case 'chat':
-        return mountChat(this.root, ctx, route.game);
       case 'run':
         return mountRun(this.root, ctx, route.run);
       case 'game':
