@@ -4,6 +4,8 @@ import type {
   PlayerId,
   PlayerInfo,
   Presence,
+  RaceVoice,
+  RaceVoiceRead,
   ReactionNotice,
 } from '../../shared/platform/protocol.ts';
 import type { GameView } from '../games/client-game.ts';
@@ -34,6 +36,8 @@ export interface ScreenHandle {
   onDataChanged?(): void;
   onPresenceChanged?(): void;
   onReaction?(reaction: ReactionNotice): void;
+  onRaceVoice?(note: RaceVoice): void;
+  onRaceVoiceRead?(read: RaceVoiceRead): void;
 }
 
 /** Clés qu'un joueur a gagnées au moins une fois. */

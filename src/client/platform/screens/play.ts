@@ -1,4 +1,10 @@
-import type { GameState, ReactionNotice, RecordEntry } from '../../../shared/platform/protocol.ts';
+import type {
+  GameState,
+  RaceVoice,
+  RaceVoiceRead,
+  ReactionNotice,
+  RecordEntry,
+} from '../../../shared/platform/protocol.ts';
 import { findReaction, REACTIONS } from '../../../shared/platform/reactions.ts';
 import type { ClientGame, GameView, Unmount } from '../../games/client-game.ts';
 import { avatar } from '../avatar.ts';
@@ -12,8 +18,9 @@ import {
   wonKeys,
 } from '../context.ts';
 import { type Child, h, replaceChildren } from '../dom.ts';
-import type { Lang } from '../i18n.ts';
+import { formatDuration, type Lang } from '../i18n.ts';
 import { reactionLabel } from '../reactions.ts';
+import { createVoiceRecorder, type VoiceRecorder } from '../recorder.ts';
 import type { PlatformStrings } from '../strings.ts';
 import { errorMessage, loading, screenHeader, showModal, toast } from '../ui.ts';
 import { renderLiveBoards } from './online.ts';
@@ -136,11 +143,182 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     reactionTimers.add(hide);
   };
 
+  const voiceHost = h('div', { class: 'race-voices' });
+  voiceHost.hidden = true;
+  const audioCache = new Map<string, string>();
+  let raceVoices: RaceVoice[] = [];
+  let recording = false;
+  let recordingSeconds = 0;
+  let currentAudio: HTMLAudioElement | null = null;
+  let currentButton: HTMLButtonElement | null = null;
+  let disposed = false;
+
+  const stopRaceAudio = () => {
+    currentAudio?.pause();
+    currentAudio = null;
+    if (currentButton) {
+      currentButton.disabled = false;
+      currentButton.textContent = '▶';
+      currentButton = null;
+    }
+  };
+
+  const preloadRaceVoice = (note: RaceVoice) => {
+    if (audioCache.has(note.id)) return;
+    void api
+      .raceVoice(note.id)
+      .then((blob) => {
+        if (!disposed) audioCache.set(note.id, URL.createObjectURL(blob));
+      })
+      .catch(() => undefined);
+  };
+
+  const playRaceVoice = async (note: RaceVoice, button: HTMLButtonElement) => {
+    stopRaceAudio();
+    button.disabled = true;
+    button.textContent = '⏸';
+    currentButton = button;
+    try {
+      let url = audioCache.get(note.id);
+      if (!url) {
+        const blob = await api.raceVoice(note.id);
+        if (disposed) return;
+        url = URL.createObjectURL(blob);
+        audioCache.set(note.id, url);
+      }
+      if (disposed) return;
+      const audio = new Audio(url);
+      currentAudio = audio;
+      audio.addEventListener('ended', () => {
+        const mine = note.player === ctx.me.id;
+        stopRaceAudio();
+        if (!mine) void api.markRaceVoiceRead(note.id).catch(() => undefined);
+      });
+      audio.addEventListener('error', () => {
+        stopRaceAudio();
+        toast(t.voiceError);
+      });
+      await audio.play();
+    } catch (error) {
+      stopRaceAudio();
+      toast(errorMessage(error, t));
+    }
+  };
+
+  const raceVoiceRow = (note: RaceVoice) => {
+    const mine = note.player === ctx.me.id;
+    const play = h(
+      'button',
+      {
+        class: 'voice-play',
+        type: 'button',
+        attrs: { 'aria-label': t.voicePlay },
+        on: { click: () => void playRaceVoice(note, play) },
+      },
+      '▶',
+    );
+    return h(
+      'div',
+      { class: 'race-voice' },
+      avatar(note.player, note.name, 'xs'),
+      play,
+      h('span', { class: 'voice-duration' }, formatDuration(note.durationMs, ctx.lang)),
+      mine ? h('small', { class: 'voice-read' }, `${note.readCount}/${note.total}`) : null,
+    );
+  };
+
+  let recorder: VoiceRecorder | null = null;
+  let mic: HTMLButtonElement | null = null;
+  const renderVoices = () => {
+    if (recording) {
+      voiceHost.hidden = false;
+      replaceChildren(
+        voiceHost,
+        h(
+          'div',
+          { class: 'race-recording' },
+          h('span', { class: 'recording-time' }, t.voiceTimer(recordingSeconds)),
+          h(
+            'button',
+            { class: 'btn primary small', type: 'button', on: { click: () => recorder?.send() } },
+            t.voiceSend,
+          ),
+        ),
+      );
+      return;
+    }
+    const visible = raceVoices.filter((note) => note.player === ctx.me.id || !note.read);
+    for (const note of visible) preloadRaceVoice(note);
+    voiceHost.hidden = visible.length === 0;
+    replaceChildren(voiceHost, ...visible.map(raceVoiceRow));
+  };
+
+  recorder = createVoiceRecorder({
+    onRecorded: (blob, duration) => {
+      void api.uploadRaceVoice(gameId, key, blob, duration).catch((error: unknown) => toast(errorMessage(error, t)));
+    },
+    onError: (error) => toast(error === 'permission' ? t.voicePermission : t.voiceTooLong),
+    onState: (active, seconds) => {
+      recording = active;
+      recordingSeconds = seconds;
+      if (mic) {
+        mic.textContent = active ? '✖' : '🎙';
+        mic.setAttribute('aria-label', active ? t.voiceCancel : t.voiceRecord);
+        mic.hidden = rivals().length === 0 && !active;
+      }
+      renderVoices();
+    },
+  });
+  mic = recorder.supported
+    ? h(
+        'button',
+        {
+          class: 'round small mic-button',
+          type: 'button',
+          attrs: { 'aria-label': t.voiceRecord },
+          on: {
+            click: () => {
+              if (recorder?.recording) recorder.cancel();
+              else recorder?.start();
+            },
+          },
+        },
+        '🎙',
+      )
+    : null;
+  if (mic) mic.hidden = true;
+  renderVoices();
+
+  const showRaceVoice = (note: RaceVoice) => {
+    if (note.game !== gameId || note.key !== key) return;
+    if (raceVoices.some((item) => item.id === note.id)) return;
+    raceVoices = [...raceVoices, note].sort((a, b) => a.at - b.at);
+    renderVoices();
+  };
+
+  const showRaceVoiceRead = (read: RaceVoiceRead) => {
+    const note = raceVoices.find((item) => item.id === read.id);
+    if (!note) return;
+    const updated = {
+      ...note,
+      readCount: read.readCount,
+      total: read.total,
+      read: note.read || read.player === ctx.me.id,
+    };
+    if (updated.player === ctx.me.id && updated.total > 0 && updated.readCount >= updated.total) {
+      raceVoices = raceVoices.filter((item) => item.id !== read.id);
+    } else {
+      raceVoices = raceVoices.map((item) => (item.id === read.id ? updated : item));
+    }
+    renderVoices();
+  };
+
   const renderRecord = () => replaceChildren(recordHost, view ? recordBadge(view, key, format, t) : null);
 
   const renderLive = () => {
     const others = rivals();
     reactionButton.hidden = others.length === 0;
+    if (mic) mic.hidden = others.length === 0 && !recording;
     if (others.length === 0) closeReactions?.();
     replaceChildren(liveHost, renderLiveBoards(others.slice(0, RACE_SIZE - 1), ctx, gameId));
   };
@@ -260,13 +438,26 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
             t,
             recordHost,
             reactionButton,
+            mic,
           ),
           liveHost,
+          voiceHost,
           boardHost,
           reactionHost,
         );
         renderLive();
         start();
+        const startedAt = Date.now();
+        void api
+          .raceVoices(gameId, key)
+          .then((notes) => {
+            if (disposed) return;
+            const known = new Set(notes.map((note) => note.id));
+            const live = raceVoices.filter((note) => note.at > startedAt - 60_000 && !known.has(note.id));
+            raceVoices = [...notes, ...live].sort((a, b) => a.at - b.at);
+            renderVoices();
+          })
+          .catch(() => undefined);
       })
       .catch((error: unknown) => toast(errorMessage(error, t)));
 
@@ -276,7 +467,14 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     onDataChanged: () => void load(),
     onPresenceChanged: renderLive,
     onReaction: showReaction,
+    onRaceVoice: showRaceVoice,
+    onRaceVoiceRead: showRaceVoiceRead,
     dispose: () => {
+      disposed = true;
+      recorder?.dispose();
+      stopRaceAudio();
+      for (const url of audioCache.values()) URL.revokeObjectURL(url);
+      audioCache.clear();
       submitAbandon();
       unmountGame?.();
       closeReactions?.();

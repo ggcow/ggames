@@ -172,30 +172,38 @@ describe('client API', () => {
     expect(errorMessage(new Error('x'), t)).toBe(t.error_generic);
   });
 
-  it('télécharge et envoie une note vocale', async () => {
+  it('télécharge et envoie des notes vocales', async () => {
     const audio = new Blob([new Uint8Array([1, 2])], { type: 'audio/webm' });
-    const note = {
-      id: 'v2',
-      player: 'abc123',
-      name: 'Léa',
-      durationMs: 1000,
-      mime: 'audio/webm',
-      at: 1,
+    const note = { id: 'v2', player: 'abc123', name: 'Léa', durationMs: 1000, mime: 'audio/webm', at: 1 };
+    const raceNote = {
+      ...note,
+      id: 'r1',
+      game: 'fioles',
+      key: 'c:1',
       readCount: 0,
       total: 1,
       read: false,
     };
-    const fetch = vi.fn(async (input: string) =>
-      input === '/api/voices/v1'
-        ? new Response(audio, { status: 200 })
-        : new Response(JSON.stringify(note), { status: 200 }),
-    );
+    const fetch = vi.fn(async (input: string, init?: RequestInit) => {
+      if (input === '/api/voices/v1' || input === '/api/race-voices/v1') {
+        return new Response(audio, { status: 200 });
+      }
+      if (input.endsWith('/read')) {
+        return new Response(JSON.stringify({ readCount: 1, total: 1 }), { status: 200 });
+      }
+      if (input.includes('/games/')) {
+        return new Response(JSON.stringify(init?.method === 'GET' ? [raceNote] : raceNote), { status: 200 });
+      }
+      return new Response(JSON.stringify(note), { status: 200 });
+    });
     const api = new ApiClient(fetch);
     api.setToken('secret');
 
     expect((await api.voice('v1')).type).toBe('audio/webm');
     expect((await api.uploadVoice(audio, 1000)).id).toBe('v2');
-    await api.markVoiceRead('v1');
+    expect((await api.raceVoices('fioles', 'c:1'))[0]?.id).toBe('r1');
+    expect((await api.uploadRaceVoice('fioles', 'c:1', audio, 1000)).id).toBe('r1');
+    expect(await api.markRaceVoiceRead('r1')).toEqual({ readCount: 1, total: 1 });
 
     expect(fetch).toHaveBeenCalledWith(
       '/api/voices',
@@ -209,7 +217,11 @@ describe('client API', () => {
       }),
     );
     expect(fetch).toHaveBeenCalledWith(
-      '/api/voices/v1/read',
+      '/api/games/fioles/voices?key=c%3A1',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/race-voices/r1/read',
       expect.objectContaining({ method: 'POST', headers: { Authorization: 'Bearer secret' } }),
     );
   });

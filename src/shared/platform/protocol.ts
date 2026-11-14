@@ -142,7 +142,9 @@ export const ROUTES = {
   chat: '/api/chat',
   voices: '/api/voices',
   voice: (id: string) => `/api/voices/${id}`,
-  voiceRead: (id: string) => `/api/voices/${id}/read`,
+  raceVoices: (game: GameId, key: string) => `/api/games/${game}/voices?key=${encodeURIComponent(key)}`,
+  raceVoice: (id: string) => `/api/race-voices/${id}`,
+  raceVoiceRead: (id: string) => `/api/race-voices/${id}/read`,
 } as const;
 
 /* ---------- Temps réel : WebSocket sur ROUTES.live?token=... ---------- */
@@ -176,9 +178,21 @@ export interface ChatMessage {
   at: number;
 }
 
-/** Note vocale du salon. `read` est vrai quand le lecteur l'a déjà écoutée. */
+/** Note vocale du salon : elle reste dans l'historique comme un message normal. */
 export interface VoiceNote {
   id: string;
+  player: PlayerId;
+  name: string;
+  durationMs: number;
+  mime: string;
+  at: number;
+}
+
+/** Note vocale d'une course. `read` est vrai quand le lecteur l'a déjà écoutée. */
+export interface RaceVoice {
+  id: string;
+  game: GameId;
+  key: string;
   player: PlayerId;
   name: string;
   durationMs: number;
@@ -189,8 +203,8 @@ export interface VoiceNote {
   read: boolean;
 }
 
-/** Lecture d'une note par un joueur, pour mettre à jour le compteur de l'auteur. */
-export interface VoiceReadNotice {
+/** Lecture d'une note de course par un joueur, pour mettre à jour le compteur de l'auteur. */
+export interface RaceVoiceRead {
   id: string;
   player: PlayerId;
   readCount: number;
@@ -208,7 +222,8 @@ export type ServerMessage =
   | { type: 'reaction'; reaction: ReactionNotice }
   | { type: 'chat'; message: ChatMessage }
   | { type: 'voice'; note: VoiceNote }
-  | { type: 'voice_read'; read: VoiceReadNotice }
+  | { type: 'race_voice'; note: RaceVoice }
+  | { type: 'race_voice_read'; read: RaceVoiceRead }
   /** Des données ont changé : les clients concernés rechargent. `game` null = données de joueurs. */
   | { type: 'changed'; game: GameId | null };
 
@@ -299,19 +314,32 @@ function parseChatMessage(value: unknown): ChatMessage | null {
 
 function parseVoiceNote(value: unknown): VoiceNote | null {
   if (!isRecord(value)) return null;
-  const { id, player, name, mime, read } = value;
+  const { id, player, name, mime } = value;
+  const durationMs = value['durationMs'];
+  const at = value['at'];
+  if (!isId(id) || !isId(player) || !isShortString(name, LIMITS.name)) return null;
+  if (!isCount(durationMs) || durationMs <= 0 || durationMs > LIMITS.voiceDurationMs) return null;
+  if (typeof mime !== 'string' || !mime.startsWith('audio/') || mime.length > 40) return null;
+  if (!isTimestamp(at)) return null;
+  return { id, player, name, durationMs, mime, at };
+}
+
+function parseRaceVoice(value: unknown): RaceVoice | null {
+  if (!isRecord(value)) return null;
+  const { id, game, key, player, name, mime, read } = value;
   const durationMs = value['durationMs'];
   const at = value['at'];
   const readCount = value['readCount'];
   const total = value['total'];
-  if (!isId(id) || !isId(player) || !isShortString(name, LIMITS.name)) return null;
+  if (!isId(id) || !isGameId(game) || !isShortString(key, LIMITS.key) || !isId(player)) return null;
+  if (!isShortString(name, LIMITS.name)) return null;
   if (!isCount(durationMs) || durationMs <= 0 || durationMs > LIMITS.voiceDurationMs) return null;
   if (typeof mime !== 'string' || !mime.startsWith('audio/') || mime.length > 40) return null;
   if (!isTimestamp(at) || !isCount(readCount) || !isCount(total) || typeof read !== 'boolean') return null;
-  return { id, player, name, durationMs, mime, at, readCount, total, read };
+  return { id, game, key, player, name, durationMs, mime, at, readCount, total, read };
 }
 
-function parseVoiceRead(value: unknown): VoiceReadNotice | null {
+function parseRaceVoiceRead(value: unknown): RaceVoiceRead | null {
   if (!isRecord(value)) return null;
   const { id, player, readCount, total } = value;
   if (!isId(id) || !isId(player) || !isCount(readCount) || !isCount(total)) return null;
@@ -337,9 +365,13 @@ export function parseServerMessage(raw: string): ServerMessage | null {
     const note = parseVoiceNote(msg['note']);
     return note ? { type: 'voice', note } : null;
   }
-  if (msg['type'] === 'voice_read') {
-    const read = parseVoiceRead(msg['read']);
-    return read ? { type: 'voice_read', read } : null;
+  if (msg['type'] === 'race_voice') {
+    const note = parseRaceVoice(msg['note']);
+    return note ? { type: 'race_voice', note } : null;
+  }
+  if (msg['type'] === 'race_voice_read') {
+    const read = parseRaceVoiceRead(msg['read']);
+    return read ? { type: 'race_voice_read', read } : null;
   }
   if (msg['type'] === 'presence' && Array.isArray(msg['online'])) {
     return { type: 'presence', online: msg['online'].map(parsePresence).filter((p): p is Presence => p !== null) };

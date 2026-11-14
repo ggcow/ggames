@@ -76,6 +76,33 @@ const MIGRATIONS: readonly string[] = [
   );
   CREATE INDEX voice_reads_player ON voice_reads (player);
   `,
+  `
+  DROP TABLE voice_reads;
+  CREATE TABLE race_voices (
+    id TEXT PRIMARY KEY,
+    game TEXT NOT NULL,
+    key TEXT NOT NULL,
+    player TEXT NOT NULL REFERENCES players(id),
+    duration_ms INTEGER NOT NULL,
+    mime TEXT NOT NULL,
+    data BLOB NOT NULL,
+    created INTEGER NOT NULL
+  );
+  CREATE INDEX race_voices_key ON race_voices (game, key, created);
+  CREATE TABLE race_voice_recipients (
+    note TEXT NOT NULL REFERENCES race_voices(id) ON DELETE CASCADE,
+    player TEXT NOT NULL REFERENCES players(id),
+    PRIMARY KEY (note, player)
+  );
+  CREATE INDEX race_voice_recipients_player ON race_voice_recipients (player);
+  CREATE TABLE race_voice_reads (
+    note TEXT NOT NULL REFERENCES race_voices(id) ON DELETE CASCADE,
+    player TEXT NOT NULL REFERENCES players(id),
+    read_at INTEGER NOT NULL,
+    PRIMARY KEY (note, player)
+  );
+  CREATE INDEX race_voice_reads_player ON race_voice_reads (player);
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

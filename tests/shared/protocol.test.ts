@@ -67,7 +67,9 @@ describe('champs du protocole', () => {
     expect(ROUTES.chat).toBe('/api/chat');
     expect(ROUTES.voices).toBe('/api/voices');
     expect(ROUTES.voice('abc123')).toBe('/api/voices/abc123');
-    expect(ROUTES.voiceRead('abc123')).toBe('/api/voices/abc123/read');
+    expect(ROUTES.raceVoices('fioles', 'c:1')).toBe('/api/games/fioles/voices?key=c%3A1');
+    expect(ROUTES.raceVoice('abc123')).toBe('/api/race-voices/abc123');
+    expect(ROUTES.raceVoiceRead('abc123')).toBe('/api/race-voices/abc123/read');
   });
 });
 
@@ -134,27 +136,27 @@ describe('messages temps réel', () => {
     expect(parseServerMessage('{"type":"chat"}')).toBeNull();
   });
 
-  it('parse une note vocale et un accusé de lecture', () => {
-    const note = {
-      id: 'abc123',
-      player: 'def456',
-      name: 'Léa',
-      durationMs: 1200,
-      mime: 'audio/webm',
-      at: 123,
-      readCount: 0,
-      total: 2,
-      read: false,
-    };
+  it('parse une note vocale de salon et une note de course', () => {
+    const note = { id: 'abc123', player: 'def456', name: 'Léa', durationMs: 1200, mime: 'audio/webm', at: 123 };
     expect(parseServerMessage(JSON.stringify({ type: 'voice', note }))).toEqual({ type: 'voice', note });
     expect(parseServerMessage(JSON.stringify({ type: 'voice', note: { ...note, mime: 'text/plain' } }))).toBeNull();
     expect(
       parseServerMessage(JSON.stringify({ type: 'voice', note: { ...note, durationMs: LIMITS.voiceDurationMs + 1 } })),
     ).toBeNull();
 
+    const race = { ...note, game: 'fioles', key: 'c:1', readCount: 0, total: 2, read: false };
+    expect(parseServerMessage(JSON.stringify({ type: 'race_voice', note: race }))).toEqual({
+      type: 'race_voice',
+      note: race,
+    });
+    expect(parseServerMessage(JSON.stringify({ type: 'race_voice', note: { ...race, read: 'oui' } }))).toBeNull();
+
     const read = { id: 'abc123', player: 'def456', readCount: 1, total: 2 };
-    expect(parseServerMessage(JSON.stringify({ type: 'voice_read', read }))).toEqual({ type: 'voice_read', read });
-    expect(parseServerMessage(JSON.stringify({ type: 'voice_read', read: { ...read, total: -1 } }))).toBeNull();
+    expect(parseServerMessage(JSON.stringify({ type: 'race_voice_read', read }))).toEqual({
+      type: 'race_voice_read',
+      read,
+    });
+    expect(parseServerMessage(JSON.stringify({ type: 'race_voice_read', read: { ...read, total: -1 } }))).toBeNull();
   });
 });
 

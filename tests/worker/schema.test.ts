@@ -18,11 +18,13 @@ describe('schéma', () => {
       expect(tables(sql)).toEqual([
         'chat_messages',
         'players',
+        'race_voice_reads',
+        'race_voice_recipients',
+        'race_voices',
         'runs',
         'schema_version',
         'sessions',
         'voice_notes',
-        'voice_reads',
       ]);
       expect(sql.exec<{ version: number }>('SELECT version FROM schema_version').one().version).toBe(SCHEMA_VERSION);
     });
@@ -43,7 +45,9 @@ describe('schéma', () => {
       sql.exec(
         "INSERT INTO runs (id, game, key, player, status, value, duration_ms, replay, ended) VALUES ('run001', 'fioles', 'c:1', 'abc123', 'won', 5, 1, '', 1)",
       );
-      sql.exec('DROP TABLE voice_reads');
+      sql.exec('DROP TABLE race_voice_reads');
+      sql.exec('DROP TABLE race_voice_recipients');
+      sql.exec('DROP TABLE race_voices');
       sql.exec('DROP TABLE voice_notes');
       sql.exec('DROP TABLE chat_messages');
       sql.exec('UPDATE schema_version SET version = 2');

@@ -204,8 +204,12 @@ export class App {
       this.chat?.receiveVoice(message.note);
       return;
     }
-    if (message.type === 'voice_read') {
-      this.chat?.receiveVoiceRead(message.read);
+    if (message.type === 'race_voice') {
+      this.screen?.onRaceVoice?.(message.note);
+      return;
+    }
+    if (message.type === 'race_voice_read') {
+      this.screen?.onRaceVoiceRead?.(message.read);
       return;
     }
     const game = routeGame(this.route);

@@ -8,6 +8,7 @@ import type {
   PlayerId,
   PlayerInfo,
   PlayerProgress,
+  RaceVoice,
   RecordEntry,
   Run,
   RunSummary,
@@ -33,18 +34,16 @@ type ProgressRow = { player: string; completed: number; runs: number; play_time:
 type RecordRow = { key: string; player: string; value: number; run: string };
 type KeyRow = { key: string; attempts: number; wins: number; best: string | null };
 type ChatRow = { id: string; player: string; name: string; text: string; created: number };
-type VoiceRow = {
-  id: string;
-  player: string;
-  name: string;
-  duration_ms: number;
-  mime: string;
-  created: number;
+type VoiceRow = { id: string; player: string; name: string; duration_ms: number; mime: string; created: number };
+type VoiceDataRow = { mime: string; data: ArrayBuffer };
+type RaceVoiceRow = VoiceRow & {
+  game: string;
+  key: string;
   read_count: number;
   total: number;
   read: number;
 };
-type VoiceDataRow = { mime: string; data: ArrayBuffer };
+type RaceVoiceMetaRow = { player: string; game: string; key: string; created: number };
 
 const RUN_COLUMNS = 'id, game, key, player, status, value, duration_ms, ended';
 
@@ -305,10 +304,6 @@ export class PlatformStore {
 
   /* ---------- Notes vocales ---------- */
 
-  countOtherPlayers(player: PlayerId): number {
-    return this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM players WHERE id != ?', player).one().n;
-  }
-
   insertVoice(note: VoiceNote, data: ArrayBuffer): void {
     this.sql.exec(
       'INSERT INTO voice_notes (id, player, duration_ms, mime, data, created) VALUES (?, ?, ?, ?, ?, ?)',
@@ -321,19 +316,15 @@ export class PlatformStore {
     );
   }
 
-  /** Notes vocales récentes, avec l'état de lecture du joueur qui demande. */
-  recentVoices(viewer: PlayerId, since: number): VoiceNote[] {
+  /** Notes vocales récentes du salon, du plus ancien au plus récent. */
+  recentVoices(since: number): VoiceNote[] {
     const rows = this.sql
       .exec<VoiceRow>(
-        `SELECT v.id, v.player, p.name, v.duration_ms, v.mime, v.created,
-                (SELECT COUNT(*) FROM voice_reads r WHERE r.note = v.id) AS read_count,
-                (SELECT COUNT(*) FROM players x WHERE x.id != v.player) AS total,
-                EXISTS(SELECT 1 FROM voice_reads r WHERE r.note = v.id AND r.player = ?) AS read
+        `SELECT v.id, v.player, p.name, v.duration_ms, v.mime, v.created
          FROM voice_notes v JOIN players p ON p.id = v.player
          WHERE v.created >= ?
          ORDER BY v.created DESC
          LIMIT 50`,
-        viewer,
         since,
       )
       .toArray();
@@ -344,9 +335,6 @@ export class PlatformStore {
       durationMs: row.duration_ms,
       mime: row.mime,
       at: row.created,
-      readCount: row.read_count,
-      total: row.total,
-      read: row.read !== 0,
     }));
   }
 
@@ -364,15 +352,96 @@ export class PlatformStore {
     );
   }
 
-  insertVoiceRead(note: string, player: PlayerId, at: number): void {
-    this.sql.exec('INSERT OR IGNORE INTO voice_reads (note, player, read_at) VALUES (?, ?, ?)', note, player, at);
+  pruneVoices(before: number): void {
+    this.sql.exec('DELETE FROM voice_notes WHERE created < ?', before);
   }
 
-  voiceReadCounts(note: string): { readCount: number; total: number } {
+  /* ---------- Notes vocales de course ---------- */
+
+  insertRaceVoice(note: RaceVoice, data: ArrayBuffer, recipients: readonly PlayerId[]): void {
+    this.sql.exec(
+      `INSERT INTO race_voices (id, game, key, player, duration_ms, mime, data, created)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      note.id,
+      note.game,
+      note.key,
+      note.player,
+      note.durationMs,
+      note.mime,
+      data,
+      note.at,
+    );
+    for (const recipient of recipients) {
+      this.sql.exec('INSERT INTO race_voice_recipients (note, player) VALUES (?, ?)', note.id, recipient);
+    }
+  }
+
+  /** Notes de course visibles par un joueur : les siennes et celles dont il est destinataire. */
+  recentRaceVoices(viewer: PlayerId, game: GameId, key: string, since: number): RaceVoice[] {
+    const rows = this.sql
+      .exec<RaceVoiceRow>(
+        `SELECT v.id, v.game, v.key, v.player, p.name, v.duration_ms, v.mime, v.created,
+                (SELECT COUNT(*) FROM race_voice_reads r WHERE r.note = v.id) AS read_count,
+                (SELECT COUNT(*) FROM race_voice_recipients r WHERE r.note = v.id) AS total,
+                EXISTS(SELECT 1 FROM race_voice_reads r WHERE r.note = v.id AND r.player = ?) AS read
+         FROM race_voices v JOIN players p ON p.id = v.player
+         WHERE v.game = ? AND v.key = ? AND v.created >= ?
+           AND (v.player = ? OR EXISTS(SELECT 1 FROM race_voice_recipients r WHERE r.note = v.id AND r.player = ?))
+         ORDER BY v.created DESC
+         LIMIT 50`,
+        viewer,
+        game,
+        key,
+        since,
+        viewer,
+        viewer,
+      )
+      .toArray();
+    return rows.reverse().map((row) => ({
+      id: row.id,
+      game: row.game,
+      key: row.key,
+      player: row.player,
+      name: row.name,
+      durationMs: row.duration_ms,
+      mime: row.mime,
+      at: row.created,
+      readCount: row.read_count,
+      total: row.total,
+      read: row.read !== 0,
+    }));
+  }
+
+  findRaceVoice(id: string): { mime: string; data: Uint8Array } | null {
+    const row = this.sql.exec<VoiceDataRow>('SELECT mime, data FROM race_voices WHERE id = ?', id).toArray()[0];
+    if (!row) return null;
+    return { mime: row.mime, data: new Uint8Array(row.data) };
+  }
+
+  findRaceVoiceMeta(id: string): RaceVoiceMetaRow | null {
+    return (
+      this.sql
+        .exec<RaceVoiceMetaRow>('SELECT player, game, key, created FROM race_voices WHERE id = ?', id)
+        .toArray()[0] ?? null
+    );
+  }
+
+  isRaceVoiceRecipient(note: string, player: PlayerId): boolean {
+    return (
+      this.sql.exec('SELECT 1 FROM race_voice_recipients WHERE note = ? AND player = ?', note, player).toArray()
+        .length > 0
+    );
+  }
+
+  insertRaceVoiceRead(note: string, player: PlayerId, at: number): void {
+    this.sql.exec('INSERT OR IGNORE INTO race_voice_reads (note, player, read_at) VALUES (?, ?, ?)', note, player, at);
+  }
+
+  raceVoiceReadCounts(note: string): { readCount: number; total: number } {
     const row = this.sql
       .exec<{ read_count: number; total: number }>(
-        `SELECT (SELECT COUNT(*) FROM voice_reads WHERE note = ?) AS read_count,
-                (SELECT COUNT(*) FROM players WHERE id != (SELECT player FROM voice_notes WHERE id = ?)) AS total`,
+        `SELECT (SELECT COUNT(*) FROM race_voice_reads WHERE note = ?) AS read_count,
+                (SELECT COUNT(*) FROM race_voice_recipients WHERE note = ?) AS total`,
         note,
         note,
       )
@@ -380,14 +449,19 @@ export class PlatformStore {
     return { readCount: row.read_count, total: row.total };
   }
 
-  deleteVoice(id: string): void {
-    this.sql.exec('DELETE FROM voice_reads WHERE note = ?', id);
-    this.sql.exec('DELETE FROM voice_notes WHERE id = ?', id);
+  deleteRaceVoice(id: string): void {
+    this.sql.exec('DELETE FROM race_voice_reads WHERE note = ?', id);
+    this.sql.exec('DELETE FROM race_voice_recipients WHERE note = ?', id);
+    this.sql.exec('DELETE FROM race_voices WHERE id = ?', id);
   }
 
-  pruneVoices(before: number): void {
-    this.sql.exec('DELETE FROM voice_reads WHERE note IN (SELECT id FROM voice_notes WHERE created < ?)', before);
-    this.sql.exec('DELETE FROM voice_notes WHERE created < ?', before);
+  pruneRaceVoices(before: number): void {
+    this.sql.exec('DELETE FROM race_voice_reads WHERE note IN (SELECT id FROM race_voices WHERE created < ?)', before);
+    this.sql.exec(
+      'DELETE FROM race_voice_recipients WHERE note IN (SELECT id FROM race_voices WHERE created < ?)',
+      before,
+    );
+    this.sql.exec('DELETE FROM race_voices WHERE created < ?', before);
   }
 
   gameSummaries(): Map<GameId, Omit<GameSummary, 'id'>> {

@@ -7,9 +7,10 @@ import {
   LIMITS,
   type Presence,
   parseServerMessage,
+  type RaceVoice,
+  type RaceVoiceRead,
   type ReactionNotice,
   type VoiceNote,
-  type VoiceReadNotice,
 } from '../../src/shared/platform/protocol.ts';
 import type { World } from '../../src/worker/platform/world.ts';
 import { call, newPlayer } from './support.ts';
@@ -28,7 +29,8 @@ async function connect(token: string) {
   const reactions: ReactionNotice[] = [];
   const chats: ChatMessage[] = [];
   const voices: VoiceNote[] = [];
-  const voiceReads: VoiceReadNotice[] = [];
+  const raceVoices: RaceVoice[] = [];
+  const raceVoiceReads: RaceVoiceRead[] = [];
   const waiters: (() => void)[] = [];
   ws.addEventListener('message', (event) => {
     const msg = typeof event.data === 'string' ? parseServerMessage(event.data) : null;
@@ -36,7 +38,8 @@ async function connect(token: string) {
     if (msg?.type === 'reaction') reactions.push(msg.reaction);
     if (msg?.type === 'chat') chats.push(msg.message);
     if (msg?.type === 'voice') voices.push(msg.note);
-    if (msg?.type === 'voice_read') voiceReads.push(msg.read);
+    if (msg?.type === 'race_voice') raceVoices.push(msg.note);
+    if (msg?.type === 'race_voice_read') raceVoiceReads.push(msg.read);
     for (const resolve of waiters.splice(0)) resolve();
   });
   const next = () => new Promise<void>((resolve) => waiters.push(resolve));
@@ -64,7 +67,7 @@ async function connect(token: string) {
       await next();
     }
   }
-  /** Attend une note vocale vérifiant `predicate`. */
+  /** Attend une note vocale de salon vérifiant `predicate`. */
   async function voiceUntil(predicate: (note: VoiceNote) => boolean): Promise<VoiceNote> {
     for (;;) {
       const found = voices.find(predicate);
@@ -72,10 +75,18 @@ async function connect(token: string) {
       await next();
     }
   }
-  /** Attend un accusé de lecture vérifiant `predicate`. */
-  async function voiceReadUntil(predicate: (read: VoiceReadNotice) => boolean): Promise<VoiceReadNotice> {
+  /** Attend une note vocale de course vérifiant `predicate`. */
+  async function raceVoiceUntil(predicate: (note: RaceVoice) => boolean): Promise<RaceVoice> {
     for (;;) {
-      const found = voiceReads.find(predicate);
+      const found = raceVoices.find(predicate);
+      if (found) return found;
+      await next();
+    }
+  }
+  /** Attend un accusé de lecture de course vérifiant `predicate`. */
+  async function raceVoiceReadUntil(predicate: (read: RaceVoiceRead) => boolean): Promise<RaceVoiceRead> {
+    for (;;) {
+      const found = raceVoiceReads.find(predicate);
       if (found) return found;
       await next();
     }
@@ -87,11 +98,13 @@ async function connect(token: string) {
     reactionUntil,
     chatUntil,
     voiceUntil,
-    voiceReadUntil,
+    raceVoiceUntil,
+    raceVoiceReadUntil,
     reactions,
     chats,
     voices,
-    voiceReads,
+    raceVoices,
+    raceVoiceReads,
     send,
   };
 }
@@ -109,6 +122,28 @@ async function uploadVoice(token: string, data: Uint8Array, durationMs = 1000, m
     }),
   );
   return { status: response.status, body: (await response.json()) as VoiceNote };
+}
+
+async function uploadRaceVoice(
+  token: string,
+  game: string,
+  key: string,
+  data: Uint8Array,
+  durationMs = 1000,
+  mime = 'audio/webm',
+) {
+  const response = await exports.default.fetch(
+    new Request(`https://test.local/api/games/${game}/voices?key=${encodeURIComponent(key)}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'content-type': mime,
+        'x-voice-duration': String(durationMs),
+      },
+      body: data,
+    }),
+  );
+  return { status: response.status, body: (await response.json()) as RaceVoice };
 }
 
 describe('temps réel', () => {
@@ -223,24 +258,20 @@ describe('temps réel', () => {
     expect((await call('/api/chat')).status).toBe(401);
   });
 
-  it('diffuse une note vocale et la supprime quand tous les destinataires ont écouté', async () => {
+  it('diffuse une note vocale du salon et la garde dans l’historique', async () => {
     const a = await newPlayer();
     const b = await newPlayer();
-    const c = await newPlayer();
-    const liveA = await connect(a.token);
     const liveB = await connect(b.token);
-    const liveC = await connect(c.token);
-    await liveA.until((online) => online.length === 3);
-
     const data = new Uint8Array([1, 2, 3, 4]);
-    const uploaded = await uploadVoice(a.token, data);
+
+    const uploaded = await uploadVoice(a.token, data, 1000, 'audio/webm;codecs=opus');
     expect(uploaded.status).toBe(200);
-    expect(uploaded.body).toMatchObject({ player: a.player.id, durationMs: 1000, mime: 'audio/webm', total: 2 });
+    expect(uploaded.body).toMatchObject({ player: a.player.id, durationMs: 1000, mime: 'audio/webm' });
     const note = uploaded.body;
-
     expect((await liveB.voiceUntil((item) => item.id === note.id)).id).toBe(note.id);
-    expect((await liveC.voiceUntil((item) => item.id === note.id)).id).toBe(note.id);
 
+    const history = await call<VoiceNote[]>('/api/voices', { token: b.token });
+    expect(history.body).toEqual([note]);
     const audio = await exports.default.fetch(
       new Request(`https://test.local/api/voices/${note.id}`, { headers: { Authorization: `Bearer ${b.token}` } }),
     );
@@ -248,29 +279,71 @@ describe('temps réel', () => {
     expect(audio.headers.get('content-type')).toBe('audio/webm');
     expect(new Uint8Array(await audio.arrayBuffer())).toEqual(data);
 
-    const firstRead = await call<{ readCount: number; total: number }>(`/api/voices/${note.id}/read`, {
+    liveB.ws.close(1000, 'bye');
+  });
+
+  it('diffuse une note de course et la supprime quand les destinataires ont écouté', async () => {
+    const a = await newPlayer();
+    const b = await newPlayer();
+    const c = await newPlayer();
+    const liveA = await connect(a.token);
+    const liveB = await connect(b.token);
+    const liveC = await connect(c.token);
+    await liveA.until((online) => online.length === 3);
+    for (const live of [liveA, liveB, liveC]) {
+      live.send({ type: 'activity', game: 'fioles', key: 'c:1', state: '', value: 0 });
+    }
+    await liveA.until((online) => online.filter((p) => p.key === 'c:1').length === 3);
+
+    const data = new Uint8Array([1, 2, 3, 4]);
+    const uploaded = await uploadRaceVoice(a.token, 'fioles', 'c:1', data);
+    expect(uploaded.status).toBe(200);
+    expect(uploaded.body).toMatchObject({ game: 'fioles', key: 'c:1', player: a.player.id, total: 2 });
+    const note = uploaded.body;
+
+    expect((await liveB.raceVoiceUntil((item) => item.id === note.id)).id).toBe(note.id);
+    expect((await liveC.raceVoiceUntil((item) => item.id === note.id)).id).toBe(note.id);
+
+    const audio = await exports.default.fetch(
+      new Request(`https://test.local/api/race-voices/${note.id}`, {
+        headers: { Authorization: `Bearer ${b.token}` },
+      }),
+    );
+    expect(audio.status).toBe(200);
+    expect(new Uint8Array(await audio.arrayBuffer())).toEqual(data);
+
+    const firstRead = await call<{ readCount: number; total: number }>(`/api/race-voices/${note.id}/read`, {
       method: 'POST',
       token: b.token,
     });
     expect(firstRead.body).toEqual({ readCount: 1, total: 2 });
-    await liveA.voiceReadUntil((read) => read.id === note.id && read.readCount === 1);
+    await liveA.raceVoiceReadUntil((read) => read.id === note.id && read.readCount === 1);
 
-    const forB = await call<VoiceNote[]>('/api/voices', { token: b.token });
+    const forB = await call<RaceVoice[]>('/api/games/fioles/voices?key=c%3A1', { token: b.token });
     expect(forB.body[0]?.read).toBe(true);
-    const forC = await call<VoiceNote[]>('/api/voices', { token: c.token });
+    const forC = await call<RaceVoice[]>('/api/games/fioles/voices?key=c%3A1', { token: c.token });
     expect(forC.body[0]?.read).toBe(false);
 
-    const secondRead = await call<{ readCount: number; total: number }>(`/api/voices/${note.id}/read`, {
+    const secondRead = await call<{ readCount: number; total: number }>(`/api/race-voices/${note.id}/read`, {
       method: 'POST',
       token: c.token,
     });
     expect(secondRead.body).toEqual({ readCount: 2, total: 2 });
-    await liveA.voiceReadUntil((read) => read.id === note.id && read.readCount === 2);
-    expect((await call<VoiceNote[]>('/api/voices', { token: a.token })).body).toEqual([]);
+    await liveA.raceVoiceReadUntil((read) => read.id === note.id && read.readCount === 2);
+    expect((await call<RaceVoice[]>('/api/games/fioles/voices?key=c%3A1', { token: a.token })).body).toEqual([]);
 
     liveA.ws.close(1000, 'bye');
     liveB.ws.close(1000, 'bye');
     liveC.ws.close(1000, 'bye');
+  });
+
+  it('refuse une note de course hors du niveau joué', async () => {
+    const a = await newPlayer();
+    const live = await connect(a.token);
+    live.send({ type: 'activity', game: 'fioles', key: 'c:2', state: '', value: 0 });
+    await live.until((online) => online.some((p) => p.player === a.player.id && p.key === 'c:2'));
+    expect((await uploadRaceVoice(a.token, 'fioles', 'c:1', new Uint8Array([1]))).status).toBe(403);
+    live.ws.close(1000, 'bye');
   });
 
   it('valide les notes vocales et oublie les anciennes', async () => {
@@ -291,7 +364,9 @@ describe('temps réel', () => {
   it('exige une session pour les notes vocales', async () => {
     expect((await call('/api/voices')).status).toBe(401);
     expect((await call('/api/voices/abc123')).status).toBe(401);
-    expect((await call('/api/voices/abc123/read', { method: 'POST' })).status).toBe(401);
+    expect((await call('/api/games/fioles/voices?key=c%3A1')).status).toBe(401);
+    expect((await call('/api/race-voices/abc123')).status).toBe(401);
+    expect((await call('/api/race-voices/abc123/read', { method: 'POST' })).status).toBe(401);
     const response = await exports.default.fetch(
       new Request('https://test.local/api/voices', {
         method: 'POST',

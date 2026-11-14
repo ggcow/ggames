@@ -23,6 +23,7 @@ import {
   type Presence,
   parseClientMessage,
   parseDuration,
+  type RaceVoice,
   type Run,
   type RunStatus,
   type ServerMessage,
@@ -41,6 +42,7 @@ export const QUOTAS = { players: 200 } as const;
 
 const CHAT_HISTORY = 50;
 const SALON_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+const RACE_VOICE_RETENTION_MS = 60 * 60 * 1000;
 const VOICE_MIMES = ['audio/webm', 'audio/mp4', 'audio/ogg'] as const;
 
 const voiceMime = (value: unknown): string | null => {
@@ -153,13 +155,12 @@ export class World extends DurableObject<Env> {
     return ok(this.store.recentChat(CHAT_HISTORY, now - SALON_RETENTION_MS));
   }
 
-  /** Notes vocales récentes, avec l'état de lecture du joueur. */
+  /** Notes vocales récentes du salon. */
   async getVoices(token: unknown): Promise<Result<VoiceNote[]>> {
-    const me = await this.authenticate(token);
-    if (!me) return unauthorized();
+    if (!(await this.authenticate(token))) return unauthorized();
     const now = Date.now();
     this.store.pruneVoices(now - SALON_RETENTION_MS);
-    return ok(this.store.recentVoices(me.id, now - SALON_RETENTION_MS));
+    return ok(this.store.recentVoices(now - SALON_RETENTION_MS));
   }
 
   /** Enregistre une note vocale et la diffuse à tous les connectés. */
@@ -187,9 +188,6 @@ export class World extends DurableObject<Env> {
       durationMs,
       mime: type,
       at: now,
-      readCount: 0,
-      total: this.store.countOtherPlayers(me.id),
-      read: false,
     };
     this.store.insertVoice(note, data);
     this.store.pruneVoices(now - SALON_RETENTION_MS);
@@ -207,21 +205,95 @@ export class World extends DurableObject<Env> {
     return audio ? ok(audio) : fail(404, 'unknown voice');
   }
 
-  /** Marque une note comme écoutée pour ce joueur et met à jour le compteur de l'auteur. */
-  async markVoiceRead(token: unknown, id: unknown): Promise<Result<{ readCount: number; total: number }>> {
+  /** Notes vocales d'une course visibles par le joueur. */
+  async getRaceVoices(token: unknown, gameId: unknown, key: unknown): Promise<Result<RaceVoice[]>> {
+    const me = await this.authenticate(token);
+    if (!me) return unauthorized();
+    const game = findGame(gameId);
+    if (!game || typeof key !== 'string' || !game.isValidKey(key)) return fail(400, 'invalid key');
+    const now = Date.now();
+    this.store.pruneRaceVoices(now - RACE_VOICE_RETENTION_MS);
+    return ok(this.store.recentRaceVoices(me.id, game.id, key, now - RACE_VOICE_RETENTION_MS));
+  }
+
+  /** Enregistre une note vocale de course et la diffuse aux joueurs présents sur le niveau. */
+  async uploadRaceVoice(
+    token: unknown,
+    gameId: unknown,
+    key: unknown,
+    mime: unknown,
+    durationMs: unknown,
+    data: unknown,
+  ): Promise<Result<RaceVoice>> {
+    const me = await this.authenticate(token);
+    if (!me) return unauthorized();
+    const game = findGame(gameId);
+    if (!game || typeof key !== 'string' || !game.isValidKey(key)) return fail(400, 'invalid key');
+    const type = voiceMime(mime);
+    if (!type) return fail(400, 'invalid voice');
+    if (
+      typeof durationMs !== 'number' ||
+      !Number.isInteger(durationMs) ||
+      durationMs <= 0 ||
+      durationMs > LIMITS.voiceDurationMs
+    ) {
+      return fail(400, 'invalid voice');
+    }
+    if (!(data instanceof ArrayBuffer) || data.byteLength === 0 || data.byteLength > LIMITS.voiceBytes) {
+      return fail(400, 'invalid voice');
+    }
+    const present = this.playersOn(game.id, key);
+    if (!present.includes(me.id)) return fail(403, 'not in race');
+    const recipients = present.filter((player) => player !== me.id);
+    if (recipients.length === 0) return fail(403, 'not in race');
+    const now = Date.now();
+    const note: RaceVoice = {
+      id: createId(),
+      game: game.id,
+      key,
+      player: me.id,
+      name: me.name,
+      durationMs,
+      mime: type,
+      at: now,
+      readCount: 0,
+      total: recipients.length,
+      read: false,
+    };
+    this.store.insertRaceVoice(note, data, recipients);
+    this.store.pruneRaceVoices(now - RACE_VOICE_RETENTION_MS);
+    this.broadcastToKey(game.id, key, { type: 'race_voice', note });
+    return ok(note);
+  }
+
+  /** Audio d'une note de course, réservé à l'auteur et aux destinataires. */
+  async getRaceVoice(token: unknown, id: unknown): Promise<Result<{ mime: string; data: Uint8Array }>> {
     const me = await this.authenticate(token);
     if (!me) return unauthorized();
     if (typeof id !== 'string') return fail(404, 'unknown voice');
-    const meta = this.store.findVoiceMeta(id);
-    if (!meta || meta.created < Date.now() - SALON_RETENTION_MS) return fail(404, 'unknown voice');
-    if (meta.player === me.id) return ok(this.store.voiceReadCounts(id));
-    this.store.insertVoiceRead(id, me.id, Date.now());
-    const counts = this.store.voiceReadCounts(id);
-    this.broadcast({
-      type: 'voice_read',
+    const meta = this.store.findRaceVoiceMeta(id);
+    if (!meta || meta.created < Date.now() - RACE_VOICE_RETENTION_MS) return fail(404, 'unknown voice');
+    if (meta.player !== me.id && !this.store.isRaceVoiceRecipient(id, me.id)) return fail(404, 'unknown voice');
+    const audio = this.store.findRaceVoice(id);
+    return audio ? ok(audio) : fail(404, 'unknown voice');
+  }
+
+  /** Marque une note de course comme écoutée pour ce destinataire. */
+  async markRaceVoiceRead(token: unknown, id: unknown): Promise<Result<{ readCount: number; total: number }>> {
+    const me = await this.authenticate(token);
+    if (!me) return unauthorized();
+    if (typeof id !== 'string') return fail(404, 'unknown voice');
+    const meta = this.store.findRaceVoiceMeta(id);
+    if (!meta || meta.created < Date.now() - RACE_VOICE_RETENTION_MS) return fail(404, 'unknown voice');
+    if (meta.player === me.id) return ok(this.store.raceVoiceReadCounts(id));
+    if (!this.store.isRaceVoiceRecipient(id, me.id)) return fail(403, 'not in race');
+    this.store.insertRaceVoiceRead(id, me.id, Date.now());
+    const counts = this.store.raceVoiceReadCounts(id);
+    this.broadcastToKey(meta.game, meta.key, {
+      type: 'race_voice_read',
       read: { id, player: me.id, readCount: counts.readCount, total: counts.total },
     });
-    if (counts.total > 0 && counts.readCount >= counts.total) this.store.deleteVoice(id);
+    if (counts.total > 0 && counts.readCount >= counts.total) this.store.deleteRaceVoice(id);
     return ok(counts);
   }
 
@@ -443,6 +515,16 @@ export class World extends DurableObject<Env> {
       if (ws === exclude) continue;
       this.send(ws, data);
     }
+  }
+
+  /** Joueurs connectés sur un niveau donné, sans doublon entre leurs appareils. */
+  private playersOn(game: GameId, key: string): PlayerId[] {
+    const players = new Set<PlayerId>();
+    for (const ws of this.ctx.getWebSockets()) {
+      const attachment = readAttachment(ws);
+      if (attachment.game === game && attachment.key === key) players.add(attachment.player);
+    }
+    return [...players];
   }
 
   /** Diffuse un message aux connexions dont la présence courante est ce jeu et ce niveau. */

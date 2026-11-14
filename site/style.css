@@ -164,6 +164,9 @@ button:disabled {
 .round:disabled {
   opacity: 0.35;
 }
+.round[hidden] {
+  display: none;
+}
 .round-spacer {
   width: 44px;
   flex: none;
@@ -487,6 +490,49 @@ input[type="range"] {
   font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
+}
+.recording-time[hidden] {
+  display: none;
+}
+.race-voices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.race-voices[hidden] {
+  display: none;
+}
+.race-voice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 99px;
+  background: var(--surface);
+  box-shadow: 0 3px 0 var(--surface-edge);
+}
+.race-voice .voice-play {
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
+}
+.race-voice .voice-duration {
+  font-size: 12px;
+}
+.race-voice .voice-read {
+  font-size: 10px;
+}
+.race-recording {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 3px 0 var(--surface-edge);
 }
 .chat-form {
   position: sticky;

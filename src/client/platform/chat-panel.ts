@@ -1,10 +1,11 @@
-// Salon intégré à une page : messages texte, notes vocales et lecture par destinataire.
+// Salon intégré à une page : messages texte et notes vocales normales.
 
 import { type ChatMessage, LIMITS, type VoiceNote } from '../../shared/platform/protocol.ts';
 import { avatar } from './avatar.ts';
 import type { AppContext } from './context.ts';
 import { h, replaceChildren } from './dom.ts';
 import { formatDuration, formatTime } from './i18n.ts';
+import { createVoiceRecorder } from './recorder.ts';
 import { errorMessage, toast } from './ui.ts';
 
 export interface ChatPanel {
@@ -20,12 +21,6 @@ export function chatPanel(ctx: AppContext): ChatPanel {
   const audioCache = new Map<string, string>();
   let currentAudio: HTMLAudioElement | null = null;
   let currentButton: HTMLButtonElement | null = null;
-  let recorder: MediaRecorder | null = null;
-  let stream: MediaStream | null = null;
-  let chunks: Blob[] = [];
-  let recordingStarted = 0;
-  let recordingTimer: ReturnType<typeof setInterval> | null = null;
-  let starting = false;
   let disposed = false;
 
   const messageRow = (message: ChatMessage) =>
@@ -82,11 +77,7 @@ export function chatPanel(ctx: AppContext): ChatPanel {
       if (disposed) return;
       const audio = new Audio(url);
       currentAudio = audio;
-      audio.addEventListener('ended', () => {
-        const mine = note.player === ctx.me.id;
-        stopAudio();
-        if (!mine) void ctx.api.markVoiceRead(note.id).catch(() => undefined);
-      });
+      audio.addEventListener('ended', stopAudio);
       audio.addEventListener('error', () => {
         stopAudio();
         toast(t.voiceError);
@@ -123,7 +114,6 @@ export function chatPanel(ctx: AppContext): ChatPanel {
           { class: 'voice-line' },
           play,
           h('span', { class: 'voice-duration' }, formatDuration(note.durationMs, ctx.lang)),
-          mine ? h('small', { class: 'voice-read' }, `${note.readCount}/${note.total}`) : null,
         ),
       ),
     );
@@ -136,9 +126,7 @@ export function chatPanel(ctx: AppContext): ChatPanel {
     }
     const items: TimelineItem[] = [
       ...ctx.chat.messages.map((message) => ({ at: message.at, kind: 'text' as const, message })),
-      ...ctx.chat.voices
-        .filter((note) => note.player === ctx.me.id || !note.read)
-        .map((note) => ({ at: note.at, kind: 'voice' as const, note })),
+      ...ctx.chat.voices.map((note) => ({ at: note.at, kind: 'voice' as const, note })),
     ].sort((a, b) => a.at - b.at);
     for (const item of items) if (item.kind === 'voice') preloadVoice(item.note);
     replaceChildren(
@@ -151,113 +139,8 @@ export function chatPanel(ctx: AppContext): ChatPanel {
     if (ctx.chat.unread > 0) ctx.chat.markRead();
   };
 
-  const canRecord = typeof MediaRecorder !== 'undefined' && typeof navigator.mediaDevices?.getUserMedia === 'function';
   const recordingLabel = h('span', { class: 'recording-time' });
   recordingLabel.hidden = true;
-  const mic = canRecord
-    ? h(
-        'button',
-        {
-          class: 'round small mic-button',
-          type: 'button',
-          attrs: { 'aria-label': t.voiceRecord },
-          on: { click: () => void toggleRecording() },
-        },
-        '🎙',
-      )
-    : null;
-
-  const stopRecording = () => {
-    if (recordingTimer) clearInterval(recordingTimer);
-    recordingTimer = null;
-    recordingLabel.hidden = true;
-    if (mic) {
-      mic.textContent = '🎙';
-      mic.setAttribute('aria-label', t.voiceRecord);
-    }
-    if (recorder && recorder.state !== 'inactive') recorder.stop();
-  };
-
-  const finishRecording = async (finished: MediaRecorder) => {
-    const duration = Math.min(LIMITS.voiceDurationMs, Math.max(1, Date.now() - recordingStarted));
-    const blob = new Blob(chunks, { type: finished.mimeType || 'audio/webm' });
-    chunks = [];
-    stream?.getTracks().forEach((track) => {
-      track.stop();
-    });
-    stream = null;
-    recorder = null;
-    if (disposed || blob.size === 0) return;
-    if (blob.size > LIMITS.voiceBytes) {
-      toast(t.voiceTooLong);
-      return;
-    }
-    try {
-      await ctx.api.uploadVoice(blob, duration);
-    } catch (error) {
-      toast(errorMessage(error, t));
-    }
-  };
-
-  const toggleRecording = async () => {
-    if (starting) return;
-    if (recorder) {
-      stopRecording();
-      return;
-    }
-    starting = true;
-    try {
-      const media = await navigator.mediaDevices.getUserMedia({ audio: true });
-      if (disposed) {
-        media.getTracks().forEach((track) => {
-          track.stop();
-        });
-        return;
-      }
-      stream = media;
-      const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'].find((type) =>
-        MediaRecorder.isTypeSupported(type),
-      );
-      const next = new MediaRecorder(media, mime ? { mimeType: mime } : undefined);
-      recorder = next;
-      chunks = [];
-      recordingStarted = Date.now();
-      next.addEventListener('dataavailable', (event) => {
-        if (event.data.size > 0) chunks.push(event.data);
-      });
-      next.addEventListener('stop', () => void finishRecording(next));
-      next.start();
-      if (mic) {
-        mic.textContent = '⏹';
-        mic.setAttribute('aria-label', t.voiceStop);
-      }
-      recordingLabel.hidden = false;
-      recordingLabel.textContent = t.voiceRecording(0);
-      recordingTimer = setInterval(() => {
-        const seconds = Math.ceil((Date.now() - recordingStarted) / 1000);
-        recordingLabel.textContent = t.voiceRecording(seconds);
-        if (Date.now() - recordingStarted >= LIMITS.voiceDurationMs) stopRecording();
-      }, 250);
-    } catch {
-      if (recordingTimer) clearInterval(recordingTimer);
-      recordingTimer = null;
-      recordingLabel.hidden = true;
-      if (mic) {
-        mic.textContent = '🎙';
-        mic.setAttribute('aria-label', t.voiceRecord);
-      }
-      stream?.getTracks().forEach((track) => {
-        track.stop();
-      });
-      stream = null;
-      recorder = null;
-      chunks = [];
-      toast(t.voicePermission);
-    } finally {
-      starting = false;
-    }
-  };
-
   const input = h('input', {
     class: 'chat-input',
     type: 'text',
@@ -266,6 +149,43 @@ export function chatPanel(ctx: AppContext): ChatPanel {
     autocomplete: 'off',
     attrs: { 'aria-label': t.chatPlaceholder },
   });
+  const sendButton = h('button', { class: 'btn primary', type: 'submit' }, t.send);
+  let mic: HTMLButtonElement | null = null;
+  const recorder = createVoiceRecorder({
+    onRecorded: (blob, duration) => {
+      void ctx.api.uploadVoice(blob, duration).catch((error: unknown) => toast(errorMessage(error, t)));
+    },
+    onError: (error) => toast(error === 'permission' ? t.voicePermission : t.voiceTooLong),
+    onState: (recording, seconds) => {
+      sendButton.textContent = recording ? t.voiceSend : t.send;
+      sendButton.setAttribute('aria-label', recording ? t.voiceSend : t.send);
+      input.disabled = recording;
+      if (mic) {
+        mic.textContent = recording ? '✖' : '🎙';
+        mic.setAttribute('aria-label', recording ? t.voiceCancel : t.voiceRecord);
+      }
+      recordingLabel.hidden = !recording;
+      recordingLabel.textContent = t.voiceTimer(seconds);
+    },
+  });
+  mic = recorder.supported
+    ? h(
+        'button',
+        {
+          class: 'round small mic-button',
+          type: 'button',
+          attrs: { 'aria-label': t.voiceRecord },
+          on: {
+            click: () => {
+              if (recorder.recording) recorder.cancel();
+              else recorder.start();
+            },
+          },
+        },
+        '🎙',
+      )
+    : null;
+
   const form = h(
     'form',
     {
@@ -273,6 +193,10 @@ export function chatPanel(ctx: AppContext): ChatPanel {
       on: {
         submit: (event) => {
           event.preventDefault();
+          if (recorder.recording) {
+            recorder.send();
+            return;
+          }
           const text = input.value.trim();
           if (!text) return;
           ctx.live.chat(text);
@@ -284,7 +208,7 @@ export function chatPanel(ctx: AppContext): ChatPanel {
     input,
     recordingLabel,
     mic,
-    h('button', { class: 'btn primary', type: 'submit' }, t.send),
+    sendButton,
   );
 
   const element = h('div', { class: 'chat-panel' }, list, form);
@@ -299,11 +223,7 @@ export function chatPanel(ctx: AppContext): ChatPanel {
     element,
     dispose: () => {
       disposed = true;
-      if (recordingTimer) clearInterval(recordingTimer);
-      if (recorder && recorder.state !== 'inactive') recorder.stop();
-      stream?.getTracks().forEach((track) => {
-        track.stop();
-      });
+      recorder.dispose();
       stopAudio();
       for (const url of audioCache.values()) URL.revokeObjectURL(url);
       audioCache.clear();

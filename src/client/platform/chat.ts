@@ -1,6 +1,6 @@
 // Salon global côté client : historique court, messages reçus en direct et compteur de non-lus.
 
-import type { ChatMessage, VoiceNote, VoiceReadNotice } from '../../shared/platform/protocol.ts';
+import type { ChatMessage, VoiceNote } from '../../shared/platform/protocol.ts';
 import type { ApiClient } from './api.ts';
 import type { LocalStore } from './storage.ts';
 
@@ -10,7 +10,6 @@ const READ_KEY_PREFIX = 'chatRead:';
 export class ChatStore {
   private readonly api: Pick<ApiClient, 'chat' | 'voices'>;
   private readonly store: LocalStore;
-  private readonly player: string;
   private readonly readKey: string;
   private readonly listeners = new Set<() => void>();
   private items: ChatMessage[] = [];
@@ -23,7 +22,6 @@ export class ChatStore {
   constructor(api: Pick<ApiClient, 'chat' | 'voices'>, store: LocalStore, player: string) {
     this.api = api;
     this.store = store;
-    this.player = player;
     this.readKey = `${READ_KEY_PREFIX}${player}`;
     this.lastRead =
       store.get(this.readKey, (value) => (typeof value === 'number' && Number.isFinite(value) ? value : null)) ?? 0;
@@ -85,24 +83,6 @@ export class ChatStore {
   receiveVoice(note: VoiceNote): void {
     if (this.voiceItems.some((item) => item.id === note.id)) return;
     this.voiceItems = [...this.voiceItems, note].sort((a, b) => a.at - b.at).slice(-HISTORY_LIMIT);
-    this.emit();
-  }
-
-  /** Lecture d'une note : mise à jour du compteur et disparition chez le lecteur. */
-  receiveVoiceRead(read: VoiceReadNotice): void {
-    const note = this.voiceItems.find((item) => item.id === read.id);
-    if (!note) return;
-    const updated = {
-      ...note,
-      readCount: read.readCount,
-      total: read.total,
-      read: note.read || read.player === this.player,
-    };
-    if (updated.player === this.player && updated.total > 0 && updated.readCount >= updated.total) {
-      this.voiceItems = this.voiceItems.filter((item) => item.id !== read.id);
-    } else {
-      this.voiceItems = this.voiceItems.map((item) => (item.id === read.id ? updated : item));
-    }
     this.emit();
   }
 

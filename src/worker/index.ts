@@ -67,6 +67,34 @@ const ROUTE_TABLE: readonly Route[] = [
   },
   {
     method: 'GET',
+    pattern: new RegExp(`^/api/games/${GAME}/voices$`),
+    handler: async ({ world, token, params, request }) => {
+      const key = new URL(request.url).searchParams.get('key') ?? '';
+      return toResponse(await world.getRaceVoices(token, params[0], key));
+    },
+  },
+  {
+    method: 'POST',
+    pattern: new RegExp(`^/api/games/${GAME}/voices$`),
+    handler: async ({ world, token, params, request }) => {
+      const key = new URL(request.url).searchParams.get('key') ?? '';
+      const declared = Number(request.headers.get('content-length') ?? 0);
+      if (Number.isFinite(declared) && declared > LIMITS.voiceBytes) return errorResponse(400, 'invalid voice');
+      const data = await request.arrayBuffer();
+      return toResponse(
+        await world.uploadRaceVoice(
+          token,
+          params[0],
+          key,
+          request.headers.get('content-type'),
+          Number(request.headers.get('x-voice-duration')),
+          data,
+        ),
+      );
+    },
+  },
+  {
+    method: 'GET',
     pattern: /^\/api\/chat$/,
     handler: async ({ world, token }) => toResponse(await world.getChat(token)),
   },
@@ -104,9 +132,20 @@ const ROUTE_TABLE: readonly Route[] = [
     },
   },
   {
+    method: 'GET',
+    pattern: new RegExp(`^/api/race-voices/${ID}$`),
+    handler: async ({ world, token, params }) => {
+      const result = await world.getRaceVoice(token, params[0]);
+      if (!result.ok) return errorResponse(result.status, result.error);
+      return new Response(result.value.data, {
+        headers: { 'content-type': result.value.mime, 'cache-control': 'no-store' },
+      });
+    },
+  },
+  {
     method: 'POST',
-    pattern: new RegExp(`^/api/voices/${ID}/read$`),
-    handler: async ({ world, token, params }) => toResponse(await world.markVoiceRead(token, params[0])),
+    pattern: new RegExp(`^/api/race-voices/${ID}/read$`),
+    handler: async ({ world, token, params }) => toResponse(await world.markRaceVoiceRead(token, params[0])),
   },
   {
     method: 'GET',

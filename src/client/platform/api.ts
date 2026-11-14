@@ -10,6 +10,7 @@ import {
   type PlayerGameDetail,
   type PlayerId,
   type PlayerInfo,
+  type RaceVoice,
   ROUTES,
   type Run,
   type RunId,
@@ -73,7 +74,21 @@ export class ApiClient {
     });
     return this.parseJson<VoiceNote>(response);
   };
-  markVoiceRead = (id: string) => this.request<{ readCount: number; total: number }>('POST', ROUTES.voiceRead(id));
+  raceVoices = (game: GameId, key: string) => this.request<RaceVoice[]>('GET', ROUTES.raceVoices(game, key));
+  raceVoice = async (id: string): Promise<Blob> => {
+    const response = await this.send('GET', ROUTES.raceVoice(id));
+    if (!response.ok) await this.fail(response);
+    return response.blob();
+  };
+  uploadRaceVoice = async (game: GameId, key: string, blob: Blob, durationMs: number): Promise<RaceVoice> => {
+    const response = await this.send('POST', ROUTES.raceVoices(game, key), blob, {
+      'content-type': blob.type || 'application/octet-stream',
+      'x-voice-duration': String(durationMs),
+    });
+    return this.parseJson<RaceVoice>(response);
+  };
+  markRaceVoiceRead = (id: string) =>
+    this.request<{ readCount: number; total: number }>('POST', ROUTES.raceVoiceRead(id));
   game = (game: GameId) => this.request<GameState>('GET', ROUTES.game(game));
   playerDetail = (game: GameId, player: PlayerId) =>
     this.request<PlayerGameDetail>('GET', ROUTES.playerDetail(game, player));
