@@ -88,6 +88,13 @@ describe('partie', () => {
   const data = boardToString(start);
   const tubes = (host: HTMLElement) => [...host.querySelectorAll<HTMLElement>('.tube')];
 
+  it('signale l’état initial dès le montage', () => {
+    const host = document.createElement('div');
+    const onProgress = vi.fn();
+    mountFiolesPlay(host, { start, strings: FIOLES_STRINGS.fr, onProgress, onWin: vi.fn() });
+    expect(onProgress).toHaveBeenCalledWith({ state: data, value: 0, replay: '' });
+  });
+
   it('joue au toucher, signale chaque coup et produit un replay gagnant valide', () => {
     const host = document.createElement('div');
     const onProgress = vi.fn();

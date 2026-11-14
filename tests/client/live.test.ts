@@ -69,6 +69,19 @@ describe('LiveClient', () => {
     expect(listener).toHaveBeenCalledOnce();
   });
 
+  it('envoie une réaction', () => {
+    const live = create();
+    live.connect('t');
+    latest().open();
+    live.react('fioles', 'c:1', 'thumbs');
+    expect(JSON.parse(latest().sent.at(-1) ?? '')).toEqual({
+      type: 'reaction',
+      game: 'fioles',
+      key: 'c:1',
+      code: 'thumbs',
+    });
+  });
+
   it('envoie un ping régulier', () => {
     const live = create();
     live.connect('t');

@@ -185,6 +185,10 @@ export class App {
       this.screen?.onPresenceChanged?.();
       return;
     }
+    if (message.type === 'reaction') {
+      this.screen?.onReaction?.(message.reaction);
+      return;
+    }
     const game = routeGame(this.route);
     if (message.game === null || game === null || message.game === game) this.screen?.onDataChanged?.();
   }

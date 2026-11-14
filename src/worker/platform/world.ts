@@ -6,7 +6,9 @@ import { DurableObject } from 'cloudflare:workers';
 import type { GameDefinition } from '../../shared/games/game.ts';
 import { findGame, GAMES } from '../../shared/games/registry.ts';
 import {
+  type ClientMessage,
   cleanName,
+  type GameId,
   type GameState,
   type GameSummary,
   isRunStatus,
@@ -30,7 +32,7 @@ import { createId, createToken, hashPassword, sha256, verifyPassword } from './c
 import { fail, ok, type Result } from './result.ts';
 import { migrate } from './schema.ts';
 import { nameKey, PlatformStore } from './store.ts';
-import { LoginThrottle } from './throttle.ts';
+import { LoginThrottle, ReactionThrottle } from './throttle.ts';
 
 /** Garde-fous : plateforme entre amis à inscription libre. */
 export const QUOTAS = { players: 200 } as const;
@@ -46,6 +48,7 @@ const unknownGame = (): Result<never> => fail(404, 'unknown game');
 export class World extends DurableObject<Env> {
   private readonly store: PlatformStore;
   private readonly throttle = new LoginThrottle(10, 10 * 60 * 1000);
+  private readonly reactionThrottle = new ReactionThrottle(1000);
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -209,6 +212,10 @@ export class World extends DurableObject<Env> {
   override async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
     const msg = typeof message === 'string' ? parseClientMessage(message) : null;
     if (!msg) return;
+    if (msg.type === 'reaction') {
+      this.react(ws, msg);
+      return;
+    }
     const current = readAttachment(ws);
     const now = Date.now();
     const next: Attachment =
@@ -276,6 +283,30 @@ export class World extends DurableObject<Env> {
     };
   }
 
+  /**
+   * Réaction de course : le joueur doit être en train de jouer ce niveau, et une seule réaction passe par
+   * seconde. Elle n'est diffusée qu'aux connexions présentes sur le même `(jeu, niveau)` et n'est pas stockée.
+   */
+  private react(ws: WebSocket, msg: Extract<ClientMessage, { type: 'reaction' }>): void {
+    const current = readAttachment(ws);
+    if (current.game !== msg.game || current.key !== msg.key) return;
+    const game = findGame(msg.game);
+    if (!game?.isValidKey(msg.key)) return;
+    const now = Date.now();
+    if (!this.reactionThrottle.allow(current.player, now)) return;
+    this.broadcastToKey(msg.game, msg.key, {
+      type: 'reaction',
+      reaction: {
+        game: msg.game,
+        key: msg.key,
+        player: current.player,
+        name: current.name,
+        code: msg.code,
+        at: now,
+      },
+    });
+  }
+
   /** Joueurs connectés : une entrée par joueur, sa connexion la plus récemment active. */
   private presence(exclude?: WebSocket): Presence[] {
     const latest = new Map<string, Attachment>();
@@ -296,11 +327,25 @@ export class World extends DurableObject<Env> {
     const data = JSON.stringify(message);
     for (const ws of this.ctx.getWebSockets()) {
       if (ws === exclude) continue;
-      try {
-        ws.send(data);
-      } catch {
-        // Connexion en cours de fermeture : retirée par webSocketClose.
-      }
+      this.send(ws, data);
+    }
+  }
+
+  /** Diffuse un message aux connexions dont la présence courante est ce jeu et ce niveau. */
+  private broadcastToKey(game: GameId, key: string, message: ServerMessage): void {
+    const data = JSON.stringify(message);
+    for (const ws of this.ctx.getWebSockets()) {
+      const attachment = readAttachment(ws);
+      if (attachment.game !== game || attachment.key !== key) continue;
+      this.send(ws, data);
+    }
+  }
+
+  private send(ws: WebSocket, data: string): void {
+    try {
+      ws.send(data);
+    } catch {
+      // Connexion en cours de fermeture : retirée par webSocketClose.
     }
   }
 }

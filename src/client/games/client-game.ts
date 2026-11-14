@@ -41,7 +41,7 @@ export interface LevelProgress {
 export interface PlayContext {
   key: string;
   lang: Lang;
-  /** À appeler après chaque action du joueur. `state` est diffusé aux autres joueurs connectés. */
+  /** À appeler au montage puis après chaque action. `state` est diffusé aux autres joueurs connectés. */
   progress(update: { state: string; value: number; replay: string }): void;
   /** Fin de partie. La plateforme enregistre la partie et affiche le résultat. */
   finish(result: { status: 'won' | 'lost'; replay: string }): void;

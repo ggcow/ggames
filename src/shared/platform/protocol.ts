@@ -2,6 +2,7 @@
 // comptes, parties enregistrées (avec replay), progression, classements, présence en temps réel.
 // Le contenu des champs `key`, `replay` et `state` est défini par chaque jeu (voir shared/games).
 
+import { isReactionCode, type ReactionCode } from './reactions.ts';
 import { cleanText, isId, isRecord, parseJson } from './validate.ts';
 
 export type PlayerId = string;
@@ -149,12 +150,24 @@ export interface Presence {
   value: number;
 }
 
+/** Réaction de course : elle n'existe que pour les joueurs du même niveau et n'est jamais conservée. */
+export interface ReactionNotice {
+  game: GameId;
+  key: string;
+  player: PlayerId;
+  name: string;
+  code: ReactionCode;
+  at: number;
+}
+
 export type ClientMessage =
   | { type: 'activity'; game: GameId; key: string; state: string; value: number }
+  | { type: 'reaction'; game: GameId; key: string; code: ReactionCode }
   | { type: 'idle' };
 
 export type ServerMessage =
   | { type: 'presence'; online: Presence[] }
+  | { type: 'reaction'; reaction: ReactionNotice }
   /** Des données ont changé : les clients concernés rechargent. `game` null = données de joueurs. */
   | { type: 'changed'; game: GameId | null };
 
@@ -186,10 +199,18 @@ const isShortString = (value: unknown, max: number): value is string =>
 const isCount = (value: unknown): value is number =>
   typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= LIMITS.value;
 
+const isTimestamp = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0;
+
 export function parseClientMessage(raw: string): ClientMessage | null {
   const msg = parseJson(raw);
   if (!isRecord(msg)) return null;
   if (msg['type'] === 'idle') return { type: 'idle' };
+  if (msg['type'] === 'reaction') {
+    const { game, key, code } = msg;
+    if (!isGameId(game) || !isShortString(key, LIMITS.key) || !isReactionCode(code)) return null;
+    return { type: 'reaction', game, key, code };
+  }
   if (msg['type'] !== 'activity') return null;
   const { game, key, state, value } = msg;
   if (!isGameId(game) || !isShortString(key, LIMITS.key) || !isShortString(state, LIMITS.state) || !isCount(value)) {
@@ -209,12 +230,27 @@ function parsePresence(value: unknown): Presence | null {
   return { player, name, game, key, state, value: score };
 }
 
+function parseReaction(value: unknown): ReactionNotice | null {
+  if (!isRecord(value)) return null;
+  const { game, key, player, name, code } = value;
+  const at = value['at'];
+  if (!isGameId(game) || !isShortString(key, LIMITS.key) || !isId(player) || !isShortString(name, LIMITS.name)) {
+    return null;
+  }
+  if (!isReactionCode(code) || !isTimestamp(at)) return null;
+  return { game, key, player, name, code, at };
+}
+
 export function parseServerMessage(raw: string): ServerMessage | null {
   const msg = parseJson(raw);
   if (!isRecord(msg)) return null;
   if (msg['type'] === 'changed') {
     const game = msg['game'];
     return game === null || isGameId(game) ? { type: 'changed', game } : null;
+  }
+  if (msg['type'] === 'reaction') {
+    const reaction = parseReaction(msg['reaction']);
+    return reaction ? { type: 'reaction', reaction } : null;
   }
   if (msg['type'] === 'presence' && Array.isArray(msg['online'])) {
     return { type: 'presence', online: msg['online'].map(parsePresence).filter((p): p is Presence => p !== null) };

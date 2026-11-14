@@ -85,12 +85,29 @@ describe('messages temps réel', () => {
     expect(parseClientMessage(raw)).toBeNull();
   });
 
+  it('parse une réaction valide et rejette les codes inconnus', () => {
+    const msg = { type: 'reaction', game: 'fioles', key: 'c:1', code: 'thumbs' };
+    expect(parseClientMessage(JSON.stringify(msg))).toEqual(msg);
+    expect(parseClientMessage('{"type":"reaction","game":"fioles","key":"c:1","code":"inconnu"}')).toBeNull();
+    expect(parseClientMessage('{"type":"reaction","game":"fioles","code":"thumbs"}')).toBeNull();
+  });
+
   it('parse les messages serveur et filtre les présences invalides', () => {
     expect(parseServerMessage('{"type":"changed","game":null}')).toEqual({ type: 'changed', game: null });
     const good = { player: 'abc123', name: 'Léa', game: null, key: null, state: null, value: 0 };
     const raw = JSON.stringify({ type: 'presence', online: [good, { player: 'X' }] });
     expect(parseServerMessage(raw)).toEqual({ type: 'presence', online: [good] });
     expect(parseServerMessage('{"type":"changed","game":"BAD"}')).toBeNull();
+  });
+
+  it('parse une réaction serveur et rejette ses champs invalides', () => {
+    const reaction = { game: 'fioles', key: 'c:1', player: 'abc123', name: 'Léa', code: 'nice', at: 123 };
+    expect(parseServerMessage(JSON.stringify({ type: 'reaction', reaction }))).toEqual({ type: 'reaction', reaction });
+    expect(
+      parseServerMessage(JSON.stringify({ type: 'reaction', reaction: { ...reaction, code: 'inconnu' } })),
+    ).toBeNull();
+    expect(parseServerMessage(JSON.stringify({ type: 'reaction', reaction: { ...reaction, at: 0 } }))).toBeNull();
+    expect(parseServerMessage('{"type":"reaction"}')).toBeNull();
   });
 });
 

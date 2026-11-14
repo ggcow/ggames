@@ -113,5 +113,6 @@ export function mountFiolesPlay(host: HTMLElement, options: FiolesPlayOptions): 
   const onResize = () => render();
   window.addEventListener('resize', onResize);
   render();
+  report();
   return () => window.removeEventListener('resize', onResize);
 }

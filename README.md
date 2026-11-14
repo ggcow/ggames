@@ -18,6 +18,8 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
 - La fiche d'un ami ne liste que les niveaux que vous avez tous les deux réussis : un replay ne révèle jamais
   la solution d'un niveau que tu n'as pas encore fini.
 - Quand un ami joue, son plateau s'affiche en direct ; toucher son nom permet de jouer le même niveau.
+- Pendant une course, envoie des réactions rapides (emojis ou phrases) aux joueurs du même niveau. Elles
+  disparaissent après quelques secondes et ne sont pas conservées.
 - Interface en français et en chinois (bouton 中 / Fr en haut de l’écran).
 
 ### Jeux

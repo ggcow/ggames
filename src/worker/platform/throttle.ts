@@ -29,3 +29,20 @@ export class LoginThrottle {
     return (this.failures.get(account) ?? []).filter((at) => now - at < this.windowMs);
   }
 }
+
+/** Laisse passer au plus une réaction par joueur et par intervalle, en mémoire du Durable Object. */
+export class ReactionThrottle {
+  private readonly last = new Map<string, number>();
+  private readonly cooldownMs: number;
+
+  constructor(cooldownMs: number) {
+    this.cooldownMs = cooldownMs;
+  }
+
+  allow(player: string, now: number): boolean {
+    const previous = this.last.get(player);
+    if (previous !== undefined && now - previous < this.cooldownMs) return false;
+    this.last.set(player, now);
+    return true;
+  }
+}

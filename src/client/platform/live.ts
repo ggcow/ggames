@@ -3,12 +3,14 @@
 
 import {
   type ClientMessage,
+  type GameId,
   PING,
   type Presence,
   parseServerMessage,
   ROUTES,
   type ServerMessage,
 } from '../../shared/platform/protocol.ts';
+import type { ReactionCode } from '../../shared/platform/reactions.ts';
 
 export type LiveListener = (message: ServerMessage) => void;
 
@@ -64,6 +66,11 @@ export class LiveClient {
   setActivity(activity: ClientMessage): void {
     this.lastActivity = activity;
     this.send(activity);
+  }
+
+  /** Envoie une réaction de course ; perdue si la connexion est fermée. */
+  react(game: GameId, key: string, code: ReactionCode): void {
+    this.send({ type: 'reaction', game, key, code });
   }
 
   private open(): void {

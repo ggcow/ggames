@@ -1,4 +1,11 @@
-import type { GameId, GameState, PlayerId, PlayerInfo, Presence } from '../../shared/platform/protocol.ts';
+import type {
+  GameId,
+  GameState,
+  PlayerId,
+  PlayerInfo,
+  Presence,
+  ReactionNotice,
+} from '../../shared/platform/protocol.ts';
 import type { GameView } from '../games/client-game.ts';
 import type { ApiClient } from './api.ts';
 import type { Lang } from './i18n.ts';
@@ -24,6 +31,7 @@ export interface ScreenHandle {
   dispose?(): void;
   onDataChanged?(): void;
   onPresenceChanged?(): void;
+  onReaction?(reaction: ReactionNotice): void;
 }
 
 /** Clés qu'un joueur a gagnées au moins une fois. */

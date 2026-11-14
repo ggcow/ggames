@@ -1,4 +1,5 @@
-import type { GameState, RecordEntry } from '../../../shared/platform/protocol.ts';
+import type { GameState, ReactionNotice, RecordEntry } from '../../../shared/platform/protocol.ts';
+import { findReaction, REACTIONS } from '../../../shared/platform/reactions.ts';
 import type { ClientGame, GameView, Unmount } from '../../games/client-game.ts';
 import { avatar } from '../avatar.ts';
 import {
@@ -12,6 +13,7 @@ import {
 } from '../context.ts';
 import { type Child, h, replaceChildren } from '../dom.ts';
 import type { Lang } from '../i18n.ts';
+import { reactionLabel } from '../reactions.ts';
 import type { PlatformStrings } from '../strings.ts';
 import { errorMessage, loading, screenHeader, showModal, toast } from '../ui.ts';
 import { renderLiveBoards } from './online.ts';
@@ -48,6 +50,9 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
   const liveHost = h('div');
   const recordHost = h('div', { class: 'record' });
   const boardHost = h('div', { class: 'play-host' });
+  const reactionHost = h('div', { class: 'reaction-bubbles', attrs: { 'aria-live': 'polite' } });
+  const reactionTimers = new Set<ReturnType<typeof setTimeout>>();
+  let closeReactions: (() => void) | null = null;
   let view: GameView | null = null;
   let unmountGame: Unmount | null = null;
   let started = Date.now();
@@ -56,9 +61,89 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
   const format = game.formatValue;
   const rivals = () => rivalsOn(ctx.live.presence, ctx.me.id, gameId, key);
 
+  const openReactions = () => {
+    closeReactions?.();
+    const close = showModal(
+      [
+        h('h3', { class: 'section-title' }, t.reactions),
+        h(
+          'div',
+          { class: 'reaction-grid' },
+          ...REACTIONS.map((reaction) =>
+            h(
+              'button',
+              {
+                class: `reaction-option ${reaction.kind}`,
+                attrs: {
+                  'aria-label': reaction.kind === 'emoji' ? reaction.emoji : reactionLabel(reaction.code, ctx.lang),
+                },
+                on: {
+                  click: () => {
+                    closeReactions?.();
+                    ctx.live.react(gameId, key, reaction.code);
+                  },
+                },
+              },
+              reaction.kind === 'emoji' ? reaction.emoji : reactionLabel(reaction.code, ctx.lang),
+            ),
+          ),
+        ),
+      ],
+      [{ label: t.close }],
+    );
+    closeReactions = () => {
+      closeReactions = null;
+      close();
+    };
+  };
+
+  const reactionButton = h(
+    'button',
+    {
+      class: 'round small reaction-button',
+      attrs: { 'aria-label': t.reactions },
+      on: { click: openReactions },
+    },
+    '😀',
+  );
+  reactionButton.hidden = true;
+
+  const showReaction = (notice: ReactionNotice) => {
+    if (notice.game !== gameId || notice.key !== key) return;
+    const reaction = findReaction(notice.code);
+    if (!reaction) return;
+    const label = reactionLabel(notice.code, ctx.lang);
+    const bubble = h(
+      'div',
+      {
+        class: `reaction-bubble ${notice.player === ctx.me.id ? 'me' : ''}`,
+        attrs: { 'aria-label': `${notice.name} : ${label}` },
+      },
+      avatar(notice.player, notice.name, 'xs'),
+      h('span', { class: reaction.kind === 'emoji' ? 'reaction-emoji' : 'reaction-text' }, label),
+    );
+    reactionHost.append(bubble);
+    while (reactionHost.children.length > 3) reactionHost.firstElementChild?.remove();
+    const hide = setTimeout(() => {
+      bubble.classList.add('out');
+      reactionTimers.delete(hide);
+      const remove = setTimeout(() => {
+        bubble.remove();
+        reactionTimers.delete(remove);
+      }, 300);
+      reactionTimers.add(remove);
+    }, 2600);
+    reactionTimers.add(hide);
+  };
+
   const renderRecord = () => replaceChildren(recordHost, view ? recordBadge(view, key, format, t) : null);
 
-  const renderLive = () => replaceChildren(liveHost, renderLiveBoards(rivals().slice(0, RACE_SIZE - 1), ctx, gameId));
+  const renderLive = () => {
+    const others = rivals();
+    reactionButton.hidden = others.length === 0;
+    if (others.length === 0) closeReactions?.();
+    replaceChildren(liveHost, renderLiveBoards(others.slice(0, RACE_SIZE - 1), ctx, gameId));
+  };
 
   const submitAbandon = () => {
     if (!pending || pending.value === 0) return;
@@ -169,9 +254,16 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         if (!canPlay(state)) return showLocked();
         replaceChildren(
           host,
-          screenHeader(game.keyLabel(key, ctx.lang), () => ctx.navigate({ name: 'game', game: gameId }), t, recordHost),
+          screenHeader(
+            game.keyLabel(key, ctx.lang),
+            () => ctx.navigate({ name: 'game', game: gameId }),
+            t,
+            recordHost,
+            reactionButton,
+          ),
           liveHost,
           boardHost,
+          reactionHost,
         );
         renderLive();
         start();
@@ -183,9 +275,13 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
   return {
     onDataChanged: () => void load(),
     onPresenceChanged: renderLive,
+    onReaction: showReaction,
     dispose: () => {
       submitAbandon();
       unmountGame?.();
+      closeReactions?.();
+      for (const timer of reactionTimers) clearTimeout(timer);
+      reactionTimers.clear();
       ctx.live.setActivity({ type: 'idle' });
     },
   };

@@ -39,6 +39,8 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   une partie sur un niveau débloqué par le joueur ou par n'importe quel autre joueur, et refuse le reste.
 - Écran de partie pensé pour un téléphone : son plateau en grand en bas, au-dessus au plus deux aperçus des
   autres joueurs en petit ; record et compteur de coups en badges compacts.
+- Pendant une course, chaque joueur envoie des réactions rapides (emojis ou phrases courtes traduites) aux
+  joueurs du même niveau. Elles ne sont pas conservées et ne concernent que la course en cours.
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct.
 - Interface en français et en chinois.
@@ -64,7 +66,7 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 site/                      fichiers statiques (index.html, style.css), copiés dans dist/
 src/
   shared/                  code commun client + serveur, sans DOM ni Cloudflare
-    platform/              protocole HTTP/WebSocket (types, routes, validation)
+    platform/              protocole HTTP/WebSocket (types, routes, validation), catalogue de réactions
     games/                 interface GameDefinition + registre des jeux
       campaign.ts          campagne de niveaux commune : clés `c:<n>`, déblocage
       fioles/              règles, solveur, génération, replays
