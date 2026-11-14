@@ -607,6 +607,11 @@ input[type="range"] {
   --theme-b: #1c7ed6;
   --theme-edge: #0b4f7a;
 }
+.theme-bouquets {
+  --theme-a: #f783ac;
+  --theme-b: #e8590c;
+  --theme-edge: #a61e4d;
+}
 .game-icon {
   width: 64px;
   height: 64px;
@@ -1314,6 +1319,205 @@ input[type="range"] {
   display: none;
 }
 
+/* ---------- Plateau (bouquets) ---------- */
+
+/*
+ * Un pot : --pw sa largeur, --top la place au-dessus pour les fleurs, --ph la hauteur de l'image du pot
+ * (420 x 455). Chaque place pose le pied de sa tige à la hauteur --base du pot, à la position --x de sa largeur.
+ */
+.bq-board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 6px;
+}
+.bq-row {
+  display: flex;
+  justify-content: center;
+  gap: calc(var(--pw) * 0.1);
+}
+.bq-row + .bq-row {
+  margin-top: calc(var(--pw) * -0.3);
+}
+.bq-pot,
+.bq-burst {
+  --top: calc(var(--pw) * 0.85);
+  --ph: calc(var(--pw) * 455 / 420);
+}
+.bq-pot {
+  position: relative;
+  width: var(--pw);
+  height: calc(var(--top) + var(--ph));
+}
+.bq-clay {
+  position: absolute;
+  left: 0;
+  top: var(--top);
+  width: 100%;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.bq-clay.front {
+  z-index: 3;
+}
+.bq-slot {
+  position: absolute;
+  top: 0;
+  left: calc(var(--pw) * var(--x));
+  transform: translateX(-50%);
+  height: calc(var(--top) + var(--ph) * var(--base));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+.bq-slot.front {
+  z-index: 2;
+}
+/* Ombre de la couche suivante, à une place libre du devant. */
+.bq-slot.next {
+  z-index: 1;
+  filter: brightness(0.45) saturate(0.35) blur(0.8px);
+}
+/* Petite ombre dans le terreau, au pied de chaque tige. */
+.bq-slot.front.filled::after {
+  content: "";
+  position: absolute;
+  bottom: calc(var(--pw) * -0.02);
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(var(--pw) * 0.2);
+  height: calc(var(--pw) * 0.05);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(20, 8, 2, 0.55), transparent);
+}
+.bq-flower {
+  display: block;
+  height: calc(var(--pw) * 0.88);
+  max-width: none;
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  /* Le pied de la tige s'efface en entrant dans le terreau. */
+  -webkit-mask-image: linear-gradient(to top, transparent 0, #000 7%);
+  mask-image: linear-gradient(to top, transparent 0, #000 7%);
+  transition: transform var(--bq-lift, 0.15s);
+}
+.mini .bq-flower {
+  pointer-events: none;
+  cursor: default;
+}
+.bq-slot.next .bq-flower {
+  height: calc(var(--pw) * 0.82);
+  pointer-events: none;
+}
+.bq-slot.lifted .bq-flower {
+  transform: translateY(calc(var(--pw) * -0.18));
+  filter: drop-shadow(0 0 6px rgba(255, 212, 59, 0.9));
+}
+.bq-flower.dragging {
+  opacity: 0.25;
+}
+.bq-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 30;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.4));
+}
+/* Médaillon émaillé : couches cachées restantes. */
+.bq-badge {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: 18%;
+  transform: translateX(-50%);
+  width: calc(var(--pw) * 0.27);
+  height: calc(var(--pw) * 0.27);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 40% 35%, #fffdf6, #efd9ae 75%);
+  border: calc(var(--pw) * 0.025) solid #d6a445;
+  box-shadow:
+    0 2px 3px rgba(20, 8, 0, 0.45),
+    inset 0 -2px 3px rgba(140, 90, 30, 0.3);
+  color: #5b2f12;
+  font-weight: 900;
+  font-size: calc(var(--pw) * 0.17);
+  line-height: 1;
+}
+.bq-pot.revealed .bq-slot.front .bq-flower {
+  animation: bq-reveal 0.45s ease-out;
+}
+@keyframes bq-reveal {
+  from {
+    filter: brightness(0.45) saturate(0.35) blur(0.8px);
+    transform: translateY(calc(var(--pw) * 0.06));
+  }
+}
+.bq-pot.shake {
+  animation: shake 0.3s;
+}
+/* Bouquet qui s'envole : les trois fleurs se rassemblent au milieu du pot, puis montent en s'effaçant. */
+.bq-burst {
+  position: fixed;
+  z-index: 25;
+  pointer-events: none;
+}
+.bq-burst .bq-slot {
+  animation: bq-gather 0.8s ease-in forwards;
+}
+.bq-burst::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(var(--top) * 0.6);
+  width: var(--pw);
+  height: var(--pw);
+  margin-left: calc(var(--pw) * -0.5);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 236, 170, 0.85), rgba(255, 180, 210, 0.35) 55%, transparent);
+  animation: bq-glow 0.8s ease-out forwards;
+}
+@keyframes bq-gather {
+  45% {
+    transform: translateX(calc(-50% + (0.5 - var(--x)) * var(--pw) * 0.8)) scale(1.05);
+  }
+  100% {
+    transform: translateX(calc(-50% + (0.5 - var(--x)) * var(--pw) * 0.8)) translateY(calc(var(--pw) * -0.9)) scale(0.7);
+    opacity: 0;
+  }
+}
+@keyframes bq-glow {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+.bq-hint {
+  margin: 0;
+  text-align: center;
+  color: var(--yellow);
+  font-weight: 800;
+}
+.mini .bq-board {
+  padding: 2px 0 0;
+}
+
 /* ---------- États ---------- */
 
 .empty {
@@ -1458,7 +1662,12 @@ input[type="range"] {
   .tube.sealed::before,
   .modal,
   .modal-box,
-  .reaction-bubble {
+  .reaction-bubble,
+  .bq-pot.revealed .bq-slot.front .bq-flower,
+  .bq-pot.shake {
     animation: none;
+  }
+  :root {
+    --bq-lift: 0s;
   }
 }

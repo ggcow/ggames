@@ -52,6 +52,8 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - Interface en français et en chinois.
 - Les niveaux de chaque jeu sont générés une fois pour toutes et enregistrés dans le projet, jamais à la volée.
 - Premier jeu : **Fioles** (trier des couleurs dans des fioles), avec une campagne de 100 niveaux.
+- Deuxième jeu : **Bouquets** (réunir trois fleurs pareilles devant un pot ; des couches cachées avancent quand
+  un devant se vide), avec une campagne de 100 niveaux de difficulté croissante et des illustrations peintes.
 
 ## Contraintes à ne jamais casser
 
@@ -71,6 +73,7 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 
 ```
 site/                      fichiers statiques (index.html, style.css), copiés dans dist/
+  games/<jeu>/             illustrations d'un jeu (WebP), servies par le site
 src/
   shared/                  code commun client + serveur, sans DOM ni Cloudflare
     platform/              protocole HTTP/WebSocket (types, routes, validation), catalogue de réactions
@@ -78,6 +81,7 @@ src/
       campaign.ts          campagne de niveaux commune : clés `c:<n>`, déblocage
       random.ts            hasard reproductible pour générer les niveaux (graine, mélange)
       fioles/              règles, replays, niveaux enregistrés (levels.ts) et leur générateur (generate.ts)
+      bouquets/            idem ; le générateur mesure la difficulté avec des parties simulées
   worker/                  serveur Cloudflare
     index.ts               routeur HTTP -> Durable Object
     http.ts                réponses JSON, lecture du corps, jeton
@@ -139,7 +143,7 @@ Erreurs attendues : valeurs `Result` renvoyées par le Durable Object, convertie
    écrits une fois pour toutes dans `levels.ts` par `npm run levels -- <jeu>` (générateur à déclarer dans
    `scripts/levels.ts`).
 2. `src/client/games/<jeu>/` : `index.ts` qui exporte un `ClientGame`, `strings.ts` (fr + zh), écrans ;
-   l'enregistrer dans `src/client/games/registry.ts`.
+   l'enregistrer dans `src/client/games/registry.ts`. Ses images éventuelles vont dans `site/games/<jeu>/`.
 3. Tests : règles et replays dans `tests/shared/`, interface dans `tests/client/`, une partie complète via
    l'API dans `tests/worker/`.
 4. Mettre à jour `README.md` (liste des jeux) et ce fichier.
@@ -184,7 +188,7 @@ Aucune modification de la plateforme ne doit être nécessaire. Si elle l'est, c
   ```
 
   Types : `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `build`, `ci`, `chore`, `style`.
-  Portées : `platform`, `worker`, `client`, `shared`, `fioles`, `ci`, `deps`, `release`.
+  Portées : `platform`, `worker`, `client`, `shared`, `fioles`, `bouquets`, `ci`, `deps`, `release`.
 - Un commit = un changement cohérent qui passe `npm run check`. Pas de commit « wip » ni « fix typo » isolé
   d'un changement qu'il corrige.
 - Hook `pre-commit` : Biome sur les fichiers indexés + vérification des types.

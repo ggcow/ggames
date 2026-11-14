@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { encodeActions as encodeBouquets } from '../../src/shared/games/bouquets/definition.ts';
 import { campaignKey } from '../../src/shared/games/campaign.ts';
 import { encodeActions, type FiolesAction } from '../../src/shared/games/fioles/definition.ts';
 import type { Board } from '../../src/shared/games/fioles/rules.ts';
@@ -9,6 +10,7 @@ import type {
   Run,
   SubmitRunResponse,
 } from '../../src/shared/platform/protocol.ts';
+import { bouquetsWin } from '../support/bouquets.ts';
 import { fiolesLevel, solve } from '../support/fioles-solver.ts';
 import { call, newPlayer } from './support.ts';
 
@@ -29,7 +31,10 @@ describe('jeux', () => {
   it('liste les jeux disponibles avec leurs statistiques', async () => {
     const { token } = await newPlayer();
     const { body } = await call<GameSummary[]>('/api/games', { token });
-    expect(body).toEqual([{ id: 'fioles', players: 0, runs: 0, lastPlayed: null }]);
+    expect(body).toEqual([
+      { id: 'fioles', players: 0, runs: 0, lastPlayed: null },
+      { id: 'bouquets', players: 0, runs: 0, lastPlayed: null },
+    ]);
   });
 
   it('répond 404 pour un jeu inconnu', async () => {
@@ -185,5 +190,41 @@ describe('parties', () => {
     const best = await submit(a.token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });
     expect(best.body.records.map((r) => r.player)).toEqual([b.player.id, a.player.id]);
     expect(best.body.records.every((r) => r.value === WIN_1.length / 2)).toBe(true);
+  });
+});
+
+describe('Bouquets', () => {
+  const submitBouquets = (token: string, body: unknown) =>
+    call<SubmitRunResponse>('/api/games/bouquets/runs', { token, body });
+  const win = bouquetsWin(1);
+  const replay = encodeBouquets(win);
+
+  it('enregistre une partie gagnée avec le nombre de coups recalculé par le serveur', async () => {
+    const me = await newPlayer();
+    const { status, body } = await submitBouquets(me.token, { key: 'c:1', status: 'won', durationMs: 5000, replay });
+    expect(status).toBe(200);
+    expect(body.run).toMatchObject({ key: 'c:1', status: 'won', value: win.length, player: me.player.id });
+    const games = await call<GameSummary[]>('/api/games', { token: me.token });
+    expect(games.body.find((game) => game.id === 'bouquets')).toMatchObject({ players: 1, runs: 1 });
+  });
+
+  it('refuse une victoire incomplète ou un replay impossible', async () => {
+    const { token } = await newPlayer();
+    const partial = encodeBouquets(win.slice(0, 1));
+    expect((await submitBouquets(token, { key: 'c:1', status: 'won', durationMs: 1, replay: partial })).status).toBe(
+      400,
+    );
+    expect((await submitBouquets(token, { key: 'c:1', status: 'abandoned', durationMs: 1, replay: 'u' })).status).toBe(
+      400,
+    );
+  });
+
+  it('refuse un niveau hors de la campagne ou pas encore débloqué', async () => {
+    const { token } = await newPlayer();
+    expect((await submitBouquets(token, { key: 'c:101', status: 'abandoned', durationMs: 1, replay: '' })).status).toBe(
+      400,
+    );
+    const win2 = encodeBouquets(bouquetsWin(2));
+    expect((await submitBouquets(token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(403);
   });
 });
