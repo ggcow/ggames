@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "wrangler dev --ip 0.0.0.0 --port 8787",
     "build": "node scripts/build.ts",
+    "levels": "node scripts/levels.ts",
     "types": "wrangler types --include-runtime",
     "typecheck": "tsc -p tsconfig.client.json && tsc -p tsconfig.worker.json && tsc -p tsconfig.node.json",
     "lint": "biome check .",

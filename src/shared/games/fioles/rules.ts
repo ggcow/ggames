@@ -1,7 +1,6 @@
 // Règles du jeu Fioles : verser des boules de couleur jusqu'à ce que chaque fiole soit d'une seule couleur.
 // Code pur, sans DOM ni Cloudflare : utilisé par le client, le serveur et les tests.
-
-import { createRandom, shuffle } from '../random.ts';
+// La génération des niveaux est dans generate.ts.
 
 /** Nombre de boules par fiole. */
 export const CAP = 4;
@@ -66,94 +65,6 @@ export function pour(board: Board, from: number, to: number): number {
     moved++;
   }
   return moved;
-}
-
-/* ---------- Solveur ---------- */
-
-const stateKey = (board: ReadonlyBoard): string =>
-  board
-    .map((tube) => tube.map((color) => LETTERS[color]).join(''))
-    .sort()
-    .join('|');
-
-/**
- * Effort du solveur : nombre d'états explorés (recherche en profondeur avec mémorisation) avant de trouver
- * une solution. `null` si le plateau est impossible ou demande plus de `limit` états.
- * Sert à vérifier qu'un plateau est faisable et à estimer sa difficulté.
- */
-export function solverEffort(start: ReadonlyBoard, limit: number): number | null {
-  const seen = new Set<string>([stateKey(start)]);
-  const stack: Board[] = [cloneBoard(start)];
-  let explored = 0;
-  for (let board = stack.pop(); board; board = stack.pop()) {
-    if (isSolved(board)) return explored;
-    if (++explored > limit) return null;
-    const towardEmpty: Board[] = [];
-    const towardColor: Board[] = [];
-    board.forEach((source, from) => {
-      if (source.length === 0 || isTubeDone(source)) return;
-      const uniform = source.every((color) => color === source[0]);
-      board.forEach((target, to) => {
-        if (from === to || !canPour(source, target)) return;
-        if (target.length === 0 && uniform) return; // déplacer une fiole unie vers une vide ne sert à rien
-        const next = cloneBoard(board);
-        pour(next, from, to);
-        const key = stateKey(next);
-        if (seen.has(key)) return;
-        seen.add(key);
-        (target.length > 0 ? towardColor : towardEmpty).push(next);
-      });
-    });
-    stack.push(...towardEmpty, ...towardColor); // pile : les coups vers une même couleur sont explorés en premier
-  }
-  return null;
-}
-
-export const isSolvable = (start: ReadonlyBoard, limit: number): boolean => solverEffort(start, limit) !== null;
-
-/* ---------- Génération ---------- */
-
-/** Paramètres d'un plateau généré. */
-export interface BoardSpec {
-  colors: number;
-  empty: number;
-  /** Refuser les plateaux dont une fiole commence avec deux boules identiques côte à côte. */
-  noAdjacentPairs: boolean;
-  /** Nombre de plateaux faisables à générer ; le plus difficile pour le solveur est retenu. */
-  candidates: number;
-}
-
-const SOLVER_LIMIT = 30_000;
-const MAX_ATTEMPTS = 400;
-
-const hasAdjacentPair = (tube: readonly Color[]): boolean => tube.some((color, i) => i > 0 && tube[i - 1] === color);
-
-function shuffledBoard(colors: number, empty: number, random: () => number): Board {
-  const balls: Color[] = [];
-  for (let color = 0; color < colors; color++) for (let k = 0; k < CAP; k++) balls.push(color);
-  shuffle(balls, random);
-  const board: Board = [];
-  for (let i = 0; i < colors; i++) board.push(balls.slice(i * CAP, i * CAP + CAP));
-  for (let i = 0; i < empty; i++) board.push([]);
-  return board;
-}
-
-/** Plateau faisable respectant `spec`. Même résultat pour une même graine. */
-export function generateBoard(spec: BoardSpec, seed: number): Board {
-  let best: { board: Board; effort: number } | null = null;
-  let last: Board = [];
-  let found = 0;
-  for (let attempt = 0; attempt < MAX_ATTEMPTS && found < spec.candidates; attempt++) {
-    const board = shuffledBoard(spec.colors, spec.empty, createRandom(seed * 131 + attempt));
-    last = board;
-    if (board.some(isTubeDone)) continue;
-    if (spec.noAdjacentPairs && board.some(hasAdjacentPair)) continue;
-    const effort = solverEffort(board, SOLVER_LIMIT);
-    if (effort === null) continue;
-    found++;
-    if (!best || effort > best.effort) best = { board, effort };
-  }
-  return best?.board ?? last;
 }
 
 /* ---------- Encodage texte ---------- */

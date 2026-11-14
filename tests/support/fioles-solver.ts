@@ -1,7 +1,7 @@
 // Solveur de test : renvoie une suite de versements qui résout le plateau (recherche en largeur).
 // Sert à produire des replays gagnants valides dans les tests.
 
-import type { FiolesAction } from '../../src/shared/games/fioles/definition.ts';
+import { type FiolesAction, levelBoard } from '../../src/shared/games/fioles/definition.ts';
 import { type Board, cloneBoard, isSolved, pour, type ReadonlyBoard } from '../../src/shared/games/fioles/rules.ts';
 
 export function solve(start: ReadonlyBoard, limit = 200_000): FiolesAction[] | null {
@@ -24,4 +24,11 @@ export function solve(start: ReadonlyBoard, limit = 200_000): FiolesAction[] | n
     });
   }
   return null;
+}
+
+/** Plateau enregistré d'un niveau de la campagne, qui doit exister. */
+export function fiolesLevel(level: number): Board {
+  const board = levelBoard(level);
+  if (!board) throw new Error(`niveau ${level} absent`);
+  return board;
 }

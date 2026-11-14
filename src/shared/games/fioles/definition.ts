@@ -1,47 +1,18 @@
-// Définition du jeu Fioles pour la plateforme : génération des niveaux de la campagne, replays.
+// Définition du jeu Fioles pour la plateforme : niveaux enregistrés de la campagne, replays.
 
 import { campaignIsUnlocked, parseCampaignKey } from '../campaign.ts';
 import type { GameDefinition, ReplayOutcome } from '../game.ts';
-import { type Board, type BoardSpec, cloneBoard, generateBoard, isSolved, MAX_COLORS, pour } from './rules.ts';
+import { LEVELS } from './levels.ts';
+import { type Board, cloneBoard, isSolved, parseBoard, pour } from './rules.ts';
 
 export const FIOLES_ID = 'fioles';
 
 /* ---------- Campagne ---------- */
 
-/** Au-delà de ce niveau, toutes les couleurs sont en jeu : la difficulté vient du choix du plateau. */
-const FULL_COLORS_LEVEL = MAX_COLORS - 2;
-
-/** Plafond du nombre de plateaux candidats supplémentaires (coût de génération : quelques ms chacun). */
-const MAX_EXTRA_CANDIDATES = 40;
-
-/**
- * Difficulté du niveau `level` : une couleur de plus à chaque niveau (3 au niveau 1, toutes au niveau 10),
- * pas de paires collées à partir du niveau 3, puis un plateau candidat de plus par niveau (jusqu'à 41) pour garder
- * le plus dur pour le solveur.
- * Toujours 2 fioles vides.
- */
-export function campaignSpec(level: number): BoardSpec {
-  return {
-    colors: Math.min(level + 2, MAX_COLORS),
-    empty: 2,
-    noAdjacentPairs: level >= 3,
-    candidates: 1 + Math.min(Math.max(level - FULL_COLORS_LEVEL, 0), MAX_EXTRA_CANDIDATES),
-  };
-}
-
-const campaignCache = new Map<number, Board>();
-
-/**
- * Plateau du niveau `level` de la campagne, identique sur tous les appareils.
- * Toute modification de la génération change les niveaux et invalide les parties enregistrées.
- */
-export function campaignBoard(level: number): Board {
-  let board = campaignCache.get(level);
-  if (!board) {
-    board = generateBoard(campaignSpec(level), level);
-    campaignCache.set(level, board);
-  }
-  return cloneBoard(board);
+/** Plateau enregistré du niveau `level` (copie modifiable), ou `null` s'il n'existe pas. */
+export function levelBoard(level: number): Board | null {
+  const text = LEVELS[level - 1];
+  return text === undefined ? null : parseBoard(text);
 }
 
 /* ---------- Replays ---------- */
@@ -98,7 +69,7 @@ export function playActions(start: Board, actions: readonly FiolesAction[]): Boa
 /** Plateau de départ d'une clé, ou `null` si la clé est invalide. */
 export function startBoard(key: string): Board | null {
   const level = parseCampaignKey(key);
-  return level === null ? null : campaignBoard(level);
+  return level === null ? null : levelBoard(level);
 }
 
 /* ---------- Définition ---------- */

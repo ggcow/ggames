@@ -12,9 +12,10 @@ describe('campagne : clés', () => {
     expect(campaignKey(12)).toBe('c:12');
     expect(parseCampaignKey('c:12')).toBe(12);
     expect(parseCampaignKey(campaignKey(MAX_LEVEL))).toBe(MAX_LEVEL);
+    expect(MAX_LEVEL).toBe(100);
   });
 
-  it.each(['c:0', 'c:01', 'c:10000', 'l:abc123', 'x:1', ''])('rejette %s', (key) => {
+  it.each(['c:0', 'c:01', 'c:101', 'c:1000', 'l:abc123', 'x:1', ''])('rejette %s', (key) => {
     expect(parseCampaignKey(key)).toBeNull();
   });
 });

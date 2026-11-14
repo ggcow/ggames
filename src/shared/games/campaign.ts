@@ -1,16 +1,17 @@
 // Campagne de niveaux numérotés, commune aux jeux qui en ont une : clés `c:<niveau>` de 1 à MAX_LEVEL.
 // Progression individuelle : on joue le premier niveau pas encore gagné et tous ceux d'avant.
 
-/** Nombre de niveaux d'une campagne. */
-export const MAX_LEVEL = 9999;
+/** Nombre de niveaux d'une campagne : cinq pages de la grille, enregistrés dans chaque jeu (`levels.ts`). */
+export const MAX_LEVEL = 100;
 
 /** Clé d'un niveau de la campagne. */
 export const campaignKey = (level: number): string => `c:${level}`;
 
 /** Numéro du niveau désigné par une clé, ou `null` si la clé n'est pas un niveau de campagne valide. */
 export function parseCampaignKey(key: string): number | null {
-  const match = /^c:([1-9]\d{0,3})$/.exec(key);
-  return match?.[1] ? Number(match[1]) : null;
+  const match = /^c:([1-9]\d{0,2})$/.exec(key);
+  const level = match?.[1] ? Number(match[1]) : null;
+  return level !== null && level <= MAX_LEVEL ? level : null;
 }
 
 /**

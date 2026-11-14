@@ -28,7 +28,7 @@ Il décrit l'état actuel du projet et les règles à respecter. `CLAUDE.md` l'i
 Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine continentale.
 
 - Chaque joueur a un compte (pseudo + mot de passe) et se connecte depuis n'importe quel appareil.
-- L'accueil liste les jeux. Pour chaque jeu : la grille des niveaux par pages (réussis, jouable, verrouillés),
+- L'accueil liste les jeux. Pour chaque jeu : la grille des 100 niveaux, 5 pages de 20 (réussis, jouable, verrouillés),
   la progression de chaque joueur (niveaux réussis, essais, temps), les classements, et le replay des parties
   gagnées sur les niveaux déjà réussis par le joueur.
 - Un replay ne révèle jamais la solution d'un niveau : on ne voit que les replays des niveaux qu'on a
@@ -50,7 +50,8 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct.
 - Interface en français et en chinois.
-- Premier jeu : **Fioles** (trier des couleurs dans des fioles), avec une campagne de niveaux infinie.
+- Les niveaux de chaque jeu sont générés une fois pour toutes et enregistrés dans le projet, jamais à la volée.
+- Premier jeu : **Fioles** (trier des couleurs dans des fioles), avec une campagne de 100 niveaux.
 
 ## Contraintes à ne jamais casser
 
@@ -62,9 +63,9 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - **Bilingue** : tout texte visible passe par un dictionnaire `defineStrings` (fr + zh). Le compilateur impose
   les mêmes clés dans les deux langues.
 - **Données de production** : ne jamais modifier une migration existante (`src/worker/platform/schema.ts`).
-  Modifier la génération des niveaux (`createRandom`, `generateBoard`, `campaignSpec`) ou le format des replays
-  rend les parties enregistrées invalides : à faire uniquement avec une migration qui supprime les parties du jeu
-  concerné, et seulement si le propriétaire l'a demandé.
+  Modifier un niveau enregistré (`src/shared/games/<jeu>/levels.ts`) ou le format des replays rend les parties
+  enregistrées invalides : à faire uniquement avec une migration qui supprime les parties concernées, et seulement
+  si le propriétaire l'a demandé. Ne jamais regénérer les niveaux d'un jeu publié.
 
 ## Architecture
 
@@ -76,7 +77,7 @@ src/
     games/                 interface GameDefinition + registre des jeux
       campaign.ts          campagne de niveaux commune : clés `c:<n>`, déblocage
       random.ts            hasard reproductible pour générer les niveaux (graine, mélange)
-      fioles/              règles, solveur, génération, replays
+      fioles/              règles, replays, niveaux enregistrés (levels.ts) et leur générateur (generate.ts)
   worker/                  serveur Cloudflare
     index.ts               routeur HTTP -> Durable Object
     http.ts                réponses JSON, lecture du corps, jeton
@@ -91,6 +92,7 @@ pages/                     projet Cloudflare Pages : relaie /api/* vers le Worke
 pages-staging/             même relais pour l'environnement de test
 tests/                     Vitest : shared/ (node), client/ (happy-dom), worker/ (runtime Cloudflare réel)
 scripts/build.ts           construction de dist/
+scripts/levels.ts          écrit les niveaux enregistrés d'un jeu à partir de son generate.ts
 ```
 
 ### Plateforme et jeux
@@ -133,7 +135,9 @@ Erreurs attendues : valeurs `Result` renvoyées par le Durable Object, convertie
 
 1. `src/shared/games/<jeu>/` : règles pures + `definition.ts` qui exporte une `GameDefinition` ;
    l'enregistrer dans `src/shared/games/registry.ts`. Un jeu à niveaux utilise la campagne commune
-   (`shared/games/campaign.ts`) et `campaignMethods()` côté client.
+   (`shared/games/campaign.ts`) et `campaignMethods()` côté client ; son `generate.ts` produit ses 100 niveaux,
+   écrits une fois pour toutes dans `levels.ts` par `npm run levels -- <jeu>` (générateur à déclarer dans
+   `scripts/levels.ts`).
 2. `src/client/games/<jeu>/` : `index.ts` qui exporte un `ClientGame`, `strings.ts` (fr + zh), écrans ;
    l'enregistrer dans `src/client/games/registry.ts`.
 3. Tests : règles et replays dans `tests/shared/`, interface dans `tests/client/`, une partie complète via
@@ -156,16 +160,17 @@ Aucune modification de la plateforme ne doit être nécessaire. Si elle l'est, c
 
 ## Commandes
 
-| Commande                 | Rôle                                                                         |
-| ------------------------ | ---------------------------------------------------------------------------- |
-| `npm run dev`            | serveur local complet (site + API + temps réel) sur http://localhost:8787    |
-| `npm run check`          | lint + types + build + tous les tests : doit passer avant chaque commit      |
-| `npm run test:watch`     | tests en continu                                                             |
-| `npm run format`         | formatage et corrections automatiques Biome                                  |
-| `npm run types`          | régénère `worker-configuration.d.ts` après un changement de `wrangler.jsonc` |
-| `npm run release`        | nouvelle version : CHANGELOG, numéro de version, commit et tag               |
-| `npm run deploy`         | déploiement manuel de la production (normalement fait par la CI sur un tag)  |
-| `npm run deploy:staging` | déploiement de l'environnement de test (Worker + Pages staging)              |
+| Commande                  | Rôle                                                                         |
+| ------------------------- | ---------------------------------------------------------------------------- |
+| `npm run dev`             | serveur local complet (site + API + temps réel) sur http://localhost:8787    |
+| `npm run check`           | lint + types + build + tous les tests : doit passer avant chaque commit      |
+| `npm run test:watch`      | tests en continu                                                             |
+| `npm run format`          | formatage et corrections automatiques Biome                                  |
+| `npm run types`           | régénère `worker-configuration.d.ts` après un changement de `wrangler.jsonc` |
+| `npm run levels -- <jeu>` | écrit les niveaux enregistrés d'un nouveau jeu (jamais d'un jeu publié)      |
+| `npm run release`         | nouvelle version : CHANGELOG, numéro de version, commit et tag               |
+| `npm run deploy`          | déploiement manuel de la production (normalement fait par la CI sur un tag)  |
+| `npm run deploy:staging`  | déploiement de l'environnement de test (Worker + Pages staging)              |
 
 ## Git
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { campaignKey } from '../../src/shared/games/campaign.ts';
-import { campaignBoard, encodeActions, type FiolesAction } from '../../src/shared/games/fioles/definition.ts';
+import { encodeActions, type FiolesAction } from '../../src/shared/games/fioles/definition.ts';
 import type { Board } from '../../src/shared/games/fioles/rules.ts';
 import type {
   GameState,
@@ -9,7 +9,7 @@ import type {
   Run,
   SubmitRunResponse,
 } from '../../src/shared/platform/protocol.ts';
-import { solve } from '../support/fioles-solver.ts';
+import { fiolesLevel, solve } from '../support/fioles-solver.ts';
 import { call, newPlayer } from './support.ts';
 
 const solution = (board: Board): FiolesAction[] => {
@@ -18,9 +18,9 @@ const solution = (board: Board): FiolesAction[] => {
   return actions;
 };
 
-const LEVEL_1 = campaignBoard(1);
+const LEVEL_1 = fiolesLevel(1);
 const WIN_1 = encodeActions(solution(LEVEL_1));
-const LEVEL_2 = campaignBoard(2);
+const LEVEL_2 = fiolesLevel(2);
 const WIN_2 = encodeActions(solution(LEVEL_2));
 
 const submit = (token: string, body: unknown) => call<SubmitRunResponse>('/api/games/fioles/runs', { token, body });
@@ -72,7 +72,7 @@ describe('parties', () => {
 
   it('refuse un niveau que personne n’a débloqué, puis l’accepte une fois le précédent gagné', async () => {
     const { token } = await newPlayer();
-    const win2 = encodeActions(solution(campaignBoard(2)));
+    const win2 = encodeActions(solution(fiolesLevel(2)));
     expect((await submit(token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(403);
     await submit(token, { key: 'c:1', status: 'abandoned', durationMs: 1, replay: WIN_1.slice(0, 2) });
     expect((await submit(token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(403);
@@ -83,10 +83,10 @@ describe('parties', () => {
   it('accepte un niveau débloqué par un autre joueur : on peut le rejoindre', async () => {
     const leader = await newPlayer();
     const joiner = await newPlayer();
-    const win2 = encodeActions(solution(campaignBoard(2)));
+    const win2 = encodeActions(solution(fiolesLevel(2)));
     await submit(leader.token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });
     expect((await submit(joiner.token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(200);
-    const win3 = encodeActions(solution(campaignBoard(3)));
+    const win3 = encodeActions(solution(fiolesLevel(3)));
     expect((await submit(joiner.token, { key: 'c:3', status: 'won', durationMs: 1, replay: win3 })).status).toBe(403);
   });
 

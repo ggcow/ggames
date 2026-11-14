@@ -1,51 +1,45 @@
 import { describe, expect, it } from 'vitest';
+import { MAX_LEVEL } from '../../src/shared/games/campaign.ts';
 import {
-  campaignBoard,
-  campaignSpec,
   decodeActions,
   encodeActions,
   type FiolesAction,
   fioles,
+  levelBoard,
   playActions,
   startBoard,
 } from '../../src/shared/games/fioles/definition.ts';
-import { boardToString, isSolvable, isSolved, MAX_COLORS, parseBoard } from '../../src/shared/games/fioles/rules.ts';
-import { solve } from '../support/fioles-solver.ts';
+import { isSolvable } from '../../src/shared/games/fioles/generate.ts';
+import { LEVELS } from '../../src/shared/games/fioles/levels.ts';
+import { isSolved } from '../../src/shared/games/fioles/rules.ts';
+import { fiolesLevel, solve } from '../support/fioles-solver.ts';
 
 describe('campagne', () => {
-  it('ajoute une couleur par niveau jusqu’au niveau 10, puis multiplie les plateaux candidats', () => {
-    expect([1, 2, 5, 10, 11, 500].map((level) => campaignSpec(level).colors)).toEqual([3, 4, 7, 12, 12, MAX_COLORS]);
-    expect([1, 2, 3, 40].map((level) => campaignSpec(level).noAdjacentPairs)).toEqual([false, false, true, true]);
-    expect([1, 10, 11, 20, 50, 500].map((level) => campaignSpec(level).candidates)).toEqual([1, 1, 2, 11, 41, 41]);
-    expect(campaignSpec(7).empty).toBe(2);
-  });
-
-  it('génère les niveaux 1 à 40 valides, faisables et identiques à chaque appel', () => {
-    for (let level = 1; level <= 40; level++) {
-      const board = campaignBoard(level);
-      const spec = campaignSpec(level);
-      expect(board).toHaveLength(spec.colors + spec.empty);
-      if (spec.noAdjacentPairs) {
-        expect(board.every((tube) => tube.every((color, i) => i === 0 || tube[i - 1] !== color))).toBe(true);
-      }
-      expect(parseBoard(boardToString(board))).not.toBeNull();
+  it('enregistre un plateau valide, faisable et non résolu pour chaque niveau', () => {
+    expect(LEVELS).toHaveLength(MAX_LEVEL);
+    for (let n = 1; n <= MAX_LEVEL; n++) {
+      const board = fiolesLevel(n);
       expect(isSolved(board)).toBe(false);
       expect(isSolvable(board, 500_000)).toBe(true);
-      expect(campaignBoard(level)).toEqual(board);
     }
   });
 
+  it('n’a pas de niveau hors de la campagne', () => {
+    expect(levelBoard(0)).toBeNull();
+    expect(levelBoard(MAX_LEVEL + 1)).toBeNull();
+  });
+
   it('renvoie une copie : modifier le plateau ne change pas le niveau', () => {
-    const board = campaignBoard(2);
+    const board = fiolesLevel(2);
     board[0]?.pop();
-    expect(campaignBoard(2)).not.toEqual(board);
+    expect(fiolesLevel(2)).not.toEqual(board);
   });
 });
 
 describe('clés', () => {
   it('reconnaît les niveaux de la campagne', () => {
     expect(fioles.isValidKey('c:3')).toBe(true);
-    expect(fioles.isValidKey('c:9999')).toBe(true);
+    expect(fioles.isValidKey('c:100')).toBe(true);
   });
 
   it('utilise la progression de la campagne', () => {
@@ -54,7 +48,7 @@ describe('clés', () => {
     expect(fioles.isUnlocked('c:3', new Set(['c:2']))).toBe(false);
   });
 
-  it.each(['c:0', 'c:01', 'c:10000', 'l:abc123', 'x:1', ''])('rejette %s', (key) => {
+  it.each(['c:0', 'c:01', 'c:101', 'c:1000', 'l:abc123', 'x:1', ''])('rejette %s', (key) => {
     expect(fioles.isValidKey(key)).toBe(false);
   });
 });
@@ -92,7 +86,7 @@ describe('replays', () => {
   });
 
   it('valide une victoire et compte chaque action comme un coup', () => {
-    const board = campaignBoard(1);
+    const board = fiolesLevel(1);
     const win = solve(board);
     if (!win) throw new Error('pas de solution');
     const withUndo: FiolesAction[] = [win[0] as FiolesAction, { type: 'undo' }, ...win];
@@ -102,7 +96,7 @@ describe('replays', () => {
   });
 
   it('refuse des actions après la victoire', () => {
-    const win = solve(campaignBoard(1));
+    const win = solve(fiolesLevel(1));
     if (!win) throw new Error('pas de solution');
     const extra = encodeActions([...win, { type: 'undo' }]);
     expect(fioles.replay('c:1', extra)).toBeNull();

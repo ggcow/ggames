@@ -8,10 +8,10 @@ import { boardStatus } from '../../src/client/games/fioles/status.ts';
 import { FIOLES_STRINGS } from '../../src/client/games/fioles/strings.ts';
 import { createGameView } from '../../src/client/platform/context.ts';
 import { MAX_LEVEL } from '../../src/shared/games/campaign.ts';
-import { campaignBoard, encodeActions, fioles } from '../../src/shared/games/fioles/definition.ts';
+import { encodeActions, fioles } from '../../src/shared/games/fioles/definition.ts';
 import { boardToString, parseBoard } from '../../src/shared/games/fioles/rules.ts';
 import type { GameState } from '../../src/shared/platform/protocol.ts';
-import { solve } from '../support/fioles-solver.ts';
+import { fiolesLevel, solve } from '../support/fioles-solver.ts';
 
 const ME = 'player1';
 const OTHER = 'player2';
@@ -84,7 +84,7 @@ describe('niveaux', () => {
 });
 
 describe('partie', () => {
-  const start = campaignBoard(1);
+  const start = fiolesLevel(1);
   const data = boardToString(start);
   const tubes = (host: HTMLElement) => [...host.querySelectorAll<HTMLElement>('.tube')];
 
