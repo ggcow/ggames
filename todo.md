@@ -5,6 +5,11 @@
 - [ ] Séparer l'identifiant de connexion du nom affiché : le pseudo actuel sert aux deux. Le login
   doit rester unique et stable, le nom affiché doit pouvoir changer sans changer la connexion.
 
+## Infrastructure
+
+- [x] Environnement de test séparé : site `ggames-staging.pages.dev`, Worker `ggames-api-staging`,
+  base Durable Object dédiée.
+
 ## Communication
 
 - [x] Étape 1 — réactions de course : un seul catalogue, chaque entrée étant soit un emoji, soit un
