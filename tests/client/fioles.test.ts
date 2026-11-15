@@ -162,6 +162,16 @@ describe('replay', () => {
     buttons[3]?.click();
     expect(host.querySelector('.counter')?.textContent).toBe(`1 coup / ${total}`);
   });
+
+  it('ne compte pas les coups annulés', () => {
+    const start = parseBoard('aaab.bbba..') ?? [];
+    const win = solve(start) ?? [];
+    const [first] = win;
+    if (!first) throw new Error('premier coup attendu');
+    const host = document.createElement('div');
+    mountFiolesReplay(host, start, encodeActions([first, { type: 'undo' }, ...win]), FIOLES_STRINGS.fr);
+    expect(host.querySelector('.counter')?.textContent).toBe(`0 coups / ${win.length}`);
+  });
 });
 
 describe('plateau', () => {

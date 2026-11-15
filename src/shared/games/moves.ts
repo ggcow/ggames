@@ -1,6 +1,15 @@
-// Score des jeux au tour par tour : on compte les coups qui restent sur le plateau. Chaque coup en ajoute un,
-// chaque annulation en retire un.
+// Jeux au tour par tour : une annulation efface le dernier coup restant. Le score compte les coups qui restent, et
+// un replay se regarde sur ces seuls coups, le chemin final.
 
-/** Nombre de coups d'une suite d'actions où `undo` annule le coup précédent. */
-export const countMoves = (actions: readonly { type: string }[]): number =>
-  actions.reduce((moves, action) => moves + (action.type === 'undo' ? -1 : 1), 0);
+/** Coups qui restent d'une suite d'actions où `undo` efface le dernier coup restant, dans l'ordre joué. */
+export function keptMoves<A extends { type: string }>(actions: readonly A[]): A[] {
+  const kept: A[] = [];
+  for (const action of actions) {
+    if (action.type === 'undo') kept.pop();
+    else kept.push(action);
+  }
+  return kept;
+}
+
+/** Nombre de coups d'une partie : chaque coup en ajoute un, chaque annulation en retire un. */
+export const countMoves = (actions: readonly { type: string }[]): number => keptMoves(actions).length;

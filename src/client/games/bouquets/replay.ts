@@ -1,8 +1,8 @@
-// Lecteur de replay : rejoue les états successifs d'une partie, avec lecture automatique.
+// Lecteur de replay : rejoue le chemin final d'une partie, sans ses coups annulés, avec lecture automatique.
 
 import { decodeActions, playActions } from '../../../shared/games/bouquets/definition.ts';
 import { type Board, cloneBoard, type ReadonlyBoard } from '../../../shared/games/bouquets/rules.ts';
-import { countMoves } from '../../../shared/games/moves.ts';
+import { keptMoves } from '../../../shared/games/moves.ts';
 import { h, replaceChildren } from '../../platform/dom.ts';
 import { preloadArt } from './art.ts';
 import { potsOf, renderBoard } from './board.ts';
@@ -17,7 +17,8 @@ export function mountBouquetsReplay(
   strings: BouquetsStrings,
 ): () => void {
   preloadArt();
-  const actions = decodeActions(replay) ?? [];
+  // Les coups annulés n'apparaissent pas : on regarde le chemin final.
+  const actions = keptMoves(decodeActions(replay) ?? []);
   const states: Board[] = playActions(cloneBoard(start), actions) ?? [cloneBoard(start)];
   let index = 0;
   let timer: ReturnType<typeof setInterval> | null = null;
@@ -28,7 +29,7 @@ export function mountBouquetsReplay(
   const playButton = h('button', { class: 'btn primary' });
 
   const render = () => {
-    counter.textContent = `${strings.moves(countMoves(actions.slice(0, index)))} / ${countMoves(actions)}`;
+    counter.textContent = `${strings.moves(index)} / ${states.length - 1}`;
     slider.value = String(index);
     playButton.textContent = timer ? '⏸' : '▶';
     renderBoard(boardHost, potsOf(states[index] ?? []), { width: host.clientWidth || window.innerWidth, strings });

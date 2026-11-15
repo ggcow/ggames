@@ -332,6 +332,12 @@ describe('partie', () => {
 });
 
 describe('replay', () => {
+  const mount = (replay: string) => {
+    const host = document.createElement('div');
+    mountBouquetsReplay(host, bouquetsLevel(1), replay, fr);
+    return host;
+  };
+
   it('avance action par action', () => {
     const start = bouquetsLevel(1);
     const replay = encodeActions(bouquetsWin(1));
@@ -344,17 +350,19 @@ describe('replay', () => {
     expect(host.querySelector('.counter')?.textContent).toBe(`1 coup / ${total}`);
   });
 
-  it('retire un coup au compteur quand la partie annule', () => {
-    const [first, ...rest] = bouquetsWin(1);
+  it('ne montre que le chemin final, sans les coups annulés', () => {
+    const win = bouquetsWin(1);
+    const [first] = win;
     if (!first) throw new Error('premier coup attendu');
-    const host = document.createElement('div');
-    mountBouquetsReplay(host, bouquetsLevel(1), encodeActions([first, { type: 'undo' }, first, ...rest]), fr);
-    const total = rest.length + 1;
-    const next = host.querySelectorAll<HTMLButtonElement>('.controls button')[3];
-    next?.click();
-    expect(host.querySelector('.counter')?.textContent).toBe(`1 coup / ${total}`);
-    next?.click();
-    expect(host.querySelector('.counter')?.textContent).toBe(`0 coups / ${total}`);
+    const withUndo = mount(encodeActions([first, { type: 'undo' }, ...win]));
+    const clean = mount(encodeActions(win));
+    expect(withUndo.querySelector('.counter')?.textContent).toBe(`0 coups / ${win.length}`);
+    for (let step = 0; step < win.length; step++) {
+      expect(withUndo.querySelector('.bq-board')?.outerHTML).toBe(clean.querySelector('.bq-board')?.outerHTML);
+      withUndo.querySelectorAll<HTMLButtonElement>('.controls button')[3]?.click();
+      clean.querySelectorAll<HTMLButtonElement>('.controls button')[3]?.click();
+    }
+    expect(withUndo.querySelector('.counter')?.textContent).toBe(`${fr.moves(win.length)} / ${win.length}`);
   });
 });
 

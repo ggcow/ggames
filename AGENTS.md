@@ -33,6 +33,7 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   gagnées sur les niveaux déjà réussis par le joueur.
 - Un replay ne révèle jamais la solution d'un niveau : on ne voit que les replays des niveaux qu'on a
   soi-même réussis. La fiche d'un joueur ne liste que les niveaux réussis par les deux.
+- Un replay se regarde sans les coups annulés : on voit le chemin final de la partie.
 - Progression individuelle : on joue le premier niveau pas encore gagné (et tous ceux d'avant).
 - Rejoindre : un niveau verrouillé qu'un ami joue en direct peut être rejoint (course sur le même plateau, trois
   joueurs au plus). La victoire compte au classement mais ne fait pas avancer la progression. Le serveur accepte
