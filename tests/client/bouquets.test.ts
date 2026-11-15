@@ -296,6 +296,23 @@ describe('partie', () => {
     unmount();
   });
 
+  it('empêche la page de défiler ou de s’actualiser pendant qu’on glisse une fleur, et seulement alors', () => {
+    const { host, unmount } = mount();
+    const touchMove = () => {
+      const event = new TouchEvent('touchmove', { cancelable: true });
+      window.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+    expect(touchMove()).toBe(false);
+    pots(host)[0]?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: xOf(0, 0), clientY: 10 }));
+    expect(touchMove()).toBe(true);
+    window.dispatchEvent(new PointerEvent('pointerup', { clientX: xOf(0, 0), clientY: 10 }));
+    expect(touchMove()).toBe(false);
+    unmount();
+    pots(host)[0]?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: xOf(0, 0), clientY: 10 }));
+    expect(touchMove()).toBe(false);
+  });
+
   it('ignore le clic qui suit un glisser', () => {
     const { host, onProgress, unmount } = mount();
     const pot = pots(host)[0];

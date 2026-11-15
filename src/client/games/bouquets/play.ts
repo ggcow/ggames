@@ -288,8 +288,15 @@ export function mountBouquetsPlay(host: HTMLElement, options: BouquetsPlayOption
     tap(event);
   };
 
+  // Un doigt posé sur une fleur appartient au glisser : descendre ne doit pas faire défiler la page ni déclencher
+  // le « tirer pour actualiser » du navigateur, que `touch-action` n'empêche pas partout.
+  const onTouchMove = (event: TouchEvent) => {
+    if (pending && event.cancelable) event.preventDefault();
+  };
+
   boardHost.addEventListener('pointerdown', onPointerDown);
   window.addEventListener('pointermove', onPointerMove, { passive: false });
+  window.addEventListener('touchmove', onTouchMove, { passive: false });
   window.addEventListener('pointerup', endDrag);
   window.addEventListener('pointercancel', endDrag);
   boardHost.addEventListener('click', onClick);
@@ -321,6 +328,7 @@ export function mountBouquetsPlay(host: HTMLElement, options: BouquetsPlayOption
   return () => {
     window.removeEventListener('resize', onResize);
     window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('touchmove', onTouchMove);
     window.removeEventListener('pointerup', endDrag);
     window.removeEventListener('pointercancel', endDrag);
     ghost?.element.remove();
