@@ -18,7 +18,7 @@ export function mountLogin(host: HTMLElement, options: LoginOptions): void {
   const { api, t } = options;
   let mode: 'login' | 'register' = 'login';
 
-  const name = h('input', { type: 'text', placeholder: t.name, maxLength: 16, autocomplete: 'username' });
+  const login = h('input', { type: 'text', placeholder: t.loginId, maxLength: 16, autocomplete: 'username' });
   const password = h('input', { type: 'password', placeholder: t.password, autocomplete: 'current-password' });
   const message = h('p', { class: 'error', attrs: { role: 'alert' } });
   const submit = h('button', { class: 'btn primary', type: 'submit' });
@@ -45,7 +45,7 @@ export function mountLogin(host: HTMLElement, options: LoginOptions): void {
         submit: (event) => {
           event.preventDefault();
           submit.disabled = true;
-          const credentials = { name: name.value, password: password.value };
+          const credentials = { login: login.value, password: password.value };
           (mode === 'login' ? api.login(credentials) : api.register(credentials))
             .then(options.onSession)
             .catch((error: unknown) => {
@@ -57,7 +57,7 @@ export function mountLogin(host: HTMLElement, options: LoginOptions): void {
         },
       },
     },
-    name,
+    login,
     password,
     message,
     submit,

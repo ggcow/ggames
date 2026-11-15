@@ -23,7 +23,7 @@ let counter = 0;
 export async function newPlayer(prefix = 'joueur'): Promise<SessionResponse> {
   counter += 1;
   const { status, body } = await call<SessionResponse>('/api/auth/register', {
-    body: { name: `${prefix}${counter}`, password: 'secret123' },
+    body: { login: `${prefix}${counter}`, password: 'secret123' },
   });
   if (status !== 200) throw new Error(`register failed: ${status}`);
   return body;

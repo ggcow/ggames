@@ -111,14 +111,16 @@ export interface PlayerGameDetail {
 
 /* ---------- HTTP ---------- */
 
+/** Identifiant de connexion, fixé à l'inscription : il ne suit pas les changements de pseudo. */
 export interface CredentialsRequest {
-  name: string;
+  login: string;
   password: string;
 }
 export interface SessionResponse {
   player: PlayerInfo;
   token: string;
 }
+/** Nouveau pseudo affiché ; l'identifiant de connexion ne change pas. */
 export interface RenameRequest {
   name: string;
 }

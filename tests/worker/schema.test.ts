@@ -9,6 +9,13 @@ import { fiolesLevel, solve } from '../support/fioles-solver.ts';
 
 const world = () => (env.WORLD as DurableObjectNamespace<World>).getByName('main');
 
+/** Remet la table `players` dans son état d'avant la séparation de l'identifiant et du pseudo. */
+const rewindLoginSplit = (sql: SqlStorage) => {
+  sql.exec('DROP INDEX players_name_key');
+  sql.exec('ALTER TABLE players DROP COLUMN name_key');
+  sql.exec('ALTER TABLE players RENAME COLUMN login_key TO name_key');
+};
+
 const tables = (sql: SqlStorage) =>
   sql
     .exec<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
@@ -45,6 +52,7 @@ describe('schéma', () => {
   it('remet à zéro les parties Fioles en repassant par les migrations', async () => {
     await runInDurableObject(world(), (_instance, state) => {
       const { sql } = state.storage;
+      rewindLoginSplit(sql);
       sql.exec("INSERT INTO players (id, name, name_key, password_hash, created) VALUES ('abc123', 'A', 'a', 'x', 1)");
       sql.exec(
         "INSERT INTO runs (id, game, key, player, status, value, duration_ms, replay, ended) VALUES ('run001', 'fioles', 'c:1', 'abc123', 'won', 5, 1, '', 1)",
@@ -65,6 +73,7 @@ describe('schéma', () => {
   it('supprime seulement les parties des niveaux de Fioles remplacés', async () => {
     await runInDurableObject(world(), (_instance, state) => {
       const { sql } = state.storage;
+      rewindLoginSplit(sql);
       sql.exec("INSERT INTO players (id, name, name_key, password_hash, created) VALUES ('def456', 'B', 'b', 'x', 1)");
       const insert = (id: string, game: string, key: string) =>
         sql.exec(
@@ -93,6 +102,7 @@ describe('schéma', () => {
     const bouquetsReplay = encodeBouquets([move, { type: 'undo' }, move, ...rest]);
     await runInDurableObject(world(), (_instance, state) => {
       const { sql } = state.storage;
+      rewindLoginSplit(sql);
       sql.exec("INSERT INTO players (id, name, name_key, password_hash, created) VALUES ('ghi789', 'C', 'c', 'x', 1)");
       const insert = (id: string, game: string, replay: string) =>
         sql.exec(
@@ -112,6 +122,29 @@ describe('schéma', () => {
       expect(value('run202')).toBe(bouquets.replay('c:1', bouquetsReplay)?.value);
       expect(value('run202')).toBe(rest.length + 1);
       expect(value('run203')).toBe(999);
+    });
+  });
+
+  it('sépare l’identifiant du pseudo sans toucher aux comptes existants', async () => {
+    await runInDurableObject(world(), (_instance, state) => {
+      const { sql } = state.storage;
+      rewindLoginSplit(sql);
+      sql.exec(
+        "INSERT INTO players (id, name, name_key, password_hash, created) VALUES ('jkl012', 'Léa', 'léa', 'x', 1)",
+      );
+      sql.exec('UPDATE schema_version SET version = 8');
+      migrate(sql);
+      const row = sql
+        .exec<{ name: string; name_key: string; login_key: string }>(
+          "SELECT name, name_key, login_key FROM players WHERE id = 'jkl012'",
+        )
+        .one();
+      expect(row).toEqual({ name: 'Léa', name_key: 'léa', login_key: 'léa' });
+      expect(() =>
+        sql.exec(
+          "INSERT INTO players (id, name, name_key, login_key, password_hash, created) VALUES ('mno345', 'LÉA', 'léa', 'autre', 'x', 1)",
+        ),
+      ).toThrow(/UNIQUE/);
     });
   });
 });

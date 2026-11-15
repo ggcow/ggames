@@ -37,12 +37,12 @@ const ROUTE_TABLE: readonly Route[] = [
   {
     method: 'POST',
     pattern: /^\/api\/auth\/register$/,
-    handler: withBody(async (b, { world }) => toResponse(await world.register(b['name'], b['password']))),
+    handler: withBody(async (b, { world }) => toResponse(await world.register(b['login'], b['password']))),
   },
   {
     method: 'POST',
     pattern: /^\/api\/auth\/login$/,
-    handler: withBody(async (b, { world }) => toResponse(await world.login(b['name'], b['password']))),
+    handler: withBody(async (b, { world }) => toResponse(await world.login(b['login'], b['password']))),
   },
   {
     method: 'POST',

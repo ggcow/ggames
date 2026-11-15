@@ -27,7 +27,8 @@ Il décrit l'état actuel du projet et les règles à respecter. `CLAUDE.md` l'i
 
 Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine continentale.
 
-- Chaque joueur a un compte (pseudo + mot de passe) et se connecte depuis n'importe quel appareil.
+- Chaque joueur a un compte (identifiant + mot de passe) et se connecte depuis n'importe quel appareil. Son pseudo
+  affiché part de l'identifiant et se change sans toucher à l'identifiant, qui reste unique et stable.
 - L'accueil liste les jeux. Pour chaque jeu : la grille des 100 niveaux, 5 pages de 20 (réussis, jouable, verrouillés),
   la progression de chaque joueur (niveaux réussis, essais, temps), les classements, et le replay des parties
   gagnées sur les niveaux déjà réussis par le joueur.
@@ -122,7 +123,7 @@ niveau débloqué).
 
 | Table                   | Contenu                                                              |
 | ----------------------- | -------------------------------------------------------------------- |
-| `players`               | compte : id, pseudo (unique sans casse), hash PBKDF2 du mot de passe |
+| `players`               | compte : id, identifiant et pseudo (uniques sans casse), hash PBKDF2 |
 | `sessions`              | jetons de session (hash SHA-256), un par appareil connecté           |
 | `runs`                  | chaque partie : jeu, clé, joueur, statut, score, durée, replay, date |
 | `chat_messages`         | messages du salon global : joueur, texte, date                       |

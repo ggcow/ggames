@@ -189,7 +189,7 @@ describe('client API', () => {
 
   it('transforme une erreur serveur en ApiError avec son message', async () => {
     const api = new ApiClient(respond(409, { error: 'name taken' }));
-    await expect(api.register({ name: 'a', password: 'abcd' })).rejects.toEqual(new ApiError(409, 'name taken'));
+    await expect(api.register({ login: 'a', password: 'abcd' })).rejects.toEqual(new ApiError(409, 'name taken'));
   });
 
   it('signale une erreur réseau', async () => {

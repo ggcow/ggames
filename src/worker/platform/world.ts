@@ -34,7 +34,7 @@ import {
 import { createId, createToken, hashPassword, sha256, verifyPassword } from './crypto.ts';
 import { fail, ok, type Result } from './result.ts';
 import { migrate } from './schema.ts';
-import { nameKey, PlatformStore } from './store.ts';
+import { PlatformStore, uniqueKey } from './store.ts';
 import { ChatThrottle, LoginThrottle, ReactionThrottle } from './throttle.ts';
 
 /** Garde-fous : plateforme entre amis à inscription libre. */
@@ -74,25 +74,27 @@ export class World extends DurableObject<Env> {
 
   /* ---------- Comptes ---------- */
 
-  async register(rawName: unknown, password: unknown): Promise<Result<SessionResponse>> {
-    const name = cleanName(rawName);
-    if (!name) return fail(400, 'invalid name');
+  /** Crée un compte ; son pseudo affiché part de l'identifiant et se change ensuite avec `rename`. */
+  async register(rawLogin: unknown, password: unknown): Promise<Result<SessionResponse>> {
+    const login = cleanName(rawLogin);
+    if (!login) return fail(400, 'invalid login');
     if (!isValidPassword(password)) return fail(400, 'invalid password');
-    if (this.store.isNameTaken(name)) return fail(409, 'name taken');
+    if (this.store.isLoginTaken(login)) return fail(409, 'login taken');
+    if (this.store.isNameTaken(login)) return fail(409, 'name taken');
     if (this.store.countPlayers() >= QUOTAS.players) return fail(429, 'player quota reached');
-    const player: PlayerInfo = { id: createId(), name, created: Date.now() };
-    this.store.insertPlayer(player, await hashPassword(password));
+    const player: PlayerInfo = { id: createId(), name: login, created: Date.now() };
+    this.store.insertPlayer(player, login, await hashPassword(password));
     this.broadcast({ type: 'changed', game: null });
     return ok(await this.openSession(player));
   }
 
-  async login(rawName: unknown, password: unknown): Promise<Result<SessionResponse>> {
-    const name = cleanName(rawName);
-    if (!name || typeof password !== 'string') return fail(400, 'invalid credentials');
-    const account = nameKey(name);
+  async login(rawLogin: unknown, password: unknown): Promise<Result<SessionResponse>> {
+    const login = cleanName(rawLogin);
+    if (!login || typeof password !== 'string') return fail(400, 'invalid credentials');
+    const account = uniqueKey(login);
     const now = Date.now();
     if (this.throttle.isBlocked(account, now)) return fail(429, 'too many attempts');
-    const credentials = this.store.findCredentials(name);
+    const credentials = this.store.findCredentials(login);
     if (!credentials || !(await verifyPassword(password, credentials.passwordHash))) {
       this.throttle.recordFailure(account, now);
       return fail(401, 'invalid credentials');

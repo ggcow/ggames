@@ -118,6 +118,14 @@ const MIGRATIONS: readonly string[] = [
   UPDATE runs SET value = (length(replay) - 5 * (length(replay) - length(replace(replay, 'u', '')))) / 4
     WHERE game = 'bouquets';
   `,
+  // L'identifiant de connexion se sépare du pseudo affiché. La clé unique existante devient celle de
+  // l'identifiant, qui ne change plus ; le pseudo reçoit sa propre clé, toujours unique sans casse.
+  `
+  ALTER TABLE players RENAME COLUMN name_key TO login_key;
+  ALTER TABLE players ADD COLUMN name_key TEXT NOT NULL DEFAULT '';
+  UPDATE players SET name_key = login_key;
+  CREATE UNIQUE INDEX players_name_key ON players (name_key);
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
