@@ -3,7 +3,7 @@ import type { LiveStatus } from '../../games/client-game.ts';
 import { findClientGame } from '../../games/registry.ts';
 import { avatar } from '../avatar.ts';
 import type { AppContext } from '../context.ts';
-import { h } from '../dom.ts';
+import { h, noTranslate } from '../dom.ts';
 import { gameIcon } from '../game-icon.ts';
 import type { PlatformStrings } from '../strings.ts';
 
@@ -41,7 +41,12 @@ export function renderOnline(others: readonly Presence[], ctx: AppContext): HTML
           avatar(presence.player, presence.name, 'md'),
           h('span', { class: 'dot' }),
         ),
-        h('span', { class: 'online-text' }, h('strong', null, presence.name), h('small', null, ...activity)),
+        h(
+          'span',
+          { class: 'online-text' },
+          noTranslate(h('strong', null, presence.name)),
+          h('small', null, ...activity),
+        ),
       );
     }),
   );
@@ -63,7 +68,7 @@ export function renderLiveBoards(others: readonly Presence[], ctx: AppContext, g
           'div',
           { class: 'live-board-head' },
           avatar(presence.player, presence.name, 'xs'),
-          h('strong', null, presence.name),
+          noTranslate(h('strong', null, presence.name)),
           game.formatValue ? h('small', null, game.formatValue(presence.value, ctx.lang)) : null,
         ),
         status ? h('span', { class: `live-status ${status}` }, liveStatusLabel(status, ctx.t)) : null,

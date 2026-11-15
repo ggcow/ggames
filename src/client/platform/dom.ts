@@ -37,6 +37,16 @@ export function append(parent: Node, ...children: Child[]): void {
 }
 
 /** Vide un élément puis y ajoute les enfants. */
+/**
+ * Soustrait un élément à la traduction automatique du navigateur (pseudo, numéro, score) : un traducteur
+ * changerait 月红 en « Red Moon » ou un chiffre en mot. `notranslate` sert aux traducteurs qui ignorent l'attribut.
+ */
+export function noTranslate<E extends HTMLElement>(element: E): E {
+  element.setAttribute('translate', 'no');
+  element.classList.add('notranslate');
+  return element;
+}
+
 export function replaceChildren(parent: Element, ...children: Child[]): void {
   parent.replaceChildren();
   append(parent, ...children);

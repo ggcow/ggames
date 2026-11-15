@@ -3,7 +3,7 @@ import { CLIENT_GAMES } from '../../games/registry.ts';
 import { avatar } from '../avatar.ts';
 import { chatPanel } from '../chat-panel.ts';
 import type { AppContext, ScreenHandle } from '../context.ts';
-import { h, replaceChildren } from '../dom.ts';
+import { h, noTranslate, replaceChildren } from '../dom.ts';
 import { gameIcon } from '../game-icon.ts';
 import { chip, errorMessage, loading, section, toast } from '../ui.ts';
 import { renderOnline } from './online.ts';
@@ -42,7 +42,7 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
       'header',
       { class: 'account' },
       avatar(ctx.me.id, ctx.me.name, 'md'),
-      h('div', { class: 'account-text' }, h('small', null, t.welcome), h('strong', null, ctx.me.name)),
+      h('div', { class: 'account-text' }, h('small', null, t.welcome), noTranslate(h('strong', null, ctx.me.name))),
       h('button', { class: 'round small', attrs: { 'aria-label': t.rename }, on: { click: rename } }, '✎'),
       h(
         'button',

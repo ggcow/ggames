@@ -159,6 +159,9 @@ Aucune modification de la plateforme ne doit être nécessaire. Si elle l'est, c
 - Code partagé (`src/shared`) : fonctions pures, sans effet de bord, sans DOM ni API Cloudflare.
 - Toute donnée venant du réseau ou du stockage local est validée par une fonction `parse…`/`is…` avant usage.
 - DOM construit avec `h()` (`src/client/platform/dom.ts`) ; jamais `innerHTML`.
+- Pseudos, numéros et scores affichés passent par `noTranslate()` (`dom.ts`), et un pseudo dans une phrase par
+  `withName()` (`ui.ts`) : la traduction automatique du navigateur ne doit ni traduire un pseudo ni écrire un
+  chiffre en lettres.
 - `erasableSyntaxOnly` : pas d'`enum`, de `namespace` ni de propriétés de paramètres de constructeur.
 - Imports avec l'extension `.ts`.
 

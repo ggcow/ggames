@@ -177,7 +177,7 @@ describe('avatars', () => {
     expect(initial('  léa')).toBe('L');
     expect(initial('小明')).toBe('小');
     expect(initial('')).toBe('?');
-    expect(avatar('abc123', 'Tom', 'md').className).toBe('avatar md');
+    expect(avatar('abc123', 'Tom', 'md').classList.contains('md')).toBe(true);
   });
 });
 
@@ -193,6 +193,23 @@ describe('grille sans score', () => {
       onPlay: vi.fn(),
     });
     expect(grid.querySelector('.level.done .level-best')?.textContent).toBe('✓');
+  });
+
+  it('soustrait numéros et scores à la traduction automatique du navigateur', () => {
+    const grid = renderLevelGrid({
+      progress: { unlocked: 2, total: 9999 },
+      page: 0,
+      tile: (level) => ({ key: `c:${level}`, label: String(level), status: level === 1 ? 'done' : 'open', best: '7' }),
+      positions: [],
+      t: PLATFORM_STRINGS.fr,
+      onPage: vi.fn(),
+      onPlay: vi.fn(),
+    });
+    const numbers = [...grid.querySelectorAll('.level-number, .level.done .level-best')];
+    expect(numbers.length).toBeGreaterThan(1);
+    for (const element of numbers) expect(element.getAttribute('translate')).toBe('no');
+    // « Jouer » reste traduisible.
+    expect(grid.querySelector('.level.open .level-best')?.getAttribute('translate')).toBeNull();
   });
 });
 

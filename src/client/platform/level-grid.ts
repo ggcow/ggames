@@ -5,7 +5,7 @@ import type { PlayerId, PlayerInfo, Presence } from '../../shared/platform/proto
 import type { LevelProgress, LevelTile } from '../games/client-game.ts';
 import { avatar } from './avatar.ts';
 import { canJoinRace } from './context.ts';
-import { h } from './dom.ts';
+import { h, noTranslate } from './dom.ts';
 import type { PlatformStrings } from './strings.ts';
 
 export const PAGE_SIZE = 20;
@@ -148,9 +148,9 @@ function renderTile(options: LevelGridOptions, level: number): HTMLElement {
       attrs: { 'aria-label': `${tile.label} ${t[`level_${state}`]}${players ? ` — ${players}` : ''}` },
       on: { click: () => options.onPlay(tile.key) },
     },
-    h('span', { class: 'level-number' }, state === 'locked' ? '🔒' : tile.label),
+    noTranslate(h('span', { class: 'level-number' }, state === 'locked' ? '🔒' : tile.label)),
     state === 'join' ? h('span', { class: 'level-best' }, t.join) : null,
-    tile.status === 'done' ? h('span', { class: 'level-best' }, tile.best ?? '✓') : null,
+    tile.status === 'done' ? noTranslate(h('span', { class: 'level-best' }, tile.best ?? '✓')) : null,
     tile.status === 'open' ? h('span', { class: 'level-best' }, t.play) : null,
     here.length > 0
       ? h(

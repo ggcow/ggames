@@ -3,7 +3,7 @@ import type { ClientGame } from '../../games/client-game.ts';
 import { avatar } from '../avatar.ts';
 import { chatPanel } from '../chat-panel.ts';
 import { type AppContext, createGameView, type ScreenHandle } from '../context.ts';
-import { h, replaceChildren } from '../dom.ts';
+import { h, noTranslate, replaceChildren } from '../dom.ts';
 import { gameIcon } from '../game-icon.ts';
 import { formatDuration } from '../i18n.ts';
 import { currentPage, playerPositions, renderLevelGrid } from '../level-grid.ts';
@@ -81,18 +81,18 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
         class: `rank-row ${progress.player === ctx.me.id ? 'me' : ''}`,
         on: { click: () => ctx.navigate({ name: 'player', game: gameId, player: progress.player }) },
       },
-      h('span', { class: `rank rank-${rank}` }, String(rank)),
+      noTranslate(h('span', { class: `rank rank-${rank}` }, String(rank))),
       avatar(progress.player, names.get(progress.player) ?? '?', 'sm'),
       h(
         'span',
         { class: 'rank-text' },
-        h('strong', null, names.get(progress.player) ?? '?'),
+        noTranslate(h('strong', null, names.get(progress.player) ?? '?')),
         h('small', null, `${t.runsCount(progress.runs)} · ${formatDuration(progress.playTimeMs, ctx.lang)}`),
       ),
       h(
         'span',
         { class: 'rank-score' },
-        h('strong', null, String(progress.completed)),
+        noTranslate(h('strong', null, String(progress.completed))),
         h('small', null, t.levelsShort),
       ),
     );

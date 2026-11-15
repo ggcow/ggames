@@ -1,13 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiClient, ApiError, NETWORK_ERROR } from '../../src/client/platform/api.ts';
 import { parseSession } from '../../src/client/platform/app.ts';
-import { append, h } from '../../src/client/platform/dom.ts';
+import { avatar } from '../../src/client/platform/avatar.ts';
+import { append, h, noTranslate } from '../../src/client/platform/dom.ts';
 import { gameIcon } from '../../src/client/platform/game-icon.ts';
 import { detectLang, formatDuration, isLang } from '../../src/client/platform/i18n.ts';
 import { formatRoute, parseRoute, type Route } from '../../src/client/platform/router.ts';
 import { createLocalStore } from '../../src/client/platform/storage.ts';
 import { PLATFORM_STRINGS } from '../../src/client/platform/strings.ts';
-import { closeModals, errorMessage, showModal } from '../../src/client/platform/ui.ts';
+import { closeModals, errorMessage, showModal, withName } from '../../src/client/platform/ui.ts';
 
 describe('router', () => {
   const routes: Route[] = [
@@ -62,6 +63,30 @@ describe('dom', () => {
     const parent = h('div');
     append(parent, undefined, 'a', h('span'));
     expect(parent.childNodes).toHaveLength(2);
+  });
+});
+
+describe('traduction automatique du navigateur', () => {
+  const isProtected = (element: Element | null | undefined) =>
+    element?.getAttribute('translate') === 'no' && element.classList.contains('notranslate');
+
+  it('soustrait un élément à la traduction en gardant ses classes', () => {
+    const element = noTranslate(h('strong', { class: 'nom' }, '月红'));
+    expect(isProtected(element)).toBe(true);
+    expect(element.classList.contains('nom')).toBe(true);
+  });
+
+  it('protège l’initiale d’un avatar', () => {
+    expect(isProtected(avatar('abc123', '月红'))).toBe(true);
+  });
+
+  it('protège le pseudo dans une phrase traduite, quelle que soit sa place', () => {
+    for (const lang of ['fr', 'zh'] as const) {
+      const line = h('strong', null, ...withName(PLATFORM_STRINGS[lang].replayOf, '月红'));
+      expect(line.textContent).toBe(PLATFORM_STRINGS[lang].replayOf('月红'));
+      expect(isProtected(line.querySelector('span'))).toBe(true);
+      expect(line.querySelector('span')?.textContent).toBe('月红');
+    }
   });
 });
 

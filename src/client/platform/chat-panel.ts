@@ -3,7 +3,7 @@
 import { type ChatMessage, LIMITS, type VoiceNote } from '../../shared/platform/protocol.ts';
 import { avatar } from './avatar.ts';
 import type { AppContext } from './context.ts';
-import { h, replaceChildren } from './dom.ts';
+import { h, noTranslate, replaceChildren } from './dom.ts';
 import { formatDuration, formatTime } from './i18n.ts';
 import { createVoiceRecorder } from './recorder.ts';
 import { errorMessage, toast } from './ui.ts';
@@ -34,7 +34,7 @@ export function chatPanel(ctx: AppContext): ChatPanel {
         h(
           'div',
           { class: 'chat-meta' },
-          h('strong', null, message.name),
+          noTranslate(h('strong', null, message.name)),
           h('small', null, formatTime(message.at, ctx.lang)),
         ),
         h('p', { class: 'chat-text' }, message.text),
@@ -108,7 +108,12 @@ export function chatPanel(ctx: AppContext): ChatPanel {
       h(
         'div',
         { class: 'chat-bubble voice-bubble' },
-        h('div', { class: 'chat-meta' }, h('strong', null, note.name), h('small', null, formatTime(note.at, ctx.lang))),
+        h(
+          'div',
+          { class: 'chat-meta' },
+          noTranslate(h('strong', null, note.name)),
+          h('small', null, formatTime(note.at, ctx.lang)),
+        ),
         h(
           'div',
           { class: 'voice-line' },

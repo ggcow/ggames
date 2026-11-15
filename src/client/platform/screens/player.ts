@@ -2,7 +2,7 @@ import type { KeyProgress, PlayerGameDetail, RunSummary } from '../../../shared/
 import type { ClientGame } from '../../games/client-game.ts';
 import { avatar } from '../avatar.ts';
 import type { AppContext, ScreenHandle } from '../context.ts';
-import { h, replaceChildren } from '../dom.ts';
+import { h, noTranslate, replaceChildren } from '../dom.ts';
 import { formatDuration } from '../i18n.ts';
 import { errorMessage, loading, screenHeader, section, toast } from '../ui.ts';
 
@@ -39,7 +39,7 @@ export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame
     replaceChildren(
       host,
       screenHeader(game.name[ctx.lang], () => ctx.navigate({ name: 'game', game: gameId }), t),
-      h('div', { class: 'profile' }, avatar(player.id, player.name, 'lg'), h('h2', null, player.name)),
+      h('div', { class: 'profile' }, avatar(player.id, player.name, 'lg'), noTranslate(h('h2', null, player.name))),
       h(
         'div',
         { class: 'stats' },

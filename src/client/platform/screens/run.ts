@@ -5,7 +5,7 @@ import { avatar } from '../avatar.ts';
 import { type AppContext, createGameView, type ScreenHandle } from '../context.ts';
 import { h, replaceChildren } from '../dom.ts';
 import { formatDate, formatDuration } from '../i18n.ts';
-import { chip, errorMessage, loading, screenHeader, toast } from '../ui.ts';
+import { chip, errorMessage, loading, screenHeader, toast, withName } from '../ui.ts';
 
 /** Revoir une partie enregistrée, action par action. */
 export function mountRun(host: HTMLElement, ctx: AppContext, runId: string): ScreenHandle {
@@ -29,7 +29,7 @@ export function mountRun(host: HTMLElement, ctx: AppContext, runId: string): Scr
         'div',
         { class: 'run-head' },
         avatar(run.player, name, 'sm'),
-        h('strong', null, t.replayOf(name)),
+        h('strong', null, ...withName(t.replayOf, name)),
         h(
           'span',
           { class: 'chips' },

@@ -17,7 +17,7 @@ import {
   type ScreenHandle,
   wonKeys,
 } from '../context.ts';
-import { type Child, h, replaceChildren } from '../dom.ts';
+import { type Child, h, noTranslate, replaceChildren } from '../dom.ts';
 import { formatDuration, type Lang } from '../i18n.ts';
 import { reactionLabel } from '../reactions.ts';
 import { createVoiceRecorder, type VoiceRecorder } from '../recorder.ts';
@@ -368,9 +368,9 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
       return h(
         'li',
         { class: record.player === ctx.me.id ? 'me' : '' },
-        h('span', { class: `rank rank-${index + 1}` }, String(index + 1)),
+        noTranslate(h('span', { class: `rank rank-${index + 1}` }, String(index + 1))),
         avatar(record.player, name, 'xs'),
-        h('span', { class: 'grow' }, name),
+        noTranslate(h('span', { class: 'grow' }, name)),
         h('b', null, format(record.value, ctx.lang)),
       );
     });

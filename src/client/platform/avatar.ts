@@ -1,6 +1,6 @@
 // Pastille ronde avec l'initiale d'un joueur, d'une couleur stable dérivée de son identifiant.
 
-import { h } from './dom.ts';
+import { h, noTranslate } from './dom.ts';
 
 const AVATAR_COLORS = ['#ff6b6b', '#ffa94d', '#ffd43b', '#69db7c', '#38d9a9', '#4dabf7', '#9775fa', '#f783ac'] as const;
 
@@ -15,9 +15,11 @@ export function avatarColor(id: string): string {
 export const initial = (name: string): string => ([...name.trim()][0] ?? '?').toUpperCase();
 
 export function avatar(id: string, name: string, size: 'xs' | 'sm' | 'md' | 'lg' = 'sm'): HTMLElement {
-  return h(
-    'span',
-    { class: `avatar ${size}`, style: { background: avatarColor(id) }, attrs: { title: name } },
-    initial(name),
+  return noTranslate(
+    h(
+      'span',
+      { class: `avatar ${size}`, style: { background: avatarColor(id) }, attrs: { title: name } },
+      initial(name),
+    ),
   );
 }
