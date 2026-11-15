@@ -10,10 +10,16 @@ export interface ReplayOutcome {
   value: number;
 }
 
+export type ScoreOrder = 'asc' | 'desc';
+
+/** Vrai si le score `value` vaut au moins `than` (égalité comprise) dans l'ordre `order`. */
+export const isAtLeastAsGood = (value: number, than: number, order: ScoreOrder): boolean =>
+  order === 'asc' ? value <= than : value >= than;
+
 export interface GameDefinition {
   readonly id: GameId;
   /** `asc` : le plus petit score gagne (ex. nombre de coups). `desc` : le plus grand gagne. */
-  readonly scoreOrder: 'asc' | 'desc';
+  readonly scoreOrder: ScoreOrder;
   /** Vrai si `key` désigne un niveau ou un mode existant. */
   isValidKey(key: string): boolean;
   /** Vrai si un joueur ayant gagné les clés `won` a débloqué `key` par sa propre progression. */

@@ -3,7 +3,7 @@
 // Le Worker l'appelle par RPC ; chaque méthode authentifie elle-même le jeton de session.
 
 import { DurableObject } from 'cloudflare:workers';
-import type { GameDefinition } from '../../shared/games/game.ts';
+import { type GameDefinition, isAtLeastAsGood } from '../../shared/games/game.ts';
 import { findGame, GAMES } from '../../shared/games/registry.ts';
 import {
   type ChatMessage,
@@ -305,29 +305,41 @@ export class World extends DurableObject<Env> {
     const player = typeof playerId === 'string' ? this.store.findPlayer(playerId) : null;
     if (!player) return fail(404, 'unknown player');
     const keys = this.store.keyProgress(game.id, player.id, game.scoreOrder);
-    const viewerWon = player.id === me.id ? null : this.store.wonKeys(game.id, me.id);
+    const progress = this.store.progress(game.id, player.id)[0] ?? null;
+    if (player.id === me.id)
+      return ok({ player, progress, keys: keys.map((key) => ({ ...key, replayVisible: true })) });
+    const mine = this.store.bestValues(game.id, me.id, game.scoreOrder);
     return ok({
       player,
-      progress: this.store.progress(game.id, player.id)[0] ?? null,
+      progress,
       // La fiche d'un ami ne liste que les niveaux réussis par les deux : les autres replays révéleraient
       // une solution, ou n'existent pas.
-      keys: viewerWon ? keys.filter((key) => key.wins > 0 && viewerWon.has(key.key)) : keys,
+      keys: keys.flatMap((key) => {
+        const own = mine.get(key.key);
+        if (!key.best || own === undefined) return [];
+        return [{ ...key, replayVisible: isAtLeastAsGood(own, key.best.value, game.scoreOrder) }];
+      }),
     });
   }
 
   /**
-   * Replay d'une partie gagnée. Un joueur ne voit que les replays des niveaux qu'il a lui-même réussis :
-   * sinon, le replay donnerait la solution d'un niveau encore à jouer.
+   * Replay d'une partie gagnée. Celui d'un autre joueur ne se regarde qu'après avoir fait aussi bien sur le même
+   * niveau : sinon, il donnerait la solution d'un niveau encore à jouer, ou une solution meilleure que la sienne.
    */
   async getRun(token: unknown, runId: unknown): Promise<Result<Run>> {
     const me = await this.authenticate(token);
     if (!me) return unauthorized();
     const run = typeof runId === 'string' ? this.store.findRun(runId) : null;
     if (run?.status !== 'won') return fail(404, 'unknown run');
-    if (run.player !== me.id && !this.store.wonKeys(run.game, me.id).has(run.key)) {
-      return fail(404, 'unknown run');
-    }
+    if (run.player !== me.id && !this.canWatch(me.id, run)) return fail(404, 'unknown run');
     return ok(run);
+  }
+
+  /** Vrai si `viewer` a gagné le niveau de `run` avec un score au moins aussi bon. */
+  private canWatch(viewer: PlayerId, run: Run): boolean {
+    const game = findGame(run.game);
+    const own = game ? this.store.bestValues(game.id, viewer, game.scoreOrder).get(run.key) : undefined;
+    return game !== null && own !== undefined && isAtLeastAsGood(own, run.value, game.scoreOrder);
   }
 
   /**

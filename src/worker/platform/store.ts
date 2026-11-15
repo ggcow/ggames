@@ -1,5 +1,6 @@
 // Accès aux données SQLite du Durable Object. Aucune règle métier ici : uniquement des requêtes typées.
 
+import type { ScoreOrder } from '../../shared/games/game.ts';
 import type {
   ChatMessage,
   GameId,
@@ -15,7 +16,8 @@ import type {
   VoiceNote,
 } from '../../shared/platform/protocol.ts';
 
-export type ScoreOrder = 'asc' | 'desc';
+/** Avancement d'un joueur sur une clé, avant de savoir qui le regarde. */
+export type StoredKeyProgress = Omit<KeyProgress, 'replayVisible'>;
 
 type PlayerRow = { id: string; name: string; created: number };
 type CredentialRow = PlayerRow & { password_hash: string };
@@ -167,14 +169,15 @@ export class PlatformStore {
     );
   }
 
-  /** Clés gagnées au moins une fois par un joueur. */
-  wonKeys(game: GameId, player: PlayerId): Set<string> {
-    const rows = this.sql.exec<{ key: string }>(
-      "SELECT DISTINCT key FROM runs WHERE game = ? AND player = ? AND status = 'won'",
+  /** Meilleur score d'un joueur sur chaque clé qu'il a gagnée. */
+  bestValues(game: GameId, player: PlayerId, order: ScoreOrder): Map<string, number> {
+    const best = order === 'asc' ? 'MIN' : 'MAX';
+    const rows = this.sql.exec<{ key: string; value: number }>(
+      `SELECT key, ${best}(value) AS value FROM runs WHERE game = ? AND player = ? AND status = 'won' GROUP BY key`,
       game,
       player,
     );
-    return new Set(rows.toArray().map((row) => row.key));
+    return new Map(rows.toArray().map((row) => [row.key, row.value]));
   }
 
   /** Clés gagnées au moins une fois, par joueur. */
@@ -244,7 +247,7 @@ export class PlatformStore {
       .map(toProgress);
   }
 
-  keyProgress(game: GameId, player: PlayerId, order: ScoreOrder): KeyProgress[] {
+  keyProgress(game: GameId, player: PlayerId, order: ScoreOrder): StoredKeyProgress[] {
     const dir = sqlOrder(order);
     const rows = this.sql
       .exec<KeyRow>(

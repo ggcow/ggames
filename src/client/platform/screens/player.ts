@@ -24,14 +24,27 @@ export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame
         h('strong', null, game.keyLabel(key.key, ctx.lang)),
         h('small', null, `${t.attempts} ${key.attempts} · ${t.wins} ${key.wins}`),
       ),
-      key.best
-        ? h(
-            'button',
-            { class: 'btn small', on: { click: () => key.best && openRun(key.best) } },
-            game.formatValue ? `▶ ${game.formatValue(key.best.value, ctx.lang)}` : t.watchReplay,
-          )
-        : null,
+      key.best ? replayButton(key.best, key.replayVisible) : null,
     );
+
+  /** Bouton du meilleur replay ; verrouillé tant que le demandeur n'a pas fait aussi bien sur ce niveau. */
+  const replayButton = (best: RunSummary, visible: boolean) => {
+    const score = game.formatValue?.(best.value, ctx.lang) ?? null;
+    if (visible) {
+      return h(
+        'button',
+        { class: 'btn small', on: { click: () => openRun(best) } },
+        score ? `▶ ${score}` : t.watchReplay,
+      );
+    }
+    // Sur un téléphone, un bouton désactivé ne dit rien : toucher le cadenas explique ce qu'il faut faire.
+    const hint = t.replayLocked(score ?? '');
+    return h(
+      'button',
+      { class: 'btn small locked', attrs: { 'aria-label': hint }, on: { click: () => toast(hint) } },
+      score ? `🔒 ${score}` : '🔒',
+    );
+  };
 
   const render = () => {
     if (!detail) return loading(host, t);

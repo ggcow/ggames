@@ -137,6 +137,10 @@ button:disabled {
   border-radius: 12px;
   --press: 3px;
 }
+/* Replay d'un ami encore verrouillé : on peut le toucher pour savoir comment le débloquer. */
+.btn.locked {
+  opacity: 0.6;
+}
 .btn:active:not(:disabled),
 .round:active:not(:disabled) {
   transform: translateY(var(--press));

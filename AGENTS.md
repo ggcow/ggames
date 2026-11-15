@@ -31,8 +31,9 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - L'accueil liste les jeux. Pour chaque jeu : la grille des 100 niveaux, 5 pages de 20 (réussis, jouable, verrouillés),
   la progression de chaque joueur (niveaux réussis, essais, temps), les classements, et le replay des parties
   gagnées sur les niveaux déjà réussis par le joueur.
-- Un replay ne révèle jamais la solution d'un niveau : on ne voit que les replays des niveaux qu'on a
-  soi-même réussis. La fiche d'un joueur ne liste que les niveaux réussis par les deux.
+- Un replay ne révèle jamais une solution meilleure que la sienne : on ne voit le replay d'un autre joueur que sur
+  un niveau qu'on a soi-même réussi avec un score au moins aussi bon. La fiche d'un joueur ne liste que les niveaux
+  réussis par les deux ; les replays encore hors de portée y sont verrouillés.
 - Un replay se regarde sans les coups annulés : on voit le chemin final de la partie.
 - Progression individuelle : on joue le premier niveau pas encore gagné (et tous ceux d'avant).
 - Rejoindre : un niveau verrouillé qu'un ami joue en direct peut être rejoint (course sur le même plateau, trois

@@ -127,7 +127,7 @@ describe('parties', () => {
     expect(state.body.players.map((p) => p.id)).toEqual(expect.arrayContaining([me.player.id, other.player.id]));
 
     const detail = await call<PlayerGameDetail>(`/api/games/fioles/players/${me.player.id}`, { token: me.token });
-    expect(detail.body.keys).toEqual([{ key: 'c:1', attempts: 2, wins: 1, best: won.body.run }]);
+    expect(detail.body.keys).toEqual([{ key: 'c:1', attempts: 2, wins: 1, best: won.body.run, replayVisible: true }]);
 
     expect((await call(`/api/runs/${abandoned.body.run.id}`, { token: me.token })).status).toBe(404);
     const run = await call<Run>(`/api/runs/${won.body.run.id}`, { token: me.token });
@@ -154,7 +154,9 @@ describe('parties', () => {
     const shared = await call<PlayerGameDetail>(`/api/games/fioles/players/${friend.player.id}`, {
       token: me.token,
     });
-    expect(shared.body.keys).toEqual([{ key: 'c:1', attempts: 1, wins: 1, best: friendWin.body.run }]);
+    expect(shared.body.keys).toEqual([
+      { key: 'c:1', attempts: 1, wins: 1, best: friendWin.body.run, replayVisible: true },
+    ]);
     const run = await call<Run>(`/api/runs/${friendWin.body.run.id}`, { token: me.token });
     expect(run.body).toEqual({ ...friendWin.body.run, replay: WIN_1 });
 
@@ -165,6 +167,45 @@ describe('parties', () => {
       token: me.token,
     });
     expect(after.body.keys.map((key) => key.key)).toEqual(['c:1']);
+  });
+
+  it('ne montre le replay d’un ami qu’après avoir fait aussi bien que lui', async () => {
+    const me = await newPlayer();
+    const friend = await newPlayer();
+    const friendWin = await submit(friend.token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });
+    const detail = () => call<PlayerGameDetail>(`/api/games/fioles/players/${friend.player.id}`, { token: me.token });
+    const watch = () => call(`/api/runs/${friendWin.body.run.id}`, { token: me.token });
+
+    // Moins bien que lui : la ligne apparaît, son replay reste verrouillé.
+    await submit(me.token, {
+      key: 'c:1',
+      status: 'won',
+      durationMs: 1,
+      replay: encodeActions(detour(LEVEL_1, WIN_1.length / 2)),
+    });
+    expect((await detail()).body.keys).toEqual([
+      { key: 'c:1', attempts: 1, wins: 1, best: friendWin.body.run, replayVisible: false },
+    ]);
+    expect((await watch()).status).toBe(404);
+
+    // Aussi bien que lui : son replay s'ouvre, et le mien reste visible pour lui, qui a fait aussi bien.
+    const myWin = await submit(me.token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });
+    expect((await detail()).body.keys[0]?.replayVisible).toBe(true);
+    expect((await watch()).status).toBe(200);
+    expect((await call(`/api/runs/${myWin.body.run.id}`, { token: friend.token })).status).toBe(200);
+  });
+
+  it('ouvre le replay d’un ami moins bon que soi', async () => {
+    const me = await newPlayer();
+    const friend = await newPlayer();
+    const slower = await submit(friend.token, {
+      key: 'c:1',
+      status: 'won',
+      durationMs: 1,
+      replay: encodeActions(detour(LEVEL_1, WIN_1.length / 2)),
+    });
+    await submit(me.token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });
+    expect((await call(`/api/runs/${slower.body.run.id}`, { token: me.token })).status).toBe(200);
   });
 
   it('ne sert le replay que des parties gagnées', async () => {
@@ -191,7 +232,7 @@ describe('parties', () => {
     expect(lost.status).toBe(200);
 
     const detail = await call<PlayerGameDetail>(`/api/games/fioles/players/${me.player.id}`, { token: me.token });
-    expect(detail.body.keys).toEqual([{ key: 'c:1', attempts: 1, wins: 0, best: null }]);
+    expect(detail.body.keys).toEqual([{ key: 'c:1', attempts: 1, wins: 0, best: null, replayVisible: true }]);
   });
 
   it('classe les joueurs par meilleur score et ne garde que le meilleur de chacun', async () => {

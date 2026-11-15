@@ -92,6 +92,11 @@ export interface KeyProgress {
   attempts: number;
   wins: number;
   best: RunSummary | null;
+  /**
+   * Le demandeur peut regarder le replay de `best` : c'est sa propre fiche, ou il a fait aussi bien sur ce niveau.
+   * Sinon, ce replay lui montrerait comment faire mieux.
+   */
+  replayVisible: boolean;
 }
 
 export interface PlayerGameDetail {
