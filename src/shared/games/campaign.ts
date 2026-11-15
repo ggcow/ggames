@@ -15,6 +15,19 @@ export function parseCampaignKey(key: string): number | null {
 }
 
 /**
+ * Ordre d'affichage des clés : niveaux de la campagne par numéro croissant, puis les autres clés par ordre
+ * alphabétique, pour qu'une liste reste la même d'un chargement à l'autre.
+ */
+export function campaignCompareKeys(a: string, b: string): number {
+  const levelA = parseCampaignKey(a);
+  const levelB = parseCampaignKey(b);
+  if (levelA !== null && levelB !== null) return levelA - levelB;
+  if (levelA !== null) return -1;
+  if (levelB !== null) return 1;
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/**
  * Niveau à jouer d'un joueur : le premier qu'il n'a pas gagné en partant du niveau 1. Un niveau gagné plus loin
  * (en rejoignant un ami) ne fait pas avancer cette progression.
  */

@@ -58,6 +58,10 @@ describe('clés', () => {
     expect(bouquets.isValidKey('c:100')).toBe(true);
   });
 
+  it('range les clés dans l’ordre de la campagne', () => {
+    expect(['c:10', 'c:2', 'c:1'].sort(bouquets.compareKeys)).toEqual(['c:1', 'c:2', 'c:10']);
+  });
+
   it('utilise la progression de la campagne', () => {
     expect(bouquets.isUnlocked('c:1', new Set())).toBe(true);
     expect(bouquets.isUnlocked('c:3', new Set(['c:1', 'c:2']))).toBe(true);

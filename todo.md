@@ -1,6 +1,6 @@
 # TODO
 
-- [ ] Ordonner les replays de la fiche d'un joueur : l'ordre actuel par dernière partie jouée est
+- [x] Ordonner les replays de la fiche d'un joueur : l'ordre actuel par dernière partie jouée est
   illisible. Les classer par niveau croissant, avec un ordre stable pour les clés hors campagne.
 - [ ] Séparer l'identifiant de connexion du nom affiché : le pseudo actuel sert aux deux. Le login
   doit rester unique et stable, le nom affiché doit pouvoir changer sans changer la connexion.

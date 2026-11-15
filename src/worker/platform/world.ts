@@ -304,7 +304,9 @@ export class World extends DurableObject<Env> {
     if (!game) return unknownGame();
     const player = typeof playerId === 'string' ? this.store.findPlayer(playerId) : null;
     if (!player) return fail(404, 'unknown player');
-    const keys = this.store.keyProgress(game.id, player.id, game.scoreOrder);
+    const keys = this.store
+      .keyProgress(game.id, player.id, game.scoreOrder)
+      .sort((a, b) => game.compareKeys(a.key, b.key));
     const progress = this.store.progress(game.id, player.id)[0] ?? null;
     if (player.id === me.id)
       return ok({ player, progress, keys: keys.map((key) => ({ ...key, replayVisible: true })) });

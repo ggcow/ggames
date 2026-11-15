@@ -22,6 +22,8 @@ export interface GameDefinition {
   readonly scoreOrder: ScoreOrder;
   /** Vrai si `key` désigne un niveau ou un mode existant. */
   isValidKey(key: string): boolean;
+  /** Ordre d'affichage de deux clés (négatif si `a` vient avant `b`), stable d'un appel à l'autre. */
+  compareKeys(a: string, b: string): number;
   /** Vrai si un joueur ayant gagné les clés `won` a débloqué `key` par sa propre progression. */
   isUnlocked(key: string, won: ReadonlySet<string>): boolean;
   /** Rejoue une partie. `null` si le replay est invalide (action impossible, format incorrect). */

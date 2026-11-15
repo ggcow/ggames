@@ -226,6 +226,21 @@ describe('parties', () => {
     expect(replay.body).toEqual({ ...won.body.run, replay: WIN_1 });
   });
 
+  it('liste les niveaux de la fiche par numéro croissant, quel que soit l’ordre des parties', async () => {
+    const me = await newPlayer();
+    const friend = await newPlayer();
+    await submit(me.token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });
+    await submit(me.token, { key: 'c:2', status: 'won', durationMs: 1, replay: WIN_2 });
+    await submit(friend.token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });
+    await submit(friend.token, { key: 'c:2', status: 'won', durationMs: 1, replay: WIN_2 });
+    await submit(me.token, { key: 'c:1', status: 'lost', durationMs: 1, replay: WIN_1.slice(0, 2) });
+    const keys = async (token: string, player: string) =>
+      (await call<PlayerGameDetail>(`/api/games/fioles/players/${player}`, { token })).body.keys.map((k) => k.key);
+    expect(await keys(me.token, me.player.id)).toEqual(['c:1', 'c:2']);
+    expect(await keys(me.token, friend.player.id)).toEqual(['c:1', 'c:2']);
+    expect(await keys(friend.token, me.player.id)).toEqual(['c:1', 'c:2']);
+  });
+
   it('ne propose pas de replay pour un niveau sans victoire', async () => {
     const me = await newPlayer();
     const lost = await submit(me.token, { key: 'c:1', status: 'lost', durationMs: 1, replay: WIN_1.slice(0, 2) });

@@ -102,7 +102,10 @@ export interface KeyProgress {
 export interface PlayerGameDetail {
   player: PlayerInfo;
   progress: PlayerProgress | null;
-  /** Niveaux consultables : tous ceux joués par le demandeur, sinon ceux réussis par les deux joueurs. */
+  /**
+   * Niveaux consultables, dans l'ordre du jeu (`compareKeys`) : tous ceux joués par le demandeur, sinon ceux
+   * réussis par les deux joueurs.
+   */
   keys: KeyProgress[];
 }
 

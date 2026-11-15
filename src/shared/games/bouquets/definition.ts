@@ -1,6 +1,6 @@
 // Définition du jeu Bouquets pour la plateforme : niveaux enregistrés de la campagne, replays.
 
-import { campaignIsUnlocked, parseCampaignKey } from '../campaign.ts';
+import { campaignCompareKeys, campaignIsUnlocked, parseCampaignKey } from '../campaign.ts';
 import type { GameDefinition, ReplayOutcome } from '../game.ts';
 import { countMoves } from '../moves.ts';
 import { LEVELS } from './levels.ts';
@@ -83,6 +83,7 @@ export const bouquets: GameDefinition = {
   id: BOUQUETS_ID,
   scoreOrder: 'asc',
   isValidKey: (key) => parseCampaignKey(key) !== null,
+  compareKeys: campaignCompareKeys,
   isUnlocked: campaignIsUnlocked,
   replay(key, replay): ReplayOutcome | null {
     const start = startBoard(key);

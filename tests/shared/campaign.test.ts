@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  campaignCompareKeys,
   campaignFrontier,
   campaignIsUnlocked,
   campaignKey,
@@ -17,6 +18,13 @@ describe('campagne : clés', () => {
 
   it.each(['c:0', 'c:01', 'c:101', 'c:1000', 'l:abc123', 'x:1', ''])('rejette %s', (key) => {
     expect(parseCampaignKey(key)).toBeNull();
+  });
+
+  it('range les niveaux par numéro, puis les autres clés par ordre alphabétique', () => {
+    const keys = ['x:b', 'c:10', 'c:2', 'c:101', 'c:1', 'x:a', 'c:100'];
+    expect(keys.sort(campaignCompareKeys)).toEqual(['c:1', 'c:2', 'c:10', 'c:100', 'c:101', 'x:a', 'x:b']);
+    expect(campaignCompareKeys('c:3', 'c:3')).toBe(0);
+    expect(campaignCompareKeys('x:a', 'x:a')).toBe(0);
   });
 });
 

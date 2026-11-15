@@ -254,7 +254,7 @@ export class PlatformStore {
         `SELECT key, COUNT(*) AS attempts, SUM(status = 'won') AS wins,
                 (SELECT id FROM runs b WHERE b.game = r.game AND b.player = r.player AND b.key = r.key
                    AND b.status = 'won' ORDER BY b.value ${dir}, b.ended LIMIT 1) AS best
-         FROM runs r WHERE game = ? AND player = ? GROUP BY key ORDER BY MAX(ended) DESC`,
+         FROM runs r WHERE game = ? AND player = ? GROUP BY key`,
         game,
         player,
       )
