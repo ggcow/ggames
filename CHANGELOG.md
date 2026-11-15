@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.2](https://github.com/ggcow/ggames/compare/v0.5.1...v0.5.2) (2026-11-15)
+
+### Fonctionnalités
+
+* **platform:** rendre l'identifiant modifiable et l'afficher à son propriétaire ([743cfb8](https://github.com/ggcow/ggames/commit/743cfb8cadc4612a6132cdcc73fcee1ab94b6e47))
+* **platform:** séparer l'identifiant de connexion du pseudo affiché ([590980e](https://github.com/ggcow/ggames/commit/590980ec4117284b1e953c62e7c65a314360a8f7))
+
+### Corrections
+
+* **platform:** classer les niveaux de la fiche d'un joueur par numéro ([68e1d2b](https://github.com/ggcow/ggames/commit/68e1d2b2f8bfeb44b1fc1df98eb6dd5aac08bfe0))
+
 ## [0.5.1](https://github.com/ggcow/ggames/compare/v0.5.0...v0.5.1) (2026-11-15)
 
 ### Fonctionnalités
