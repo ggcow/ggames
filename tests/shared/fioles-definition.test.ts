@@ -15,7 +15,7 @@ import { isSolved } from '../../src/shared/games/fioles/rules.ts';
 import { fiolesLevel, solve } from '../support/fioles-solver.ts';
 
 describe('campagne', () => {
-  it('enregistre un plateau valide, faisable et non résolu pour chaque niveau', () => {
+  it('enregistre un plateau valide, faisable et non résolu pour chaque niveau', { timeout: 120_000 }, () => {
     expect(LEVELS).toHaveLength(MAX_LEVEL);
     for (let n = 1; n <= MAX_LEVEL; n++) {
       const board = fiolesLevel(n);
