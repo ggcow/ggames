@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { encodeActions as encodeBouquets } from '../../src/shared/games/bouquets/definition.ts';
 import { campaignKey } from '../../src/shared/games/campaign.ts';
 import { encodeActions, type FiolesAction } from '../../src/shared/games/fioles/definition.ts';
-import type { Board } from '../../src/shared/games/fioles/rules.ts';
+import { type Board, cloneBoard, pour } from '../../src/shared/games/fioles/rules.ts';
 import type {
   GameState,
   GameSummary,
@@ -22,6 +22,19 @@ const solution = (board: Board): FiolesAction[] => {
 
 const LEVEL_1 = fiolesLevel(1);
 const WIN_1 = encodeActions(solution(LEVEL_1));
+
+/** Victoire plus longue que WIN_1 : un détour, puis une solution depuis le plateau obtenu. */
+const detour = (board: Board, moves: number): FiolesAction[] => {
+  for (let from = 0; from < board.length; from++) {
+    for (let to = 0; to < board.length; to++) {
+      const after = cloneBoard(board);
+      if (from === to || pour(after, from, to) === 0) continue;
+      const rest = solve(after);
+      if (rest && rest.length + 1 > moves) return [{ type: 'pour', from, to }, ...rest];
+    }
+  }
+  throw new Error('pas de détour');
+};
 const LEVEL_2 = fiolesLevel(2);
 const WIN_2 = encodeActions(solution(LEVEL_2));
 
@@ -184,7 +197,7 @@ describe('parties', () => {
   it('classe les joueurs par meilleur score et ne garde que le meilleur de chacun', async () => {
     const a = await newPlayer();
     const b = await newPlayer();
-    const slower = encodeActions([{ type: 'pour', from: 0, to: 3 }, { type: 'undo' }, ...solution(LEVEL_1)]);
+    const slower = encodeActions(detour(LEVEL_1, WIN_1.length / 2));
     await submit(a.token, { key: 'c:1', status: 'won', durationMs: 1, replay: slower });
     await submit(b.token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });
     const best = await submit(a.token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });

@@ -89,13 +89,13 @@ describe('replays', () => {
     expect(playActions([[0], []], [{ type: 'undo' }])).toBeNull();
   });
 
-  it('valide une victoire et compte chaque action comme un coup', () => {
+  it('valide une victoire, compte chaque coup et retire un coup par annulation', () => {
     const board = fiolesLevel(1);
     const win = solve(board);
     if (!win) throw new Error('pas de solution');
     const withUndo: FiolesAction[] = [win[0] as FiolesAction, { type: 'undo' }, ...win];
     expect(fioles.replay('c:1', encodeActions(win))).toEqual({ finished: true, value: win.length });
-    expect(fioles.replay('c:1', encodeActions(withUndo))).toEqual({ finished: true, value: win.length + 2 });
+    expect(fioles.replay('c:1', encodeActions(withUndo))).toEqual({ finished: true, value: win.length });
     expect(fioles.replay('c:1', encodeActions(win.slice(0, 1)))).toEqual({ finished: false, value: 1 });
   });
 

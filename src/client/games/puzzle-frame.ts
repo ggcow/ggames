@@ -1,5 +1,5 @@
 // Cadre commun des jeux de réflexion au tour par tour : le plateau, avec le compteur de coups en pastille sur
-// son bord pour ne pas lui prendre de hauteur sur un téléphone, puis les boutons Annuler et Recommencer.
+// son bord pour ne pas lui prendre de hauteur sur un téléphone, puis les boutons Recommencer et Annuler.
 // Le jeu remplit `table` et met à jour le compteur et l'état des boutons.
 
 import { h, replaceChildren } from '../platform/dom.ts';
@@ -28,7 +28,7 @@ export function mountPuzzleFrame(host: HTMLElement, options: PuzzleFrameOptions)
   replaceChildren(
     host,
     h('div', { class: 'table' }, frame.counter, frame.table),
-    h('div', { class: 'controls' }, frame.undo, frame.restart),
+    h('div', { class: 'controls' }, frame.restart, frame.undo),
   );
   return frame;
 }

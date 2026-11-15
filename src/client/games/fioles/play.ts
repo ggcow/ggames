@@ -12,6 +12,7 @@ import {
   pour,
   type ReadonlyBoard,
 } from '../../../shared/games/fioles/rules.ts';
+import { countMoves } from '../../../shared/games/moves.ts';
 import { mountPuzzleFrame } from '../puzzle-frame.ts';
 import { renderBoard, shake } from './board.ts';
 import type { FiolesStrings } from './strings.ts';
@@ -44,7 +45,7 @@ export function mountFiolesPlay(host: HTMLElement, options: FiolesPlayOptions): 
   });
 
   const render = (arrived?: { tube: number; count: number }) => {
-    counter.textContent = strings.moves(actions.length);
+    counter.textContent = strings.moves(countMoves(actions));
     undo.disabled = history.length === 0 || finished;
     restart.disabled = finished;
     renderBoard(boardHost, board, {
@@ -56,7 +57,7 @@ export function mountFiolesPlay(host: HTMLElement, options: FiolesPlayOptions): 
   };
 
   const report = () =>
-    options.onProgress({ state: boardToString(board), value: actions.length, replay: encodeActions(actions) });
+    options.onProgress({ state: boardToString(board), value: countMoves(actions), replay: encodeActions(actions) });
 
   const tap = (index: number, element: HTMLElement) => {
     if (finished) return;

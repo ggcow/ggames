@@ -1,7 +1,11 @@
 import { env, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
+import { bouquets, encodeActions as encodeBouquets } from '../../src/shared/games/bouquets/definition.ts';
+import { encodeActions as encodeFioles, type FiolesAction, fioles } from '../../src/shared/games/fioles/definition.ts';
 import { migrate, SCHEMA_VERSION } from '../../src/worker/platform/schema.ts';
 import type { World } from '../../src/worker/platform/world.ts';
+import { bouquetsWin } from '../support/bouquets.ts';
+import { fiolesLevel, solve } from '../support/fioles-solver.ts';
 
 const world = () => (env.WORLD as DurableObjectNamespace<World>).getByName('main');
 
@@ -73,10 +77,41 @@ describe('schéma', () => {
       insert('run102', 'fioles', 'c:100');
       insert('run103', 'fioles', 'c:23');
       insert('run104', 'autre', 'c:24');
-      sql.exec('UPDATE schema_version SET version = ?', SCHEMA_VERSION - 1);
+      sql.exec('UPDATE schema_version SET version = 6');
       migrate(sql);
       const left = sql.exec<{ id: string }>('SELECT id FROM runs ORDER BY id').toArray();
       expect(left.map((row) => row.id)).toEqual(['run103', 'run104']);
+    });
+  });
+
+  it('recalcule le score des parties : une annulation retire un coup', async () => {
+    const fiolesWin = solve(fiolesLevel(1)) ?? [];
+    const [pour] = fiolesWin;
+    const [move, ...rest] = bouquetsWin(1);
+    if (!pour || !move) throw new Error('premiers coups attendus');
+    const fiolesReplay = encodeFioles([pour, { type: 'undo' } satisfies FiolesAction, ...fiolesWin]);
+    const bouquetsReplay = encodeBouquets([move, { type: 'undo' }, move, ...rest]);
+    await runInDurableObject(world(), (_instance, state) => {
+      const { sql } = state.storage;
+      sql.exec("INSERT INTO players (id, name, name_key, password_hash, created) VALUES ('ghi789', 'C', 'c', 'x', 1)");
+      const insert = (id: string, game: string, replay: string) =>
+        sql.exec(
+          "INSERT INTO runs (id, game, key, player, status, value, duration_ms, replay, ended) VALUES (?, ?, 'c:1', 'ghi789', 'won', 999, 1, ?, 1)",
+          id,
+          game,
+          replay,
+        );
+      insert('run201', 'fioles', fiolesReplay);
+      insert('run202', 'bouquets', bouquetsReplay);
+      insert('run203', 'autre', 'u');
+      sql.exec('UPDATE schema_version SET version = 7');
+      migrate(sql);
+      const value = (id: string) => sql.exec<{ value: number }>('SELECT value FROM runs WHERE id = ?', id).one().value;
+      expect(value('run201')).toBe(fioles.replay('c:1', fiolesReplay)?.value);
+      expect(value('run201')).toBe(fiolesWin.length);
+      expect(value('run202')).toBe(bouquets.replay('c:1', bouquetsReplay)?.value);
+      expect(value('run202')).toBe(rest.length + 1);
+      expect(value('run203')).toBe(999);
     });
   });
 });

@@ -101,13 +101,13 @@ describe('replays', () => {
     expect(playActions([[[0, _, _]]], [{ type: 'undo' }])).toBeNull();
   });
 
-  it('valide une victoire et compte chaque action comme un coup', () => {
+  it('valide une victoire, compte chaque coup et retire un coup par annulation', () => {
     const solution = bouquetsWin(1);
     const first = solution[0];
     if (!first) throw new Error('premier coup attendu');
     const withUndo: BouquetsAction[] = [first, { type: 'undo' }, ...solution];
     expect(bouquets.replay('c:1', encodeActions(solution))).toEqual({ finished: true, value: solution.length });
-    expect(bouquets.replay('c:1', encodeActions(withUndo))).toEqual({ finished: true, value: solution.length + 2 });
+    expect(bouquets.replay('c:1', encodeActions(withUndo))).toEqual({ finished: true, value: solution.length });
     expect(bouquets.replay('c:1', encodeActions(solution.slice(0, 1)))).toEqual({ finished: false, value: 1 });
   });
 

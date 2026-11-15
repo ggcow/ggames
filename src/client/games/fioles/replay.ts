@@ -2,6 +2,7 @@
 
 import { decodeActions, playActions } from '../../../shared/games/fioles/definition.ts';
 import type { Board, ReadonlyBoard } from '../../../shared/games/fioles/rules.ts';
+import { countMoves } from '../../../shared/games/moves.ts';
 import { h, replaceChildren } from '../../platform/dom.ts';
 import { renderBoard } from './board.ts';
 import type { FiolesStrings } from './strings.ts';
@@ -28,7 +29,7 @@ export function mountFiolesReplay(
   const playButton = h('button', { class: 'btn primary' });
 
   const render = () => {
-    counter.textContent = `${strings.moves(index)} / ${states.length - 1}`;
+    counter.textContent = `${strings.moves(countMoves(actions.slice(0, index)))} / ${countMoves(actions)}`;
     slider.value = String(index);
     playButton.textContent = timer ? '⏸' : '▶';
     renderBoard(boardHost, states[index] ?? [], { width: host.clientWidth || window.innerWidth });

@@ -15,6 +15,7 @@ import {
   type Move,
   type ReadonlyBoard,
 } from '../../../shared/games/bouquets/rules.ts';
+import { countMoves } from '../../../shared/games/moves.ts';
 import { h } from '../../platform/dom.ts';
 import { mountPuzzleFrame } from '../puzzle-frame.ts';
 import { preloadArt } from './art.ts';
@@ -115,7 +116,7 @@ export function mountBouquetsPlay(host: HTMLElement, options: BouquetsPlayOption
   host.append(hint);
 
   const render = (revealed: readonly number[] = []) => {
-    counter.textContent = strings.moves(actions.length);
+    counter.textContent = strings.moves(countMoves(actions));
     undo.disabled = history.length === 0 || finished;
     restart.disabled = finished;
     hint.hidden = finished || hasMove(board);
@@ -128,7 +129,7 @@ export function mountBouquetsPlay(host: HTMLElement, options: BouquetsPlayOption
   };
 
   const report = () =>
-    options.onProgress({ state: liveState(board), value: actions.length, replay: encodeActions(actions) });
+    options.onProgress({ state: liveState(board), value: countMoves(actions), replay: encodeActions(actions) });
 
   const potElement = (pot: number) => boardHost.querySelector<HTMLElement>(`.bq-pot[data-pot="${pot}"]`);
 

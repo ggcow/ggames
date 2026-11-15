@@ -223,18 +223,19 @@ describe('partie', () => {
     unmount();
   });
 
-  it('compte l’annulation comme un coup et recommence à zéro', () => {
+  it('retire un coup à l’annulation et recommence à zéro', () => {
     const { host, onProgress, unmount } = mount();
     const first = bouquetsWin(1)[0];
     if (first?.type !== 'move') throw new Error('premier coup attendu');
     tapAt(host, first.from, first.slot);
     tapAt(host, first.to, first.place);
-    const [undo, restart] = [...host.querySelectorAll<HTMLButtonElement>('.controls button')];
+    const [restart, undo] = [...host.querySelectorAll<HTMLButtonElement>('.controls button')];
+    expect(host.querySelector('.counter')?.textContent).toBe('1 coup');
     undo?.click();
     expect(onProgress).toHaveBeenLastCalledWith(
-      expect.objectContaining({ value: 2, replay: `${encodeActions([first])}u` }),
+      expect.objectContaining({ value: 0, replay: `${encodeActions([first])}u` }),
     );
-    expect(host.querySelector('.counter')?.textContent).toBe('2 coups');
+    expect(host.querySelector('.counter')?.textContent).toBe('0 coups');
     restart?.click();
     expect(onProgress).toHaveBeenLastCalledWith({ state: liveState(start), value: 0, replay: '' });
     unmount();
@@ -341,6 +342,19 @@ describe('replay', () => {
     const buttons = [...host.querySelectorAll<HTMLButtonElement>('.controls button')];
     buttons[3]?.click();
     expect(host.querySelector('.counter')?.textContent).toBe(`1 coup / ${total}`);
+  });
+
+  it('retire un coup au compteur quand la partie annule', () => {
+    const [first, ...rest] = bouquetsWin(1);
+    if (!first) throw new Error('premier coup attendu');
+    const host = document.createElement('div');
+    mountBouquetsReplay(host, bouquetsLevel(1), encodeActions([first, { type: 'undo' }, first, ...rest]), fr);
+    const total = rest.length + 1;
+    const next = host.querySelectorAll<HTMLButtonElement>('.controls button')[3];
+    next?.click();
+    expect(host.querySelector('.counter')?.textContent).toBe(`1 coup / ${total}`);
+    next?.click();
+    expect(host.querySelector('.counter')?.textContent).toBe(`0 coups / ${total}`);
   });
 });
 

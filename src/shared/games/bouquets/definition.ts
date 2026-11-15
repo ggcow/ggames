@@ -2,6 +2,7 @@
 
 import { campaignIsUnlocked, parseCampaignKey } from '../campaign.ts';
 import type { GameDefinition, ReplayOutcome } from '../game.ts';
+import { countMoves } from '../moves.ts';
 import { LEVELS } from './levels.ts';
 import { applyMove, type Board, cloneBoard, isSolved, type Move, parseBoard } from './rules.ts';
 
@@ -92,6 +93,6 @@ export const bouquets: GameDefinition = {
     const firstSolved = states.findIndex(isSolved);
     // Une partie s'arrête dès que le plateau est vide : aucune action après.
     if (firstSolved !== -1 && firstSolved !== states.length - 1) return null;
-    return { finished: firstSolved !== -1, value: actions.length };
+    return { finished: firstSolved !== -1, value: countMoves(actions) };
   },
 };

@@ -48,6 +48,7 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   des messages vocaux courts : une note disparaît pour chaque destinataire après son écoute, reste visible
   pour ceux qui ne l'ont pas encore écoutée, et expire au bout d'une heure.
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
+- Score d'un jeu au tour par tour : le nombre de coups joués ; Annuler en retire un, Recommencer repart de zéro.
 - Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct.
 - Interface en français et en chinois.
 - Les niveaux de chaque jeu sont générés une fois pour toutes et enregistrés dans le projet, jamais à la volée.
@@ -80,6 +81,7 @@ src/
     games/                 interface GameDefinition + registre des jeux
       campaign.ts          campagne de niveaux commune : clés `c:<n>`, déblocage
       random.ts            hasard reproductible pour générer les niveaux (graine, mélange)
+      moves.ts             score des jeux au tour par tour : coups joués, moins un par annulation
       fioles/              règles, replays, niveaux enregistrés (levels.ts) et leur générateur (generate.ts)
       bouquets/            idem ; le générateur mesure la difficulté avec des parties simulées
   worker/                  serveur Cloudflare
@@ -91,7 +93,7 @@ src/
     platform/              coquille : session, routeur, API, temps réel, salon, écrans communs, UI, i18n
     games/                 interface ClientGame + registre + un dossier par jeu
       campaign.ts          méthodes ClientGame d'une campagne (progression, cases, niveau suivant)
-      puzzle-frame.ts      cadre de partie commun : compteur de coups, Annuler, Recommencer
+      puzzle-frame.ts      cadre de partie commun : compteur de coups, Recommencer, Annuler
 pages/                     projet Cloudflare Pages : relaie /api/* vers le Worker (service binding)
 pages-staging/             même relais pour l'environnement de test
 tests/                     Vitest : shared/ (node), client/ (happy-dom), worker/ (runtime Cloudflare réel)

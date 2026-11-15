@@ -110,6 +110,14 @@ const MIGRATIONS: readonly string[] = [
     'c:79', 'c:80', 'c:82', 'c:83', 'c:84', 'c:89', 'c:91', 'c:92', 'c:94', 'c:95', 'c:100'
   );
   `,
+  // Une annulation retire un coup au lieu d'en ajouter un : score = coups - annulations, relu dans le replay.
+  // Une annulation s'y écrit « u » ; un coup y prend 2 caractères pour Fioles, 4 pour Bouquets.
+  `
+  UPDATE runs SET value = (length(replay) - 3 * (length(replay) - length(replace(replay, 'u', '')))) / 2
+    WHERE game = 'fioles';
+  UPDATE runs SET value = (length(replay) - 5 * (length(replay) - length(replace(replay, 'u', '')))) / 4
+    WHERE game = 'bouquets';
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

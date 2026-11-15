@@ -112,7 +112,7 @@ describe('partie', () => {
     unmount();
   });
 
-  it('compte l’annulation comme un coup et recommence à zéro', () => {
+  it('retire un coup à l’annulation et recommence à zéro', () => {
     const host = document.createElement('div');
     const onProgress = vi.fn();
     mountFiolesPlay(host, { start, strings: FIOLES_STRINGS.fr, onProgress, onWin: vi.fn() });
@@ -120,12 +120,13 @@ describe('partie', () => {
     if (first?.type !== 'pour') throw new Error('premier coup attendu');
     tubes(host)[first.from]?.click();
     tubes(host)[first.to]?.click();
-    const [undo, restart] = [...host.querySelectorAll('.controls button')] as HTMLButtonElement[];
+    const [restart, undo] = [...host.querySelectorAll('.controls button')] as HTMLButtonElement[];
+    expect(host.querySelector('.counter')?.textContent).toBe('1 coup');
     undo?.click();
     expect(onProgress).toHaveBeenLastCalledWith(
-      expect.objectContaining({ value: 2, replay: `${encodeActions([first])}u` }),
+      expect.objectContaining({ value: 0, replay: `${encodeActions([first])}u` }),
     );
-    expect(host.querySelector('.counter')?.textContent).toBe('2 coups');
+    expect(host.querySelector('.counter')?.textContent).toBe('0 coups');
     restart?.click();
     expect(onProgress).toHaveBeenLastCalledWith({ state: data, value: 0, replay: '' });
   });
@@ -136,7 +137,7 @@ describe('partie', () => {
     expect([...host.children].map((child) => child.className)).toEqual(['table', 'controls']);
     expect(host.querySelector('.table > .counter')?.textContent).toBe('0 coups');
     const buttons = [...(host.querySelector('.controls')?.children ?? [])];
-    expect(buttons.map((child) => child.textContent)).toEqual(['↶ Annuler', '⟲ Recommencer']);
+    expect(buttons.map((child) => child.textContent)).toEqual(['⟲ Recommencer', '↶ Annuler']);
   });
 
   it('sélectionne puis désélectionne une fiole', () => {

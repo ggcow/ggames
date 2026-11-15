@@ -2,6 +2,7 @@
 
 import { decodeActions, playActions } from '../../../shared/games/bouquets/definition.ts';
 import { type Board, cloneBoard, type ReadonlyBoard } from '../../../shared/games/bouquets/rules.ts';
+import { countMoves } from '../../../shared/games/moves.ts';
 import { h, replaceChildren } from '../../platform/dom.ts';
 import { preloadArt } from './art.ts';
 import { potsOf, renderBoard } from './board.ts';
@@ -27,7 +28,7 @@ export function mountBouquetsReplay(
   const playButton = h('button', { class: 'btn primary' });
 
   const render = () => {
-    counter.textContent = `${strings.moves(index)} / ${states.length - 1}`;
+    counter.textContent = `${strings.moves(countMoves(actions.slice(0, index)))} / ${countMoves(actions)}`;
     slider.value = String(index);
     playButton.textContent = timer ? '⏸' : '▶';
     renderBoard(boardHost, potsOf(states[index] ?? []), { width: host.clientWidth || window.innerWidth, strings });
