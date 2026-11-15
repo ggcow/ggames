@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.1](https://github.com/ggcow/ggames/compare/v0.5.0...v0.5.1) (2026-11-15)
+
+### Fonctionnalités
+
+* **platform:** montrer les replays sans les coups annulés ([135d6c8](https://github.com/ggcow/ggames/commit/135d6c81e0b71d47379ede249425c7b563c52b58))
+* **platform:** n'ouvrir le replay d'un ami qu'après avoir fait aussi bien ([36bfe3f](https://github.com/ggcow/ggames/commit/36bfe3f97591c725fc1da3367a0f5d5bc363f933))
+
+### Corrections
+
+* **bouquets:** ne plus actualiser la page en glissant une fleur vers le bas ([7ffd881](https://github.com/ggcow/ggames/commit/7ffd8813bdb664006da7a0a52322d1744bedc4e3))
+* **platform:** faire retirer un coup à Annuler et le placer après Recommencer ([9345be8](https://github.com/ggcow/ggames/commit/9345be8b9d1fd3e4ce5799670b977ef567a934d3))
+* **platform:** protéger pseudos et numéros de la traduction du navigateur ([2851e1b](https://github.com/ggcow/ggames/commit/2851e1b4d6c4459229bb83274bff70b405ddba43))
+
 ## [0.5.0](https://github.com/ggcow/ggames/compare/v0.4.8...v0.5.0) (2026-11-14)
 
 ### ⚠ BREAKING CHANGES
