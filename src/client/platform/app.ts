@@ -1,6 +1,6 @@
 // Coquille de l'application : session, langue, navigation entre écrans, branchement du temps réel.
 
-import type { PlayerInfo, ServerMessage, SessionResponse } from '../../shared/platform/protocol.ts';
+import type { Account, ServerMessage, SessionResponse } from '../../shared/platform/protocol.ts';
 import { isId, isRecord } from '../../shared/platform/validate.ts';
 import { findClientGame } from '../games/registry.ts';
 import { ApiClient } from './api.ts';
@@ -24,9 +24,11 @@ const LANG_KEY = 'lang';
 
 export function parseSession(raw: unknown): SessionResponse | null {
   if (!isRecord(raw) || typeof raw['token'] !== 'string' || !isRecord(raw['player'])) return null;
-  const { id, name, created } = raw['player'];
-  if (!isId(id) || typeof name !== 'string' || typeof created !== 'number') return null;
-  return { token: raw['token'], player: { id, name, created } };
+  const { id, name, created, login = name } = raw['player'];
+  if (!isId(id) || typeof name !== 'string' || typeof created !== 'number' || typeof login !== 'string') return null;
+  // Une session enregistrée sans identifiant l'a été quand il valait toujours le pseudo ; `me()` le relit
+  // au démarrage de la session.
+  return { token: raw['token'], player: { id, name, created, login } };
 }
 
 /** Clé de jeu concernée par une route (pour savoir quel écran recharger). */
@@ -91,7 +93,7 @@ export class App {
     this.navigate({ name: 'login' });
   }
 
-  private updateMe(me: PlayerInfo): void {
+  private updateMe(me: Account): void {
     if (!this.session) return;
     this.session = { ...this.session, player: me };
     this.store.set(SESSION_KEY, this.session);
@@ -103,7 +105,7 @@ export class App {
     else window.location.hash = hash;
   }
 
-  private context(me: PlayerInfo): AppContext {
+  private context(me: Account): AppContext {
     if (!this.chat) throw new Error('salon indisponible');
     return {
       api: this.api,

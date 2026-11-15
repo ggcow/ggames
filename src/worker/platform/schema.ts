@@ -126,6 +126,12 @@ const MIGRATIONS: readonly string[] = [
   UPDATE players SET name_key = login_key;
   CREATE UNIQUE INDEX players_name_key ON players (name_key);
   `,
+  // L'identifiant devient modifiable et s'affiche à son propriétaire tel qu'il l'a écrit. Sans
+  // renommage possible entre l'étape précédente et celle-ci, il vaut encore le pseudo de chaque compte.
+  `
+  ALTER TABLE players ADD COLUMN login TEXT NOT NULL DEFAULT '';
+  UPDATE players SET login = name;
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

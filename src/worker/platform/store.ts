@@ -2,6 +2,7 @@
 
 import type { ScoreOrder } from '../../shared/games/game.ts';
 import type {
+  Account,
   ChatMessage,
   GameId,
   GameSummary,
@@ -20,7 +21,8 @@ import type {
 export type StoredKeyProgress = Omit<KeyProgress, 'replayVisible'>;
 
 type PlayerRow = { id: string; name: string; created: number };
-type CredentialRow = PlayerRow & { password_hash: string };
+type AccountRow = PlayerRow & { login: string };
+type CredentialRow = AccountRow & { password_hash: string };
 type RunRow = {
   id: string;
   game: string;
@@ -87,8 +89,12 @@ export class PlatformStore {
     return this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM players').one().n;
   }
 
-  isLoginTaken(login: string): boolean {
-    return this.sql.exec('SELECT 1 FROM players WHERE login_key = ?', uniqueKey(login)).toArray().length > 0;
+  /** Vrai si un autre joueur que `except` se connecte déjà avec cet identifiant. */
+  isLoginTaken(login: string, except?: PlayerId): boolean {
+    return (
+      this.sql.exec('SELECT 1 FROM players WHERE login_key = ? AND id != ?', uniqueKey(login), except ?? '').toArray()
+        .length > 0
+    );
   }
 
   /** Vrai si un autre joueur que `except` affiche déjà ce pseudo. */
@@ -101,10 +107,11 @@ export class PlatformStore {
 
   insertPlayer(player: PlayerInfo, login: string, passwordHash: string): void {
     this.sql.exec(
-      'INSERT INTO players (id, name, name_key, login_key, password_hash, created) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO players (id, name, name_key, login, login_key, password_hash, created) VALUES (?, ?, ?, ?, ?, ?, ?)',
       player.id,
       player.name,
       uniqueKey(player.name),
+      login,
       uniqueKey(login),
       passwordHash,
       player.created,
@@ -116,12 +123,37 @@ export class PlatformStore {
     this.sql.exec('UPDATE players SET name = ?, name_key = ? WHERE id = ?', name, uniqueKey(name), id);
   }
 
-  findCredentials(login: string): { player: PlayerInfo; passwordHash: string } | null {
+  /** Change l'identifiant de connexion ; le pseudo affiché reste le même. */
+  changeLogin(id: PlayerId, login: string): void {
+    this.sql.exec('UPDATE players SET login = ?, login_key = ? WHERE id = ?', login, uniqueKey(login), id);
+  }
+
+  /** Compte d'un joueur, avec son identifiant : à ne renvoyer qu'à son propriétaire. */
+  findAccount(id: PlayerId): Account | null {
+    return (
+      this.sql.exec<AccountRow>('SELECT id, name, created, login FROM players WHERE id = ?', id).toArray()[0] ?? null
+    );
+  }
+
+  findPasswordHash(id: PlayerId): string | null {
+    return (
+      this.sql.exec<{ password_hash: string }>('SELECT password_hash FROM players WHERE id = ?', id).toArray()[0]
+        ?.password_hash ?? null
+    );
+  }
+
+  findCredentials(login: string): { account: Account; passwordHash: string } | null {
     const row = this.sql
-      .exec<CredentialRow>('SELECT id, name, created, password_hash FROM players WHERE login_key = ?', uniqueKey(login))
+      .exec<CredentialRow>(
+        'SELECT id, name, created, login, password_hash FROM players WHERE login_key = ?',
+        uniqueKey(login),
+      )
       .toArray()[0];
     return row
-      ? { player: { id: row.id, name: row.name, created: row.created }, passwordHash: row.password_hash }
+      ? {
+          account: { id: row.id, name: row.name, created: row.created, login: row.login },
+          passwordHash: row.password_hash,
+        }
       : null;
   }
 

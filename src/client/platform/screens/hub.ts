@@ -1,11 +1,12 @@
 import type { GameSummary } from '../../../shared/platform/protocol.ts';
 import { CLIENT_GAMES } from '../../games/registry.ts';
+import { openAccountDialog } from '../account-dialog.ts';
 import { avatar } from '../avatar.ts';
 import { chatPanel } from '../chat-panel.ts';
 import type { AppContext, ScreenHandle } from '../context.ts';
 import { h, noTranslate, replaceChildren } from '../dom.ts';
 import { gameIcon } from '../game-icon.ts';
-import { chip, errorMessage, loading, section, toast } from '../ui.ts';
+import { chip, errorMessage, loading, section, toast, withName } from '../ui.ts';
 import { renderOnline } from './online.ts';
 
 /** Accueil : compte, liste des jeux, joueurs en ligne. */
@@ -28,22 +29,21 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
     );
   };
 
-  const rename = () => {
-    const name = window.prompt(t.newName, ctx.me.name);
-    if (!name) return;
-    api
-      .rename(name)
-      .then((me) => ctx.setMe(me))
-      .catch((error: unknown) => toast(errorMessage(error, t)));
-  };
+  const editAccount = () => openAccountDialog({ api, t, me: ctx.me, onChanged: (me) => ctx.setMe(me) });
 
   const account = () =>
     h(
       'header',
       { class: 'account' },
       avatar(ctx.me.id, ctx.me.name, 'md'),
-      h('div', { class: 'account-text' }, h('small', null, t.welcome), noTranslate(h('strong', null, ctx.me.name))),
-      h('button', { class: 'round small', attrs: { 'aria-label': t.rename }, on: { click: rename } }, '✎'),
+      h(
+        'div',
+        { class: 'account-text' },
+        h('small', null, t.welcome),
+        noTranslate(h('strong', null, ctx.me.name)),
+        h('small', null, ...withName(t.loginIs, ctx.me.login)),
+      ),
+      h('button', { class: 'btn small', on: { click: editAccount } }, t.editAccount),
       h(
         'button',
         {

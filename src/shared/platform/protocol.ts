@@ -32,6 +32,11 @@ export interface PlayerInfo {
   created: number;
 }
 
+/** Compte du joueur connecté : son identifiant de connexion n'est jamais montré aux autres. */
+export interface Account extends PlayerInfo {
+  login: string;
+}
+
 /** Issue d'une partie. `abandoned` : quittée avant la fin. */
 export type RunStatus = 'won' | 'lost' | 'abandoned';
 export const RUN_STATUSES: readonly RunStatus[] = ['won', 'lost', 'abandoned'];
@@ -111,13 +116,16 @@ export interface PlayerGameDetail {
 
 /* ---------- HTTP ---------- */
 
-/** Identifiant de connexion, fixé à l'inscription : il ne suit pas les changements de pseudo. */
+/**
+ * Identifiant de connexion et mot de passe : pour se connecter, s'inscrire, ou changer d'identifiant (le mot de
+ * passe confirme alors que c'est bien le propriétaire du compte).
+ */
 export interface CredentialsRequest {
   login: string;
   password: string;
 }
 export interface SessionResponse {
-  player: PlayerInfo;
+  player: Account;
   token: string;
 }
 /** Nouveau pseudo affiché ; l'identifiant de connexion ne change pas. */
@@ -143,6 +151,7 @@ export const ROUTES = {
   login: '/api/auth/login',
   logout: '/api/auth/logout',
   me: '/api/me',
+  meLogin: '/api/me/login',
   games: '/api/games',
   live: '/api/live',
   game: (game: GameId) => `/api/games/${game}`,

@@ -6,6 +6,7 @@ import { DurableObject } from 'cloudflare:workers';
 import { type GameDefinition, isAtLeastAsGood } from '../../shared/games/game.ts';
 import { findGame, GAMES } from '../../shared/games/registry.ts';
 import {
+  type Account,
   type ChatMessage,
   type ClientMessage,
   cleanName,
@@ -85,7 +86,7 @@ export class World extends DurableObject<Env> {
     const player: PlayerInfo = { id: createId(), name: login, created: Date.now() };
     this.store.insertPlayer(player, login, await hashPassword(password));
     this.broadcast({ type: 'changed', game: null });
-    return ok(await this.openSession(player));
+    return ok(await this.openSession({ ...player, login }));
   }
 
   async login(rawLogin: unknown, password: unknown): Promise<Result<SessionResponse>> {
@@ -100,7 +101,7 @@ export class World extends DurableObject<Env> {
       return fail(401, 'invalid credentials');
     }
     this.throttle.reset(account);
-    return ok(await this.openSession(credentials.player));
+    return ok(await this.openSession(credentials.account));
   }
 
   async logout(token: unknown): Promise<Result<true>> {
@@ -108,12 +109,12 @@ export class World extends DurableObject<Env> {
     return ok(true);
   }
 
-  async me(token: unknown): Promise<Result<PlayerInfo>> {
+  async me(token: unknown): Promise<Result<Account>> {
     const me = await this.authenticate(token);
-    return me ? ok(me) : unauthorized();
+    return me ? this.account(me.id) : unauthorized();
   }
 
-  async rename(token: unknown, rawName: unknown): Promise<Result<PlayerInfo>> {
+  async rename(token: unknown, rawName: unknown): Promise<Result<Account>> {
     const me = await this.authenticate(token);
     if (!me) return unauthorized();
     const name = cleanName(rawName);
@@ -125,7 +126,32 @@ export class World extends DurableObject<Env> {
     }
     this.broadcast({ type: 'changed', game: null });
     this.broadcastPresence();
-    return ok({ ...me, name });
+    return this.account(me.id);
+  }
+
+  /**
+   * Change l'identifiant de connexion. Le mot de passe est exigé : sans lui, une session laissée ouverte suffirait
+   * pour changer l'identifiant et fermer le compte à son propriétaire. Les échecs comptent comme ceux de la connexion.
+   */
+  async changeLogin(token: unknown, rawLogin: unknown, password: unknown): Promise<Result<Account>> {
+    const me = await this.authenticate(token);
+    if (!me) return unauthorized();
+    const login = cleanName(rawLogin);
+    if (!login || typeof password !== 'string') return fail(400, 'invalid login');
+    const current = this.store.findAccount(me.id);
+    const passwordHash = this.store.findPasswordHash(me.id);
+    if (!current || passwordHash === null) return unauthorized();
+    const account = uniqueKey(current.login);
+    const now = Date.now();
+    if (this.throttle.isBlocked(account, now)) return fail(429, 'too many attempts');
+    if (!(await verifyPassword(password, passwordHash))) {
+      this.throttle.recordFailure(account, now);
+      return fail(403, 'wrong password');
+    }
+    this.throttle.reset(account);
+    if (this.store.isLoginTaken(login, me.id)) return fail(409, 'login taken');
+    this.store.changeLogin(me.id, login);
+    return this.account(me.id);
   }
 
   /* ---------- Jeux ---------- */
@@ -422,10 +448,15 @@ export class World extends DurableObject<Env> {
 
   /* ---------- Interne ---------- */
 
-  private async openSession(player: PlayerInfo): Promise<SessionResponse> {
+  private async openSession(player: Account): Promise<SessionResponse> {
     const token = createToken();
     this.store.insertSession(await sha256(token), player.id, Date.now());
     return { player, token };
+  }
+
+  private account(id: PlayerId): Result<Account> {
+    const account = this.store.findAccount(id);
+    return account ? ok(account) : unauthorized();
   }
 
   private async authenticate(token: unknown): Promise<PlayerInfo | null> {

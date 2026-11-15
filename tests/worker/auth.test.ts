@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { ErrorResponse, PlayerInfo, SessionResponse } from '../../src/shared/platform/protocol.ts';
+import type {
+  Account,
+  ErrorResponse,
+  GameState,
+  PlayerInfo,
+  SessionResponse,
+} from '../../src/shared/platform/protocol.ts';
 import { call, newPlayer } from './support.ts';
 
 describe('comptes', () => {
@@ -8,9 +14,9 @@ describe('comptes', () => {
       body: { login: '  Léa  ', password: 'motdepasse' },
     });
     expect(status).toBe(200);
-    expect(body.player.name).toBe('Léa');
+    expect(body.player).toMatchObject({ name: 'Léa', login: 'Léa' });
     expect(body.token).toMatch(/^[0-9a-f]{48}$/);
-    const me = await call<PlayerInfo>('/api/me', { token: body.token });
+    const me = await call<Account>('/api/me', { token: body.token });
     expect(me.body).toEqual(body.player);
   });
 
@@ -107,6 +113,71 @@ describe('comptes', () => {
     expect(renamed.body.name).toBe('Inès');
     const login = await call<SessionResponse>('/api/auth/login', { body: { login: 'inès', password: 'abcd' } });
     expect(login.body.player).toEqual({ ...ines.body.player, name: 'Nana' });
+  });
+
+  describe('changement d’identifiant', () => {
+    const changeLogin = (token: string, body: unknown) =>
+      call<Account & ErrorResponse>('/api/me/login', { method: 'PATCH', token, body });
+
+    it('change l’identifiant sans toucher au pseudo', async () => {
+      const { token, player } = await call<SessionResponse>('/api/auth/register', {
+        body: { login: 'Hugo', password: 'secret' },
+      }).then((r) => r.body);
+      const changed = await changeLogin(token, { login: '  Hugo2  ', password: 'secret' });
+      expect(changed.status).toBe(200);
+      expect(changed.body).toEqual({ ...player, login: 'Hugo2' });
+      expect((await call<Account>('/api/me', { token })).body.login).toBe('Hugo2');
+
+      expect((await call('/api/auth/login', { body: { login: 'Hugo', password: 'secret' } })).status).toBe(401);
+      const again = await call<SessionResponse>('/api/auth/login', { body: { login: 'hugo2', password: 'secret' } });
+      expect(again.body.player).toEqual({ ...player, login: 'Hugo2' });
+    });
+
+    it('accepte de changer seulement la casse de son identifiant', async () => {
+      const { token } = await call<SessionResponse>('/api/auth/register', {
+        body: { login: 'clara', password: 'secret' },
+      }).then((r) => r.body);
+      expect((await changeLogin(token, { login: 'Clara', password: 'secret' })).body.login).toBe('Clara');
+    });
+
+    it('exige le bon mot de passe et compte les échecs comme à la connexion', async () => {
+      const { token } = await call<SessionResponse>('/api/auth/register', {
+        body: { login: 'Rémi', password: 'secret' },
+      }).then((r) => r.body);
+      const wrong = await changeLogin(token, { login: 'Rémi2', password: 'faux' });
+      expect(wrong.status).toBe(403);
+      expect(wrong.body.error).toBe('wrong password');
+      for (let i = 1; i < 10; i++)
+        expect((await changeLogin(token, { login: 'Rémi2', password: 'faux' })).status).toBe(403);
+      expect((await changeLogin(token, { login: 'Rémi2', password: 'secret' })).status).toBe(429);
+      expect((await call('/api/auth/login', { body: { login: 'Rémi', password: 'secret' } })).status).toBe(429);
+      expect((await call<Account>('/api/me', { token })).body.login).toBe('Rémi');
+    });
+
+    it('refuse un identifiant pris, invalide, ou sans session', async () => {
+      await call('/api/auth/register', { body: { login: 'Yanis', password: 'abcd' } });
+      const { token } = await newPlayer();
+      const taken = await changeLogin(token, { login: 'YANIS', password: 'secret123' });
+      expect(taken.status).toBe(409);
+      expect(taken.body.error).toBe('login taken');
+      expect((await changeLogin(token, { login: '  ', password: 'secret123' })).status).toBe(400);
+      expect((await changeLogin(token, { login: 'Yaya' })).status).toBe(400);
+      const anonymous = await call('/api/me/login', { method: 'PATCH', body: { login: 'Yaya', password: 'x' } });
+      expect(anonymous.status).toBe(401);
+    });
+
+    it('ne montre jamais l’identifiant aux autres joueurs', async () => {
+      const me = await newPlayer();
+      await changeLogin(me.token, { login: 'secret-login', password: 'secret123' });
+      const other = await newPlayer();
+      const state = await call<GameState>('/api/games/fioles', { token: other.token });
+      expect(JSON.stringify(state.body)).not.toContain('secret-login');
+      expect(state.body.players.find((p) => p.id === me.player.id)).toEqual({
+        id: me.player.id,
+        name: me.player.name,
+        created: me.player.created,
+      });
+    });
   });
 
   it('répond 404 aux routes inconnues et 400 aux corps invalides', async () => {

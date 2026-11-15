@@ -6,7 +6,8 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
 ## Pour les joueurs
 
 - Crée un compte avec un identifiant et un mot de passe, puis connecte-toi sur n'importe quel appareil. Ton
-  pseudo affiché part de l'identifiant et se change à tout moment, sans changer la connexion.
+  pseudo affiché part de l'identifiant ; le bouton Modifier de l'accueil change l'un ou l'autre (ton mot de
+  passe est demandé pour changer d'identifiant).
 - L'accueil liste les jeux et les joueurs en ligne.
 - Pour chaque jeu : une grille de 100 niveaux sur 5 pages. Chacun avance à son rythme : un niveau se débloque
   quand tous les précédents sont gagnés.

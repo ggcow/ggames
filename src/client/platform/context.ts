@@ -1,8 +1,8 @@
 import type {
+  Account,
   GameId,
   GameState,
   PlayerId,
-  PlayerInfo,
   Presence,
   RaceVoice,
   RaceVoiceRead,
@@ -23,10 +23,10 @@ export interface AppContext {
   readonly chat: ChatStore;
   readonly lang: Lang;
   readonly t: PlatformStrings;
-  readonly me: PlayerInfo;
+  readonly me: Account;
   navigate(route: Route): void;
   setLang(lang: Lang): void;
-  setMe(me: PlayerInfo): void;
+  setMe(me: Account): void;
   logout(): Promise<void>;
 }
 

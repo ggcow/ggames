@@ -165,10 +165,16 @@ describe('stockage local', () => {
 
 describe('session mémorisée', () => {
   it('accepte une session bien formée et rejette le reste', () => {
-    const session = { token: 't'.repeat(48), player: { id: 'abc123', name: 'Léa', created: 1 } };
+    const session = { token: 't'.repeat(48), player: { id: 'abc123', name: 'Léa', created: 1, login: 'lea' } };
     expect(parseSession(session)).toEqual(session);
     expect(parseSession({ token: 1, player: session.player })).toBeNull();
-    expect(parseSession({ token: 'x', player: { id: 'X', name: 'a', created: 1 } })).toBeNull();
+    expect(parseSession({ token: 'x', player: { id: 'X', name: 'a', created: 1, login: 'a' } })).toBeNull();
+    expect(parseSession({ token: 'x', player: { ...session.player, login: 3 } })).toBeNull();
+  });
+
+  it('prend le pseudo comme identifiant d’une session enregistrée sans identifiant', () => {
+    const player = { id: 'abc123', name: 'Léa', created: 1 };
+    expect(parseSession({ token: 'x', player })).toEqual({ token: 'x', player: { ...player, login: 'Léa' } });
   });
 });
 
@@ -184,6 +190,17 @@ describe('client API', () => {
       method: 'PATCH',
       headers: { Authorization: 'Bearer secret', 'content-type': 'application/json' },
       body: '{"name":"A"}',
+    });
+  });
+
+  it('envoie le changement d’identifiant avec le mot de passe', async () => {
+    const fetch = respond(200, { id: 'abc123', name: 'A', created: 1, login: 'b' });
+    const api = new ApiClient(fetch);
+    await api.changeLogin({ login: 'b', password: 'secret' });
+    expect(fetch).toHaveBeenCalledWith('/api/me/login', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: '{"login":"b","password":"secret"}',
     });
   });
 

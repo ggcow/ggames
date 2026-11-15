@@ -405,6 +405,27 @@ input[type="range"] {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.account-text small:last-child {
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+.field > span {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+.field[hidden] {
+  display: none;
+}
 
 /* ---------- Salon ---------- */
 

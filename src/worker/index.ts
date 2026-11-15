@@ -56,6 +56,13 @@ const ROUTE_TABLE: readonly Route[] = [
     handler: withBody(async (b, { world, token }) => toResponse(await world.rename(token, b['name']))),
   },
   {
+    method: 'PATCH',
+    pattern: /^\/api\/me\/login$/,
+    handler: withBody(async (b, { world, token }) =>
+      toResponse(await world.changeLogin(token, b['login'], b['password'])),
+    ),
+  },
+  {
     method: 'GET',
     pattern: /^\/api\/games$/,
     handler: async ({ world, token }) => toResponse(await world.listGames(token)),

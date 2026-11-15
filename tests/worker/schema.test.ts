@@ -9,8 +9,14 @@ import { fiolesLevel, solve } from '../support/fioles-solver.ts';
 
 const world = () => (env.WORLD as DurableObjectNamespace<World>).getByName('main');
 
+/** Remet la table `players` dans son état d'avant l'identifiant modifiable. */
+const rewindLoginColumn = (sql: SqlStorage) => {
+  sql.exec('ALTER TABLE players DROP COLUMN login');
+};
+
 /** Remet la table `players` dans son état d'avant la séparation de l'identifiant et du pseudo. */
 const rewindLoginSplit = (sql: SqlStorage) => {
+  rewindLoginColumn(sql);
   sql.exec('DROP INDEX players_name_key');
   sql.exec('ALTER TABLE players DROP COLUMN name_key');
   sql.exec('ALTER TABLE players RENAME COLUMN login_key TO name_key');
@@ -145,6 +151,19 @@ describe('schéma', () => {
           "INSERT INTO players (id, name, name_key, login_key, password_hash, created) VALUES ('mno345', 'LÉA', 'léa', 'autre', 'x', 1)",
         ),
       ).toThrow(/UNIQUE/);
+    });
+  });
+
+  it('donne à chaque compte existant son pseudo comme identifiant affiché', async () => {
+    await runInDurableObject(world(), (_instance, state) => {
+      const { sql } = state.storage;
+      rewindLoginColumn(sql);
+      sql.exec(
+        "INSERT INTO players (id, name, name_key, login_key, password_hash, created) VALUES ('pqr678', 'Noé', 'noé', 'noé', 'x', 1)",
+      );
+      sql.exec('UPDATE schema_version SET version = 9');
+      migrate(sql);
+      expect(sql.exec<{ login: string }>("SELECT login FROM players WHERE id = 'pqr678'").one().login).toBe('Noé');
     });
   });
 });
