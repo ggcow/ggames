@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.16](https://github.com/ggcow/ggames/compare/v0.5.15...v0.5.16) (2026-11-16)
+
+### Fonctionnalités
+
+* **client:** montrer le record du niveau et détailler la première victoire ([f8c27e1](https://github.com/ggcow/ggames/commit/f8c27e1c3c289ea3f553ca964e215063945c30df))
+
 ## [0.5.15](https://github.com/ggcow/ggames/compare/v0.5.14...v0.5.15) (2026-11-16)
 
 ### Fonctionnalités
