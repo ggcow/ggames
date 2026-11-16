@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.10](https://github.com/ggcow/ggames/compare/v0.5.9...v0.5.10) (2026-11-16)
+
+### Corrections
+
+* **client:** agrandir l'accueil et la page d'un jeu pour remplir un écran large ([8d910b9](https://github.com/ggcow/ggames/commit/8d910b93970c5f76f8f7aa54379b9e5a7e3d0237))
+* **client:** ne plus décaler l'écran large sous la barre de défilement ([b697ce9](https://github.com/ggcow/ggames/commit/b697ce9bdab6ec8c1168d234c7135f02162f4545))
+
 ## [0.5.9](https://github.com/ggcow/ggames/compare/v0.5.8...v0.5.9) (2026-11-16)
 
 ### Corrections
