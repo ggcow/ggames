@@ -365,9 +365,16 @@ button:disabled {
 .round[hidden] {
   display: none;
 }
-.round-spacer {
-  width: 44px;
-  flex: none;
+/*
+ * Chevron tracé en CSS : une police de caractères ne centre jamais son « ‹ » de la même façon. Les deux traits
+ * occupent la moitié gauche de la boîte une fois tournés, d'où le décalage qui recentre le dessin.
+ */
+.chevron {
+  width: 10px;
+  height: 10px;
+  border-right: 3px solid currentColor;
+  border-bottom: 3px solid currentColor;
+  transform: translateX(3.5px) rotate(135deg);
 }
 .link {
   color: var(--muted);
@@ -935,6 +942,12 @@ input[type="range"] {
   font-size: 34px;
   font-weight: 900;
   opacity: 0.8;
+}
+/* Retour au menu posé à droite du bandeau d'un jeu : il ne prend pas une ligne à lui seul. */
+.game-hero .round {
+  background: rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+  color: #fff;
 }
 
 /* ---------- Joueurs en ligne ---------- */

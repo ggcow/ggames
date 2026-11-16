@@ -8,7 +8,7 @@ import { detectLang, formatDuration, isLang } from '../../src/client/platform/i1
 import { formatRoute, parseRoute, type Route } from '../../src/client/platform/router.ts';
 import { createLocalStore } from '../../src/client/platform/storage.ts';
 import { PLATFORM_STRINGS } from '../../src/client/platform/strings.ts';
-import { closeModals, errorMessage, showModal, withName } from '../../src/client/platform/ui.ts';
+import { closeModals, errorMessage, screenHeader, showModal, withName } from '../../src/client/platform/ui.ts';
 
 describe('router', () => {
   const routes: Route[] = [
@@ -104,6 +104,23 @@ describe('icône de jeu', () => {
     expect(icon.getAttribute('src')).toBe('/games/x/icon.webp');
     expect(icon.getAttribute('alt')).toBe('');
     expect(icon.className).toBe('game-glyph');
+  });
+});
+
+describe('en-tête d’écran', () => {
+  it('place un bouton retour rond au chevron devant le titre, puis les actions à droite', () => {
+    const back = vi.fn();
+    const extra = h('span', { class: 'extra' }, 'x');
+    const header = screenHeader('Niveau 3', back, PLATFORM_STRINGS.fr, extra);
+
+    const button = header.querySelector<HTMLButtonElement>('button.round');
+    expect(button?.getAttribute('aria-label')).toBe(PLATFORM_STRINGS.fr.back);
+    expect(button?.querySelector('.chevron')?.textContent).toBe('');
+    button?.click();
+    expect(back).toHaveBeenCalledOnce();
+
+    expect(header.querySelector('.title')?.textContent).toBe('Niveau 3');
+    expect(header.querySelector('.topbar-extra')?.firstElementChild).toBe(extra);
   });
 });
 
