@@ -54,9 +54,9 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   compris, dès que chaque destinataire l'a écoutée ou a quitté le niveau. Écouter une note enchaîne sur
   les notes des autres joueurs qui la suivent. Pendant une course, une croix retire une note de son seul
   écran.
-- Avatar d'un joueur : un animal du catalogue (`shared/platform/avatars.ts`), que personne d'autre n'a, et une
-  couleur dérivée de son identifiant. Il en reçoit un à l'inscription et le change pour un animal encore libre
-  depuis la fenêtre Modifier, qu'ouvre aussi sa pastille sur l'accueil.
+- Avatar d'un joueur : un animal du catalogue (`shared/platform/avatars.ts`), que personne d'autre n'a, sur un
+  fond neutre. Il en reçoit un à l'inscription et le change pour un animal encore libre depuis la fenêtre
+  Modifier, qu'ouvre aussi sa pastille sur l'accueil.
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Score d'un jeu au tour par tour : le nombre de coups joués ; Annuler en retire un, Recommencer repart de zéro.
 - Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct. L'aperçu affiche

@@ -1,13 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LevelTile } from '../../src/client/games/client-game.ts';
-import {
-  avatar,
-  avatarColor,
-  avatarOf,
-  setAvatar,
-  setAvatars,
-  takenAvatars,
-} from '../../src/client/platform/avatar.ts';
+import { avatar, avatarOf, setAvatar, setAvatars, takenAvatars } from '../../src/client/platform/avatar.ts';
 import {
   currentPage,
   type PlayerPosition,
@@ -182,8 +175,7 @@ describe('grille', () => {
 describe('avatars', () => {
   afterEach(() => setAvatars([]));
 
-  it('donne à chaque joueur une couleur stable et l’animal tiré de son identifiant par défaut', () => {
-    expect(avatarColor('abc123')).toBe(avatarColor('abc123'));
+  it('donne à chaque joueur l’animal tiré de son identifiant par défaut', () => {
     expect(avatarOf('abc123')).toBe(derivedAvatar('abc123'));
     const element = avatar('abc123', 'Tom', 'md');
     expect(element.classList.contains('md')).toBe(true);

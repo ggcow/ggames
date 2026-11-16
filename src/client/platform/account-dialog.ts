@@ -3,7 +3,6 @@
 import { AVATARS, type Avatar } from '../../shared/platform/avatars.ts';
 import { type Account, cleanName, LIMITS } from '../../shared/platform/protocol.ts';
 import { type ApiClient, ApiError } from './api.ts';
-import { avatarColor } from './avatar.ts';
 import { h } from './dom.ts';
 import type { PlatformStrings } from './strings.ts';
 import { errorMessage, showModal } from './ui.ts';
@@ -29,7 +28,6 @@ export function openAccountDialog({ api, t, me, taken, onChanged }: AccountDialo
         class: 'avatar-choice',
         type: 'button',
         disabled: taken.has(avatar),
-        style: { background: avatarColor(me.id) },
         attrs: { 'aria-pressed': String(avatar === chosen) },
         on: { click: () => choose(avatar) },
       },

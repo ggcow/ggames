@@ -32,8 +32,8 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
   dès que chaque destinataire l'a écoutée ou a quitté le niveau. L'enregistrement dépend du navigateur.
 - Écouter une note vocale enchaîne sur les notes des autres joueurs qui la suivent. Pendant une course, une
   croix retire une note de son propre écran.
-- Chaque joueur a un avatar : un animal sur une couleur. L'animal se choisit en touchant sa pastille sur
-  l'accueil (ou par Modifier), parmi ceux qu'aucun autre joueur n'a déjà.
+- Chaque joueur a un avatar : un animal qui se choisit en touchant sa pastille sur l'accueil (ou par
+  Modifier), parmi ceux qu'aucun autre joueur n'a déjà.
 - Interface en français et en chinois (bouton 中 / Fr en haut de l’écran).
 
 ### Jeux
