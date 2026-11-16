@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.6](https://github.com/ggcow/ggames/compare/v0.5.5...v0.5.6) (2026-11-16)
+
+### Fonctionnalités
+
+* **platform:** laisser chaque joueur choisir son animal ([d39d864](https://github.com/ggcow/ggames/commit/d39d8644a47fa3ff3ffc912e616c1ce7863b3c32))
+
+### Corrections
+
+* **client:** réparer l'encodage des commentaires de la fenêtre du compte ([6aa3a2d](https://github.com/ggcow/ggames/commit/6aa3a2df27467a19a3fe6ba50085fa9b3f5ceb9e))
+
 ## [0.5.5](https://github.com/ggcow/ggames/compare/v0.5.4...v0.5.5) (2026-11-16)
 
 ### Fonctionnalités
