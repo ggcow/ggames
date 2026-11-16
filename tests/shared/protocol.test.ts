@@ -65,6 +65,8 @@ describe('champs du protocole', () => {
     expect(ROUTES.playerDetail('fioles', 'abc123')).toBe('/api/games/fioles/players/abc123');
     expect(ROUTES.run('abc123')).toBe('/api/runs/abc123');
     expect(ROUTES.chat).toBe('/api/chat');
+    expect(ROUTES.meAvatar).toBe('/api/me/avatar');
+    expect(ROUTES.players).toBe('/api/players');
     expect(ROUTES.voices).toBe('/api/voices');
     expect(ROUTES.voice('abc123')).toBe('/api/voices/abc123');
     expect(ROUTES.raceVoices('fioles', 'c:1')).toBe('/api/games/fioles/voices?key=c%3A1');

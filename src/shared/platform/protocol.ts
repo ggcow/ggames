@@ -2,6 +2,7 @@
 // comptes, parties enregistrées (avec replay), progression, classements, présence en temps réel.
 // Le contenu des champs `key`, `replay` et `state` est défini par chaque jeu (voir shared/games).
 
+import type { Avatar } from './avatars.ts';
 import { isReactionCode, type ReactionCode } from './reactions.ts';
 import { cleanText, isId, isRecord, parseJson } from './validate.ts';
 
@@ -30,6 +31,8 @@ export interface PlayerInfo {
   id: PlayerId;
   name: string;
   created: number;
+  /** Animal du joueur, unique ; `null` seulement si le catalogue était épuisé à son inscription. */
+  avatar: Avatar | null;
 }
 
 /** Compte du joueur connecté : son identifiant de connexion n'est jamais montré aux autres. */
@@ -152,6 +155,8 @@ export const ROUTES = {
   logout: '/api/auth/logout',
   me: '/api/me',
   meLogin: '/api/me/login',
+  meAvatar: '/api/me/avatar',
+  players: '/api/players',
   games: '/api/games',
   live: '/api/live',
   game: (game: GameId) => `/api/games/${game}`,

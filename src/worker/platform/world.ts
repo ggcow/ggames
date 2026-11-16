@@ -5,6 +5,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { type GameDefinition, isAtLeastAsGood } from '../../shared/games/game.ts';
 import { findGame, GAMES } from '../../shared/games/registry.ts';
+import { isAvatar, pickAvatar } from '../../shared/platform/avatars.ts';
 import {
   type Account,
   type ChatMessage,
@@ -70,6 +71,7 @@ export class World extends DurableObject<Env> {
     super(ctx, env);
     migrate(ctx.storage.sql);
     this.store = new PlatformStore(ctx.storage.sql);
+    this.store.assignMissingAvatars();
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair(PING, PONG));
   }
 
@@ -83,7 +85,13 @@ export class World extends DurableObject<Env> {
     if (this.store.isLoginTaken(login)) return fail(409, 'login taken');
     if (this.store.isNameTaken(login)) return fail(409, 'name taken');
     if (this.store.countPlayers() >= QUOTAS.players) return fail(429, 'player quota reached');
-    const player: PlayerInfo = { id: createId(), name: login, created: Date.now() };
+    const id = createId();
+    const player: PlayerInfo = {
+      id,
+      name: login,
+      created: Date.now(),
+      avatar: pickAvatar(id, this.store.takenAvatars()),
+    };
     this.store.insertPlayer(player, login, await hashPassword(password));
     this.broadcast({ type: 'changed', game: null });
     return ok(await this.openSession({ ...player, login }));
@@ -127,6 +135,23 @@ export class World extends DurableObject<Env> {
     this.broadcast({ type: 'changed', game: null });
     this.broadcastPresence();
     return this.account(me.id);
+  }
+
+  /** Change l'animal du joueur pour un animal du catalogue que personne d'autre n'a. */
+  async changeAvatar(token: unknown, avatar: unknown): Promise<Result<Account>> {
+    const me = await this.authenticate(token);
+    if (!me) return unauthorized();
+    if (!isAvatar(avatar)) return fail(400, 'invalid avatar');
+    if (this.store.takenAvatars(me.id).has(avatar)) return fail(409, 'avatar taken');
+    this.store.setAvatar(me.id, avatar);
+    this.broadcast({ type: 'changed', game: null });
+    return this.account(me.id);
+  }
+
+  /** Tous les joueurs, pour afficher leur animal partout où ils apparaissent. */
+  async listPlayers(token: unknown): Promise<Result<PlayerInfo[]>> {
+    const me = await this.authenticate(token);
+    return me ? ok(this.store.listPlayers()) : unauthorized();
   }
 
   /**

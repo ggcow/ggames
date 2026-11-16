@@ -3,10 +3,11 @@ import { openAccountDialog } from '../../src/client/platform/account-dialog.ts';
 import { ApiClient } from '../../src/client/platform/api.ts';
 import { PLATFORM_STRINGS } from '../../src/client/platform/strings.ts';
 import { closeModals } from '../../src/client/platform/ui.ts';
+import { AVATARS } from '../../src/shared/platform/avatars.ts';
 import type { Account } from '../../src/shared/platform/protocol.ts';
 
 const t = PLATFORM_STRINGS.fr;
-const me: Account = { id: 'abc123', name: 'Léa', created: 1, login: 'lea' };
+const me: Account = { id: 'abc123', name: 'Léa', created: 1, login: 'lea', avatar: '🐶' };
 
 type Reply = { status: number; body: unknown };
 
@@ -35,7 +36,7 @@ afterEach(() => closeModals());
 
 describe('fenêtre du compte', () => {
   it('remplit le pseudo et l’identifiant, et ne demande le mot de passe que pour changer d’identifiant', () => {
-    openAccountDialog({ api: fakeApi([]).api, t, me, onChanged: vi.fn() });
+    openAccountDialog({ api: fakeApi([]).api, t, me, taken: new Set(), onChanged: vi.fn() });
     const [name, login] = inputs();
     expect(name?.value).toBe('Léa');
     expect(login?.value).toBe('lea');
@@ -49,7 +50,7 @@ describe('fenêtre du compte', () => {
   it('change seulement le pseudo', async () => {
     const { api, fetch } = fakeApi([{ status: 200, body: { ...me, name: 'Lili' } }]);
     const onChanged = vi.fn();
-    openAccountDialog({ api, t, me, onChanged });
+    openAccountDialog({ api, t, me, taken: new Set(), onChanged });
     type(inputs()[0], 'Lili');
     submit();
     await settle();
@@ -64,7 +65,7 @@ describe('fenêtre du compte', () => {
       { status: 200, body: { ...me, login: 'lea2', name: 'Lili' } },
     ]);
     const onChanged = vi.fn();
-    openAccountDialog({ api, t, me, onChanged });
+    openAccountDialog({ api, t, me, taken: new Set(), onChanged });
     const [name, login, password] = inputs();
     type(name, 'Lili');
     type(login, 'lea2');
@@ -81,7 +82,7 @@ describe('fenêtre du compte', () => {
   it('signale un mauvais mot de passe et laisse la fenêtre ouverte', async () => {
     const { api, fetch } = fakeApi([{ status: 403, body: { error: 'wrong password' } }]);
     const onChanged = vi.fn();
-    openAccountDialog({ api, t, me, onChanged });
+    openAccountDialog({ api, t, me, taken: new Set(), onChanged });
     const [name, login, password] = inputs();
     type(name, 'Lili');
     type(login, 'lea2');
@@ -99,7 +100,7 @@ describe('fenêtre du compte', () => {
       { status: 409, body: { error: 'name taken' } },
     ]);
     const onChanged = vi.fn();
-    openAccountDialog({ api, t, me, onChanged });
+    openAccountDialog({ api, t, me, taken: new Set(), onChanged });
     const [name, login, password] = inputs();
     type(name, 'Pris');
     type(login, 'lea2');
@@ -118,11 +119,49 @@ describe('fenêtre du compte', () => {
   it('ferme sans rien envoyer quand rien ne change', async () => {
     const { api, fetch } = fakeApi([]);
     const onChanged = vi.fn();
-    openAccountDialog({ api, t, me, onChanged });
+    openAccountDialog({ api, t, me, taken: new Set(), onChanged });
     submit();
     await settle();
     expect(fetch).not.toHaveBeenCalled();
     expect(onChanged).not.toHaveBeenCalled();
     expect(document.querySelector('.modal')).toBeNull();
+  });
+
+  describe('choix de l’animal', () => {
+    const choice = (avatar: string) =>
+      [...document.querySelectorAll<HTMLButtonElement>('.avatar-choice')].find(
+        (button) => button.textContent === avatar,
+      );
+
+    it('montre tout le catalogue, son animal choisi et ceux des autres verrouillés', () => {
+      openAccountDialog({ api: fakeApi([]).api, t, me, taken: new Set(['🐙']), onChanged: vi.fn() });
+      expect(document.querySelectorAll('.avatar-choice')).toHaveLength(AVATARS.length);
+      expect(choice('🐶')?.getAttribute('aria-pressed')).toBe('true');
+      expect(choice('🐱')?.getAttribute('aria-pressed')).toBe('false');
+      expect(choice('🐙')?.disabled).toBe(true);
+      expect(choice('🐶')?.disabled).toBe(false);
+    });
+
+    it('enregistre l’animal choisi', async () => {
+      const { api, fetch } = fakeApi([{ status: 200, body: { ...me, avatar: '🦄' } }]);
+      const onChanged = vi.fn();
+      openAccountDialog({ api, t, me, taken: new Set(), onChanged });
+      choice('🦄')?.click();
+      expect(choice('🦄')?.getAttribute('aria-pressed')).toBe('true');
+      expect(choice('🐶')?.getAttribute('aria-pressed')).toBe('false');
+      submit();
+      await settle();
+      expect(bodies(fetch)).toEqual([['/api/me/avatar', 'PATCH', '{"avatar":"🦄"}']]);
+      expect(onChanged).toHaveBeenCalledWith({ ...me, avatar: '🦄' });
+    });
+
+    it('signale un animal pris entre-temps par un autre joueur', async () => {
+      const { api } = fakeApi([{ status: 409, body: { error: 'avatar taken' } }]);
+      openAccountDialog({ api, t, me, taken: new Set(), onChanged: vi.fn() });
+      choice('🦄')?.click();
+      submit();
+      await settle();
+      expect(document.querySelector('.modal .error')?.textContent).toBe(t.error_avatarTaken);
+    });
   });
 });

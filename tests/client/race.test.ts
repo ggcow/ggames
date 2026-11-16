@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { avatarAnimal } from '../../src/client/platform/avatar.ts';
+import { avatarOf } from '../../src/client/platform/avatar.ts';
 import { canJoinRace, createGameView, RACE_SIZE, rivalsOn } from '../../src/client/platform/context.ts';
 import { recordBadge } from '../../src/client/platform/screens/play.ts';
 import { PLATFORM_STRINGS } from '../../src/client/platform/strings.ts';
@@ -38,7 +38,7 @@ describe('course en direct', () => {
 
 describe('badge du record', () => {
   const state = (records: GameState['records']): GameState => ({
-    players: [{ id: 'p1', name: 'Léa', created: 1 }],
+    players: [{ id: 'p1', name: 'Léa', created: 1, avatar: null }],
     progress: [],
     records,
   });
@@ -47,7 +47,7 @@ describe('badge du record', () => {
   it('montre le détenteur et son score, avec la phrase complète en titre', () => {
     const view = createGameView(state({ 'c:1': [{ player: 'p1', value: 12, run: 'r1' }] }), 'p1', 'fr');
     const badge = recordBadge(view, 'c:1', moves, PLATFORM_STRINGS.fr);
-    expect(badge?.textContent).toBe(`🏆${avatarAnimal('p1')}12 coups`);
+    expect(badge?.textContent).toBe(`🏆${avatarOf('p1')}12 coups`);
     expect(badge?.getAttribute('title')).toBe('Record : Léa (12 coups)');
     expect(badge?.querySelector('.avatar')).not.toBeNull();
   });

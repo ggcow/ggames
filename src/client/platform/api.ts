@@ -1,5 +1,6 @@
 // Client HTTP typé de l'API. Une méthode par route ; les erreurs deviennent des ApiError.
 
+import type { Avatar } from '../../shared/platform/avatars.ts';
 import {
   type Account,
   type ChatMessage,
@@ -10,6 +11,7 @@ import {
   type GameSummary,
   type PlayerGameDetail,
   type PlayerId,
+  type PlayerInfo,
   type RaceVoice,
   ROUTES,
   type Run,
@@ -60,6 +62,8 @@ export class ApiClient {
   me = () => this.request<Account>('GET', ROUTES.me);
   rename = (name: string) => this.request<Account>('PATCH', ROUTES.me, { name });
   changeLogin = (body: CredentialsRequest) => this.request<Account>('PATCH', ROUTES.meLogin, body);
+  changeAvatar = (avatar: Avatar) => this.request<Account>('PATCH', ROUTES.meAvatar, { avatar });
+  players = () => this.request<PlayerInfo[]>('GET', ROUTES.players);
   games = () => this.request<GameSummary[]>('GET', ROUTES.games);
   chat = () => this.request<ChatMessage[]>('GET', ROUTES.chat);
   voices = () => this.request<VoiceNote[]>('GET', ROUTES.voices);

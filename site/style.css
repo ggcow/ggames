@@ -427,6 +427,33 @@ input[type="range"] {
 .field[hidden] {
   display: none;
 }
+.avatar-button {
+  flex: none;
+  border-radius: 50%;
+}
+.avatar-button:active {
+  transform: translateY(2px);
+}
+.avatar-picker {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 4px;
+}
+.avatar-choice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  font-size: 22px;
+  line-height: 1;
+}
+.avatar-choice[aria-pressed="true"] {
+  box-shadow: 0 0 0 3px var(--yellow);
+}
+.avatar-choice:disabled {
+  opacity: 0.25;
+}
 
 /* ---------- Salon ---------- */
 

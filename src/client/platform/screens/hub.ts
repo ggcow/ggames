@@ -1,7 +1,7 @@
 import type { GameSummary } from '../../../shared/platform/protocol.ts';
 import { CLIENT_GAMES } from '../../games/registry.ts';
 import { openAccountDialog } from '../account-dialog.ts';
-import { avatar } from '../avatar.ts';
+import { avatar, takenAvatars } from '../avatar.ts';
 import { chatPanel } from '../chat-panel.ts';
 import type { AppContext, ScreenHandle } from '../context.ts';
 import { h, noTranslate, replaceChildren } from '../dom.ts';
@@ -29,13 +29,23 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
     );
   };
 
-  const editAccount = () => openAccountDialog({ api, t, me: ctx.me, onChanged: (me) => ctx.setMe(me) });
+  const editAccount = () =>
+    openAccountDialog({ api, t, me: ctx.me, taken: takenAvatars(ctx.me.id), onChanged: (me) => ctx.setMe(me) });
 
   const account = () =>
     h(
       'header',
       { class: 'account' },
-      avatar(ctx.me.id, ctx.me.name, 'md'),
+      h(
+        'button',
+        {
+          class: 'avatar-button',
+          type: 'button',
+          attrs: { 'aria-label': t.changeAvatar },
+          on: { click: editAccount },
+        },
+        avatar(ctx.me.id, ctx.me.name, 'md'),
+      ),
       h(
         'div',
         { class: 'account-text' },

@@ -9,8 +9,15 @@ import { fiolesLevel, solve } from '../support/fioles-solver.ts';
 
 const world = () => (env.WORLD as DurableObjectNamespace<World>).getByName('main');
 
+/** Remet la table `players` dans son état d'avant l'animal de chaque joueur. */
+const rewindAvatar = (sql: SqlStorage) => {
+  sql.exec('DROP INDEX players_avatar');
+  sql.exec('ALTER TABLE players DROP COLUMN avatar');
+};
+
 /** Remet la table `players` dans son état d'avant l'identifiant modifiable. */
 const rewindLoginColumn = (sql: SqlStorage) => {
+  rewindAvatar(sql);
   sql.exec('ALTER TABLE players DROP COLUMN login');
 };
 
@@ -164,6 +171,24 @@ describe('schéma', () => {
       sql.exec('UPDATE schema_version SET version = 9');
       migrate(sql);
       expect(sql.exec<{ login: string }>("SELECT login FROM players WHERE id = 'pqr678'").one().login).toBe('Noé');
+    });
+  });
+
+  it('ajoute l’animal des joueurs, vide pour les comptes existants et unique', async () => {
+    await runInDurableObject(world(), (_instance, state) => {
+      const { sql } = state.storage;
+      rewindAvatar(sql);
+      sql.exec(
+        `INSERT INTO players (id, name, name_key, login, login_key, password_hash, created)
+         VALUES ('mno345', 'Zoé', 'zoé', 'zoe', 'zoe', 'x', 1), ('pqr678', 'Max', 'max', 'max', 'max', 'x', 2)`,
+      );
+      sql.exec('UPDATE schema_version SET version = ?', SCHEMA_VERSION - 1);
+      migrate(sql);
+      const avatar = sql.exec<{ avatar: string | null }>("SELECT avatar FROM players WHERE id = 'mno345'").one();
+      expect(avatar.avatar).toBeNull();
+      sql.exec("UPDATE players SET avatar = '🐶' WHERE id = 'mno345'");
+      expect(() => sql.exec("UPDATE players SET avatar = '🐶' WHERE id = 'pqr678'")).toThrow();
+      sql.exec("DELETE FROM players WHERE id IN ('mno345', 'pqr678')");
     });
   });
 });

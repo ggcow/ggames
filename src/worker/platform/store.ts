@@ -1,6 +1,7 @@
 // Accès aux données SQLite du Durable Object. Aucune règle métier ici : uniquement des requêtes typées.
 
 import type { ScoreOrder } from '../../shared/games/game.ts';
+import { type Avatar, isAvatar, pickAvatar } from '../../shared/platform/avatars.ts';
 import type {
   Account,
   ChatMessage,
@@ -20,9 +21,20 @@ import type {
 /** Avancement d'un joueur sur une clé, avant de savoir qui le regarde. */
 export type StoredKeyProgress = Omit<KeyProgress, 'replayVisible'>;
 
-type PlayerRow = { id: string; name: string; created: number };
+type PlayerRow = { id: string; name: string; created: number; avatar: string | null };
 type AccountRow = PlayerRow & { login: string };
 type CredentialRow = AccountRow & { password_hash: string };
+
+const PLAYER_COLUMNS = 'id, name, created, avatar';
+
+const toPlayer = (row: PlayerRow): PlayerInfo => ({
+  id: row.id,
+  name: row.name,
+  created: row.created,
+  avatar: isAvatar(row.avatar) ? row.avatar : null,
+});
+
+const toAccount = (row: AccountRow): Account => ({ ...toPlayer(row), login: row.login });
 type RunRow = {
   id: string;
   game: string;
@@ -107,7 +119,8 @@ export class PlatformStore {
 
   insertPlayer(player: PlayerInfo, login: string, passwordHash: string): void {
     this.sql.exec(
-      'INSERT INTO players (id, name, name_key, login, login_key, password_hash, created) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      `INSERT INTO players (id, name, name_key, login, login_key, password_hash, created, avatar)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       player.id,
       player.name,
       uniqueKey(player.name),
@@ -115,7 +128,35 @@ export class PlatformStore {
       uniqueKey(login),
       passwordHash,
       player.created,
+      player.avatar,
     );
+  }
+
+  /** Animaux déjà portés par un joueur, sauf `except`. */
+  takenAvatars(except?: PlayerId): Set<string> {
+    const rows = this.sql
+      .exec<{ avatar: string }>('SELECT avatar FROM players WHERE avatar IS NOT NULL AND id != ?', except ?? '')
+      .toArray();
+    return new Set(rows.map((row) => row.avatar));
+  }
+
+  setAvatar(id: PlayerId, avatar: Avatar): void {
+    this.sql.exec('UPDATE players SET avatar = ? WHERE id = ?', avatar, id);
+  }
+
+  /** Donne un animal libre à chaque joueur qui n'en a pas, du plus ancien au plus récent. */
+  assignMissingAvatars(): void {
+    const missing = this.sql
+      .exec<{ id: string }>('SELECT id FROM players WHERE avatar IS NULL ORDER BY created')
+      .toArray();
+    if (missing.length === 0) return;
+    const taken = this.takenAvatars();
+    for (const { id } of missing) {
+      const avatar = pickAvatar(id, taken);
+      if (!avatar) return;
+      taken.add(avatar);
+      this.setAvatar(id, avatar);
+    }
   }
 
   /** Change le pseudo affiché ; l'identifiant de connexion reste le même. */
@@ -130,9 +171,8 @@ export class PlatformStore {
 
   /** Compte d'un joueur, avec son identifiant : à ne renvoyer qu'à son propriétaire. */
   findAccount(id: PlayerId): Account | null {
-    return (
-      this.sql.exec<AccountRow>('SELECT id, name, created, login FROM players WHERE id = ?', id).toArray()[0] ?? null
-    );
+    const row = this.sql.exec<AccountRow>(`SELECT ${PLAYER_COLUMNS}, login FROM players WHERE id = ?`, id).toArray()[0];
+    return row ? toAccount(row) : null;
   }
 
   findPasswordHash(id: PlayerId): string | null {
@@ -145,24 +185,20 @@ export class PlatformStore {
   findCredentials(login: string): { account: Account; passwordHash: string } | null {
     const row = this.sql
       .exec<CredentialRow>(
-        'SELECT id, name, created, login, password_hash FROM players WHERE login_key = ?',
+        `SELECT ${PLAYER_COLUMNS}, login, password_hash FROM players WHERE login_key = ?`,
         uniqueKey(login),
       )
       .toArray()[0];
-    return row
-      ? {
-          account: { id: row.id, name: row.name, created: row.created, login: row.login },
-          passwordHash: row.password_hash,
-        }
-      : null;
+    return row ? { account: toAccount(row), passwordHash: row.password_hash } : null;
   }
 
   findPlayer(id: string): PlayerInfo | null {
-    return this.sql.exec<PlayerRow>('SELECT id, name, created FROM players WHERE id = ?', id).toArray()[0] ?? null;
+    const row = this.sql.exec<PlayerRow>(`SELECT ${PLAYER_COLUMNS} FROM players WHERE id = ?`, id).toArray()[0];
+    return row ? toPlayer(row) : null;
   }
 
   listPlayers(): PlayerInfo[] {
-    return this.sql.exec<PlayerRow>('SELECT id, name, created FROM players ORDER BY created').toArray();
+    return this.sql.exec<PlayerRow>(`SELECT ${PLAYER_COLUMNS} FROM players ORDER BY created`).toArray().map(toPlayer);
   }
 
   insertSession(tokenHash: string, player: PlayerId, now: number): void {
@@ -179,12 +215,14 @@ export class PlatformStore {
   useSession(tokenHash: string, now: number): PlayerInfo | null {
     const row = this.sql
       .exec<PlayerRow>(
-        'SELECT p.id, p.name, p.created FROM sessions s JOIN players p ON p.id = s.player WHERE s.token_hash = ?',
+        `SELECT p.id, p.name, p.created, p.avatar
+         FROM sessions s JOIN players p ON p.id = s.player WHERE s.token_hash = ?`,
         tokenHash,
       )
       .toArray()[0];
-    if (row) this.sql.exec('UPDATE sessions SET last_used = ? WHERE token_hash = ?', now, tokenHash);
-    return row ?? null;
+    if (!row) return null;
+    this.sql.exec('UPDATE sessions SET last_used = ? WHERE token_hash = ?', now, tokenHash);
+    return toPlayer(row);
   }
 
   deleteSession(tokenHash: string): void {

@@ -1,6 +1,13 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LevelTile } from '../../src/client/games/client-game.ts';
-import { avatar, avatarAnimal, avatarColor } from '../../src/client/platform/avatar.ts';
+import {
+  avatar,
+  avatarColor,
+  avatarOf,
+  setAvatar,
+  setAvatars,
+  takenAvatars,
+} from '../../src/client/platform/avatar.ts';
 import {
   currentPage,
   type PlayerPosition,
@@ -11,6 +18,7 @@ import {
   renderLevelGrid,
 } from '../../src/client/platform/level-grid.ts';
 import { PLATFORM_STRINGS } from '../../src/client/platform/strings.ts';
+import { derivedAvatar } from '../../src/shared/platform/avatars.ts';
 import type { Presence } from '../../src/shared/platform/protocol.ts';
 
 describe('pagination', () => {
@@ -172,20 +180,36 @@ describe('grille', () => {
 });
 
 describe('avatars', () => {
-  it('donne à chaque joueur une couleur et un animal stables', () => {
+  afterEach(() => setAvatars([]));
+
+  it('donne à chaque joueur une couleur stable et l’animal tiré de son identifiant par défaut', () => {
     expect(avatarColor('abc123')).toBe(avatarColor('abc123'));
-    expect(avatarAnimal('abc123')).toBe(avatarAnimal('abc123'));
+    expect(avatarOf('abc123')).toBe(derivedAvatar('abc123'));
     const element = avatar('abc123', 'Tom', 'md');
     expect(element.classList.contains('md')).toBe(true);
-    expect(element.textContent).toBe(avatarAnimal('abc123'));
+    expect(element.textContent).toBe(derivedAvatar('abc123'));
     expect(element.getAttribute('aria-label')).toBe('Tom');
   });
 
-  it('varie les animaux d’un joueur à l’autre, y compris à couleur égale', () => {
-    const ids = Array.from({ length: 200 }, (_, index) => `p${index}`);
-    expect(new Set(ids.map(avatarAnimal)).size).toBeGreaterThan(20);
-    const red = ids.filter((id) => avatarColor(id) === avatarColor('p0'));
-    expect(new Set(red.map(avatarAnimal)).size).toBeGreaterThan(5);
+  it('affiche l’animal choisi par chaque joueur', () => {
+    setAvatars([
+      { id: 'abc123', name: 'Tom', created: 1, avatar: '🦄' },
+      { id: 'def456', name: 'Léa', created: 2, avatar: null },
+    ]);
+    expect(avatar('abc123', 'Tom').textContent).toBe('🦄');
+    expect(avatarOf('def456')).toBe(derivedAvatar('def456'));
+    setAvatar('def456', '🐙');
+    expect(avatarOf('def456')).toBe('🐙');
+    setAvatar('def456', null);
+    expect(avatarOf('def456')).toBe(derivedAvatar('def456'));
+  });
+
+  it('liste les animaux pris par les autres joueurs', () => {
+    setAvatars([
+      { id: 'abc123', name: 'Tom', created: 1, avatar: '🦄' },
+      { id: 'def456', name: 'Léa', created: 2, avatar: '🐙' },
+    ]);
+    expect(takenAvatars('abc123')).toEqual(new Set(['🐙']));
   });
 });
 
@@ -223,9 +247,9 @@ describe('grille sans score', () => {
 
 describe('positions des joueurs', () => {
   const players = [
-    { id: 'aaa111', name: 'Léa', created: 1 },
-    { id: 'bbb222', name: 'Tom', created: 2 },
-    { id: 'ccc333', name: 'Zoé', created: 3 },
+    { id: 'aaa111', name: 'Léa', created: 1, avatar: null },
+    { id: 'bbb222', name: 'Tom', created: 2, avatar: null },
+    { id: 'ccc333', name: 'Zoé', created: 3, avatar: null },
   ];
   const unlocked: Record<string, number> = { aaa111: 5, bbb222: 12, ccc333: 5 };
   const presence = (player: string, game: string, key: string | null): Presence => ({

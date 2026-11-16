@@ -19,8 +19,8 @@ const OTHER = 'player2';
 function view(overrides: Partial<GameState> = {}): GameView {
   const state: GameState = {
     players: [
-      { id: ME, name: 'Moi', created: 1 },
-      { id: OTHER, name: 'Ami', created: 2 },
+      { id: ME, name: 'Moi', created: 1, avatar: null },
+      { id: OTHER, name: 'Ami', created: 2, avatar: null },
     ],
     progress: [],
     records: {},

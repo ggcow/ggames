@@ -176,6 +176,7 @@ describe('comptes', () => {
         id: me.player.id,
         name: me.player.name,
         created: me.player.created,
+        avatar: me.player.avatar,
       });
     });
   });

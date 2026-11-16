@@ -165,7 +165,10 @@ describe('stockage local', () => {
 
 describe('session mémorisée', () => {
   it('accepte une session bien formée et rejette le reste', () => {
-    const session = { token: 't'.repeat(48), player: { id: 'abc123', name: 'Léa', created: 1, login: 'lea' } };
+    const session = {
+      token: 't'.repeat(48),
+      player: { id: 'abc123', name: 'Léa', created: 1, login: 'lea', avatar: '🦄' },
+    };
     expect(parseSession(session)).toEqual(session);
     expect(parseSession({ token: 1, player: session.player })).toBeNull();
     expect(parseSession({ token: 'x', player: { id: 'X', name: 'a', created: 1, login: 'a' } })).toBeNull();
@@ -174,7 +177,15 @@ describe('session mémorisée', () => {
 
   it('prend le pseudo comme identifiant d’une session enregistrée sans identifiant', () => {
     const player = { id: 'abc123', name: 'Léa', created: 1 };
-    expect(parseSession({ token: 'x', player })).toEqual({ token: 'x', player: { ...player, login: 'Léa' } });
+    expect(parseSession({ token: 'x', player })).toEqual({
+      token: 'x',
+      player: { ...player, login: 'Léa', avatar: null },
+    });
+  });
+
+  it('ignore un animal absent ou hors du catalogue d’une session enregistrée', () => {
+    const player = { id: 'abc123', name: 'Léa', created: 1, login: 'lea', avatar: '🚗' };
+    expect(parseSession({ token: 'x', player })?.player.avatar).toBeNull();
   });
 });
 
@@ -191,6 +202,19 @@ describe('client API', () => {
       headers: { Authorization: 'Bearer secret', 'content-type': 'application/json' },
       body: '{"name":"A"}',
     });
+  });
+
+  it('envoie le changement d’animal et lit la liste des joueurs', async () => {
+    const fetch = respond(200, []);
+    const api = new ApiClient(fetch);
+    await api.changeAvatar('🦄');
+    await api.players();
+    expect(fetch).toHaveBeenNthCalledWith(
+      1,
+      '/api/me/avatar',
+      expect.objectContaining({ method: 'PATCH', body: '{"avatar":"🦄"}' }),
+    );
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/players', expect.objectContaining({ method: 'GET' }));
   });
 
   it('envoie le changement d’identifiant avec le mot de passe', async () => {

@@ -1,9 +1,11 @@
 // Coquille de l'application : session, langue, navigation entre écrans, branchement du temps réel.
 
+import { isAvatar } from '../../shared/platform/avatars.ts';
 import type { Account, ServerMessage, SessionResponse } from '../../shared/platform/protocol.ts';
 import { isId, isRecord } from '../../shared/platform/validate.ts';
 import { findClientGame } from '../games/registry.ts';
 import { ApiClient } from './api.ts';
+import { setAvatar, setAvatars } from './avatar.ts';
 import { ChatStore } from './chat.ts';
 import type { AppContext, ScreenHandle } from './context.ts';
 import { detectLang, isLang, type Lang } from './i18n.ts';
@@ -24,11 +26,11 @@ const LANG_KEY = 'lang';
 
 export function parseSession(raw: unknown): SessionResponse | null {
   if (!isRecord(raw) || typeof raw['token'] !== 'string' || !isRecord(raw['player'])) return null;
-  const { id, name, created, login = name } = raw['player'];
+  const { id, name, created, login = name, avatar = null } = raw['player'];
   if (!isId(id) || typeof name !== 'string' || typeof created !== 'number' || typeof login !== 'string') return null;
-  // Une session enregistrée sans identifiant l'a été quand il valait toujours le pseudo ; `me()` le relit
-  // au démarrage de la session.
-  return { token: raw['token'], player: { id, name, created, login } };
+  // Une session enregistrée sans identifiant l'a été quand il valait toujours le pseudo, et sans animal
+  // quand il n'existait pas ; `me()` relit l'un et l'autre au démarrage de la session.
+  return { token: raw['token'], player: { id, name, created, login, avatar: isAvatar(avatar) ? avatar : null } };
 }
 
 /** Clé de jeu concernée par une route (pour savoir quel écran recharger). */
@@ -78,6 +80,8 @@ export class App {
     this.live.connect(session.token);
     this.chat = new ChatStore(this.api, this.store, session.player.id);
     void this.chat.load().catch(() => undefined);
+    setAvatar(session.player.id, session.player.avatar);
+    this.refreshPlayers();
     void this.api
       .me()
       .then((me) => this.updateMe(me))
@@ -97,6 +101,16 @@ export class App {
     if (!this.session) return;
     this.session = { ...this.session, player: me };
     this.store.set(SESSION_KEY, this.session);
+    setAvatar(me.id, me.avatar);
+  }
+
+  /** Relit la liste des joueurs pour l'annuaire des avatars, puis fait redessiner l'écran, même en cas d'échec. */
+  private refreshPlayers(): void {
+    void this.api
+      .players()
+      .then(setAvatars)
+      .catch(() => undefined)
+      .finally(() => this.screen?.onDataChanged?.());
   }
 
   private navigate(route: Route): void {
@@ -218,7 +232,12 @@ export class App {
       this.screen?.onRaceVoiceGone?.(message.id);
       return;
     }
+    // Un changement de joueurs (inscription, pseudo, animal) passe par l'annuaire avant de redessiner.
+    if (message.game === null) {
+      this.refreshPlayers();
+      return;
+    }
     const game = routeGame(this.route);
-    if (message.game === null || game === null || message.game === game) this.screen?.onDataChanged?.();
+    if (game === null || message.game === game) this.screen?.onDataChanged?.();
   }
 }

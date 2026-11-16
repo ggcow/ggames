@@ -132,6 +132,12 @@ const MIGRATIONS: readonly string[] = [
   ALTER TABLE players ADD COLUMN login TEXT NOT NULL DEFAULT '';
   UPDATE players SET login = name;
   `,
+  // Chaque joueur a son animal, que personne d'autre n'a. Les comptes existants le reçoivent au démarrage
+  // du Durable Object (assignMissingAvatars), le choix dépendant du catalogue côté code.
+  `
+  ALTER TABLE players ADD COLUMN avatar TEXT;
+  CREATE UNIQUE INDEX players_avatar ON players (avatar);
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

@@ -54,7 +54,9 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   compris, dès que chaque destinataire l'a écoutée ou a quitté le niveau. Écouter une note enchaîne sur
   les notes des autres joueurs qui la suivent. Pendant une course, une croix retire une note de son seul
   écran.
-- Avatar d'un joueur : un animal et une couleur dérivés de son identifiant (`avatar.ts`).
+- Avatar d'un joueur : un animal du catalogue (`shared/platform/avatars.ts`), que personne d'autre n'a, et une
+  couleur dérivée de son identifiant. Il en reçoit un à l'inscription et le change pour un animal encore libre
+  depuis la fenêtre Modifier, qu'ouvre aussi sa pastille sur l'accueil.
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Score d'un jeu au tour par tour : le nombre de coups joués ; Annuler en retire un, Recommencer repart de zéro.
 - Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct. L'aperçu affiche
@@ -127,16 +129,16 @@ niveau débloqué).
 
 ### Modèle de données (SQLite du Durable Object `World`)
 
-| Table                   | Contenu                                                              |
-| ----------------------- | -------------------------------------------------------------------- |
-| `players`               | compte : id, pseudo et identifiant (uniques sans casse), hash PBKDF2 |
-| `sessions`              | jetons de session (hash SHA-256), un par appareil connecté           |
-| `runs`                  | chaque partie : jeu, clé, joueur, statut, score, durée, replay, date |
-| `chat_messages`         | messages du salon global : joueur, texte, date                       |
-| `voice_notes`           | notes vocales du salon : joueur, durée, type MIME, audio, date       |
-| `race_voices`           | notes vocales de course : jeu, niveau, joueur, audio, date           |
-| `race_voice_recipients` | destinataires d'une note de course                                   |
-| `race_voice_reads`      | lecture d'une note de course par un destinataire                     |
+| Table                   | Contenu                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| `players`               | compte : id, pseudo et identifiant (uniques sans casse), animal (unique), hash PBKDF2 |
+| `sessions`              | jetons de session (hash SHA-256), un par appareil connecté                            |
+| `runs`                  | chaque partie : jeu, clé, joueur, statut, score, durée, replay, date                  |
+| `chat_messages`         | messages du salon global : joueur, texte, date                                        |
+| `voice_notes`           | notes vocales du salon : joueur, durée, type MIME, audio, date                        |
+| `race_voices`           | notes vocales de course : jeu, niveau, joueur, audio, date                            |
+| `race_voice_recipients` | destinataires d'une note de course                                                    |
+| `race_voice_reads`      | lecture d'une note de course par un destinataire                                      |
 
 Progression, classements et statistiques sont calculés à partir de `runs` (requêtes dans `store.ts`).
 La présence en temps réel vit dans les WebSockets en hibernation, pas en base.

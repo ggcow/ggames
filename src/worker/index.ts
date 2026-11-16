@@ -63,6 +63,16 @@ const ROUTE_TABLE: readonly Route[] = [
     ),
   },
   {
+    method: 'PATCH',
+    pattern: /^\/api\/me\/avatar$/,
+    handler: withBody(async (b, { world, token }) => toResponse(await world.changeAvatar(token, b['avatar']))),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/players$/,
+    handler: async ({ world, token }) => toResponse(await world.listPlayers(token)),
+  },
+  {
     method: 'GET',
     pattern: /^\/api\/games$/,
     handler: async ({ world, token }) => toResponse(await world.listGames(token)),
