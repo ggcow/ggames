@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.14](https://github.com/ggcow/ggames/compare/v0.5.13...v0.5.14) (2026-11-16)
+
+### Fonctionnalités
+
+* **client:** poser le retour au menu sur le bandeau d'un jeu ([eb0b3eb](https://github.com/ggcow/ggames/commit/eb0b3eb7ac2496c256a4377b5054d17465095239))
+
 ## [0.5.13](https://github.com/ggcow/ggames/compare/v0.5.12...v0.5.13) (2026-11-16)
 
 ### Fonctionnalités
