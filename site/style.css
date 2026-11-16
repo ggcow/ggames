@@ -61,6 +61,30 @@ body {
   flex-direction: column;
   gap: 18px;
 }
+.with-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+/* Fenêtre large : le salon passe à droite du contenu et reste visible pendant le défilement. L'écran
+   déborde de la colonne de #app, centré sur elle. */
+@media (min-width: 900px) {
+  .with-chat {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    align-items: start;
+    gap: 28px;
+    width: min(1040px, calc(100vw - 32px));
+    margin-left: calc(50% - min(520px, 50vw - 16px));
+  }
+  .chat-section {
+    position: sticky;
+    top: 14px;
+  }
+  .chat-section .chat-list {
+    max-height: calc(100vh - 160px);
+  }
+}
 
 h1,
 h2,

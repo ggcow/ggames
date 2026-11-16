@@ -6,7 +6,7 @@ import type { AppContext } from './context.ts';
 import { h, noTranslate, replaceChildren } from './dom.ts';
 import { formatDuration, formatTime } from './i18n.ts';
 import { createVoiceRecorder } from './recorder.ts';
-import { errorMessage, toast } from './ui.ts';
+import { errorMessage, section, toast } from './ui.ts';
 import { createVoicePlayer, setPlayButton, type VoicePlayerError } from './voice-player.ts';
 
 export interface ChatPanel {
@@ -203,5 +203,29 @@ export function chatPanel(ctx: AppContext): ChatPanel {
       player.dispose();
       unsubscribe();
     },
+  };
+}
+
+/** Écran accompagné du salon : sous le contenu sur un téléphone, à sa droite quand la fenêtre est large. */
+export interface ChatScreen {
+  /** Partie de l'écran redessinée à chaque changement. */
+  content: HTMLElement;
+  /** Place contenu et salon dans `host`, une seule fois : le salon garde sa saisie et son défilement. */
+  show(host: HTMLElement): void;
+  dispose(): void;
+}
+
+export function chatScreen(ctx: AppContext): ChatScreen {
+  const content = h('div', { class: 'screen-content' });
+  const chat = chatPanel(ctx);
+  const aside = section(ctx.t.chat, chat.element);
+  aside.classList.add('chat-section');
+  const layout = h('div', { class: 'with-chat' }, content, aside);
+  return {
+    content,
+    show: (host) => {
+      if (layout.parentElement !== host) replaceChildren(host, layout);
+    },
+    dispose: chat.dispose,
   };
 }

@@ -46,7 +46,7 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - Pendant une course, chaque joueur envoie des réactions rapides (emojis ou phrases courtes traduites) aux
   joueurs du même niveau. Elles ne sont pas conservées et ne concernent que la course en cours.
 - Un salon global est intégré à l'accueil et à la page d'un jeu : on échange des messages texte directement
-  dans la page. L'historique est court (50 derniers messages, 7 jours) et les messages sont limités en
+  dans la page, sous le contenu sur un téléphone et à droite sur un écran large (`chatScreen()`). L'historique est court (50 derniers messages, 7 jours) et les messages sont limités en
   longueur et en débit.
 - Le salon accepte des notes vocales comme des messages normaux. Pendant une course, on peut aussi envoyer
   des messages vocaux courts : une note disparaît pour chaque destinataire après son écoute, reste visible

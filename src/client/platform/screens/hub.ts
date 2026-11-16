@@ -2,7 +2,7 @@ import type { GameSummary } from '../../../shared/platform/protocol.ts';
 import { CLIENT_GAMES } from '../../games/registry.ts';
 import { openAccountDialog } from '../account-dialog.ts';
 import { avatar, takenAvatars } from '../avatar.ts';
-import { chatPanel } from '../chat-panel.ts';
+import { chatScreen } from '../chat-panel.ts';
 import type { AppContext, ScreenHandle } from '../context.ts';
 import { h, noTranslate, replaceChildren } from '../dom.ts';
 import { gameIcon } from '../game-icon.ts';
@@ -14,10 +14,7 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
   const { t, api } = ctx;
   let summaries: GameSummary[] | null = null;
   const onlineHost = h('div');
-  const contentHost = h('div', { class: 'screen-content' });
-  const chat = chatPanel(ctx);
-  const chatSection = section(t.chat, chat.element);
-  let mounted = false;
+  const screen = chatScreen(ctx);
 
   const renderPresence = () => {
     replaceChildren(
@@ -98,12 +95,9 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
 
   const render = () => {
     if (!summaries) return loading(host, t);
-    if (!mounted) {
-      replaceChildren(host, contentHost, chatSection);
-      mounted = true;
-    }
+    screen.show(host);
     replaceChildren(
-      contentHost,
+      screen.content,
       account(),
       h('div', { class: 'brand' }, h('h1', null, t.appName), h('p', null, t.tagline)),
       section(t.games, h('div', { class: 'stack' }, ...summaries.map(gameCard))),
@@ -126,6 +120,6 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
   return {
     onDataChanged: () => void load(),
     onPresenceChanged: renderPresence,
-    dispose: chat.dispose,
+    dispose: screen.dispose,
   };
 }
