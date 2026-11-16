@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.13](https://github.com/ggcow/ggames/compare/v0.5.12...v0.5.13) (2026-11-16)
+
+### Fonctionnalités
+
+* **client:** partager les rangs à égalité et ouvrir le podium d'un niveau ([abb653c](https://github.com/ggcow/ggames/commit/abb653c61cf08c084c4fb958df5f47228de80310))
+* **fioles:** marquer le meilleur score possible de chaque niveau ([a5593cb](https://github.com/ggcow/ggames/commit/a5593cb14b32ef3bd47a394bd66b9b3dfae804e0))
+
 ## [0.5.12](https://github.com/ggcow/ggames/compare/v0.5.11...v0.5.12) (2026-11-16)
 
 ### Fonctionnalités
