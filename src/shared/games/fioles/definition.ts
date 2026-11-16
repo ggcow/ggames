@@ -4,6 +4,7 @@ import { campaignCompareKeys, campaignIsUnlocked, parseCampaignKey } from '../ca
 import type { GameDefinition, ReplayOutcome } from '../game.ts';
 import { countMoves } from '../moves.ts';
 import { LEVELS } from './levels.ts';
+import { OPTIMAL } from './optimal.ts';
 import { type Board, cloneBoard, isSolved, parseBoard, pour } from './rules.ts';
 
 export const FIOLES_ID = 'fioles';
@@ -91,5 +92,9 @@ export const fioles: GameDefinition = {
     // Une partie s'arrête dès que le plateau est résolu : aucune action après.
     if (firstSolved !== -1 && firstSolved !== states.length - 1) return null;
     return { finished: firstSolved !== -1, value: countMoves(actions) };
+  },
+  bestPossible(key) {
+    const level = parseCampaignKey(key);
+    return level === null ? null : (OPTIMAL[level - 1] ?? null);
   },
 };

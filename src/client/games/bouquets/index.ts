@@ -20,6 +20,7 @@ export const bouquetsClient: ClientGame = {
   ...campaignMethods(
     (level, lang) => BOUQUETS_STRINGS[lang].level(level),
     (value, lang) => BOUQUETS_STRINGS[lang].moves(value),
+    bouquets.bestPossible,
   ),
 
   renderLiveState(state) {

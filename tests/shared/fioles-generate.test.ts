@@ -4,10 +4,12 @@ import {
   generateBoard,
   generateLevels,
   isSolvable,
+  minimalMoves,
   solverEffort,
 } from '../../src/shared/games/fioles/generate.ts';
 import { LEVELS } from '../../src/shared/games/fioles/levels.ts';
 import { CAP, isSolved, MAX_COLORS } from '../../src/shared/games/fioles/rules.ts';
+import { solve } from '../support/fioles-solver.ts';
 
 describe('campagne', () => {
   it('ajoute une couleur par niveau jusqu’au niveau 10, puis multiplie les plateaux candidats', () => {
@@ -22,6 +24,30 @@ describe('campagne', () => {
     const levels = generateLevels(24);
     expect(levels).toEqual(LEVELS.slice(0, 24));
     expect(new Set(levels).size).toBe(24);
+  });
+});
+
+describe('plus petit nombre de versements', () => {
+  it('vaut zéro pour un plateau résolu et compte chaque versement nécessaire', () => {
+    expect(minimalMoves([[0, 0, 0, 0], []], 100)).toBe(0);
+    expect(minimalMoves([[0, 0, 0, 0], [1, 1, 1], [1]], 100)).toBe(1);
+    // Recoupé par le solveur de test, qui explore toutes les positions sans les regrouper.
+    const board = [[0, 1, 0, 1], [1, 0, 1, 0], [], []];
+    expect(minimalMoves(board, 100_000)).toBe(solve(board)?.length);
+    expect(minimalMoves(board, 100_000)).toBe(7);
+  });
+
+  it('renonce au-delà du nombre de positions permis ou sur un plateau impossible', () => {
+    expect(minimalMoves([[0, 1, 0, 1], [1, 0, 1, 0], [], []], 1)).toBeNull();
+    expect(
+      minimalMoves(
+        [
+          [0, 1, 0, 1],
+          [1, 0, 1, 0],
+        ],
+        100,
+      ),
+    ).toBeNull();
   });
 });
 

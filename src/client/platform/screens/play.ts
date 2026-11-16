@@ -42,6 +42,7 @@ export function recordBadge(
   key: string,
   format: ((value: number, lang: Lang) => string) | null,
   t: PlatformStrings,
+  bestPossible: number | null,
   openPodium: () => void,
 ): HTMLElement | null {
   const records = view.state.records[key] ?? [];
@@ -60,7 +61,7 @@ export function recordBadge(
       attrs: { title: text, 'aria-label': text },
       on: { click: openPodium },
     },
-    '🏆',
+    best.value === bestPossible ? '💎' : '🏆',
     ...holders.slice(0, BADGE_HOLDERS).map((record, index) => avatar(record.player, names[index] ?? '?', 'xs')),
     extra > 0 ? noTranslate(h('small', null, `+${extra}`)) : null,
     value,
@@ -68,13 +69,14 @@ export function recordBadge(
 }
 
 /**
- * Classement d'une clé, rangs partagés à égalité. `limit` ne garde que les rangs jusqu'à lui (le podium),
- * donc parfois plus de `limit` lignes.
+ * Classement d'une clé, rangs partagés à égalité, un 💎 sur chaque score égal au meilleur possible. `limit` ne
+ * garde que les rangs jusqu'à lui (le podium), donc parfois plus de `limit` lignes.
  */
 export function scoreList(
   records: readonly RecordEntry[],
   view: GameView,
   format: (value: number, lang: Lang) => string,
+  bestPossible: number | null,
   limit = Number.POSITIVE_INFINITY,
 ): HTMLElement {
   const ranks = competitionRanks(records, (a, b) => a.value === b.value);
@@ -89,7 +91,7 @@ export function scoreList(
         noTranslate(h('span', { class: `rank rank-${rank}` }, String(rank))),
         avatar(record.player, name, 'xs'),
         noTranslate(h('span', { class: 'grow' }, name)),
-        h('b', null, format(record.value, view.lang)),
+        h('b', null, record.value === bestPossible ? '💎 ' : null, format(record.value, view.lang)),
       ),
     ];
   });
@@ -116,6 +118,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
   let pending: { replay: string; value: number } | null = null;
 
   const format = game.formatValue;
+  const bestPossible = game.definition.bestPossible(key);
   const rivals = () => rivalsOn(ctx.live.presence, ctx.me.id, gameId, key);
 
   const openReactions = () => {
@@ -364,7 +367,8 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     renderVoices();
   };
 
-  const renderRecord = () => replaceChildren(recordHost, view ? recordBadge(view, key, format, t, openPodium) : null);
+  const renderRecord = () =>
+    replaceChildren(recordHost, view ? recordBadge(view, key, format, t, bestPossible, openPodium) : null);
 
   const renderLive = () => {
     const others = rivals();
@@ -410,7 +414,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     return [
       h('p', { class: 'modal-value' }, format(value, ctx.lang)),
       h('h3', { class: 'section-title' }, t.leaderboard),
-      scoreList(records, view, format),
+      scoreList(records, view, format, bestPossible),
     ];
   };
 
@@ -421,7 +425,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
       [
         h('div', { class: 'modal-emoji' }, '🏆'),
         h('h2', null, game.keyLabel(key, ctx.lang)),
-        scoreList(view.state.records[key] ?? [], view, format, PODIUM_SIZE),
+        scoreList(view.state.records[key] ?? [], view, format, bestPossible, PODIUM_SIZE),
       ],
       [{ label: t.close }],
     );
@@ -437,10 +441,12 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
 
   const showResult = (won: boolean, value: number, records: RecordEntry[]) => {
     const next = won ? nextAfterWin() : null;
+    const perfect = won && value === bestPossible;
     showModal(
       [
-        h('div', { class: 'modal-emoji' }, won ? '🎉' : '😵'),
+        h('div', { class: 'modal-emoji' }, perfect ? '💎' : won ? '🎉' : '😵'),
         h('h2', null, won ? t.won : t.lost),
+        perfect ? h('p', { class: 'perfect-note' }, t.perfect) : null,
         ...leaderboard(records, value),
       ],
       [

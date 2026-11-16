@@ -28,6 +28,8 @@ export interface LevelTile {
   status: LevelStatus;
   /** Meilleur score du joueur, déjà formaté, ou null s'il n'a pas gagné ce niveau. */
   best: string | null;
+  /** Vrai si ce meilleur score est le meilleur possible sur le niveau. */
+  perfect: boolean;
 }
 
 /** Avancement d'un joueur dans les niveaux d'un jeu. */

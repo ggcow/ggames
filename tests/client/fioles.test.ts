@@ -56,9 +56,28 @@ describe('niveaux', () => {
   });
 
   it('donne l’état de chaque case : réussie avec record, jouable, verrouillée', () => {
-    expect(fiolesClient.levelTile(1, v)).toEqual({ key: 'c:1', label: '1', status: 'done', best: '9 coups' });
-    expect(fiolesClient.levelTile(3, v)).toEqual({ key: 'c:3', label: '3', status: 'open', best: null });
-    expect(fiolesClient.levelTile(4, v)).toEqual({ key: 'c:4', label: '4', status: 'locked', best: null });
+    // 9 coups est le meilleur score possible au niveau 1.
+    expect(fiolesClient.levelTile(1, v)).toEqual({
+      key: 'c:1',
+      label: '1',
+      status: 'done',
+      best: '9 coups',
+      perfect: true,
+    });
+    expect(fiolesClient.levelTile(3, v)).toEqual({
+      key: 'c:3',
+      label: '3',
+      status: 'open',
+      best: null,
+      perfect: false,
+    });
+    expect(fiolesClient.levelTile(4, v)).toEqual({
+      key: 'c:4',
+      label: '4',
+      status: 'locked',
+      best: null,
+      perfect: false,
+    });
     expect(fiolesClient.levelTile(8, v).status).toBe('locked');
   });
 

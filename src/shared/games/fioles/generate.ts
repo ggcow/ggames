@@ -8,8 +8,12 @@ import {
   boardToString,
   CAP,
   type Color,
+  canPour,
+  cloneBoard,
+  isSolved,
   isTubeDone,
   MAX_COLORS,
+  pour,
   type ReadonlyBoard,
   searchSolution,
 } from './rules.ts';
@@ -27,6 +31,39 @@ export function solverEffort(start: ReadonlyBoard, limit: number): number | null
 }
 
 export const isSolvable = (start: ReadonlyBoard, limit: number): boolean => solverEffort(start, limit) !== null;
+
+/**
+ * Plus petit nombre de versements qui résout le plateau, par une recherche en largeur sur les positions
+ * (l'ordre des fioles ne compte pas). `null` si le plateau est impossible ou demande plus de `limit` positions.
+ */
+export function minimalMoves(start: ReadonlyBoard, limit: number): number | null {
+  const key = (board: ReadonlyBoard) => boardToString(board).split('.').sort().join('|');
+  const seen = new Set<string>([key(start)]);
+  let frontier: Board[] = [cloneBoard(start)];
+  for (let moves = 0; frontier.length > 0; moves++) {
+    if (frontier.some(isSolved)) return moves;
+    const next: Board[] = [];
+    for (const board of frontier) {
+      board.forEach((source, from) => {
+        if (source.length === 0 || isTubeDone(source)) return;
+        const uniform = source.every((color) => color === source[0]);
+        board.forEach((target, to) => {
+          if (from === to || !canPour(source, target)) return;
+          if (target.length === 0 && uniform) return; // même position, fioles échangées
+          const after = cloneBoard(board);
+          pour(after, from, to);
+          const position = key(after);
+          if (seen.has(position)) return;
+          seen.add(position);
+          next.push(after);
+        });
+      });
+    }
+    if (seen.size > limit) return null;
+    frontier = next;
+  }
+  return null;
+}
 
 /* ---------- Tirage d'un plateau ---------- */
 

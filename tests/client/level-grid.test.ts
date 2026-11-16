@@ -36,9 +36,17 @@ describe('pagination', () => {
 
 describe('grille', () => {
   const tile = (level: number): LevelTile => {
-    if (level <= 2) return { key: `c:${level}`, label: String(level), status: 'done', best: `${level * 10} coups` };
-    if (level === 3) return { key: 'c:3', label: '3', status: 'open', best: null };
-    return { key: `c:${level}`, label: String(level), status: 'locked', best: null };
+    if (level <= 2) {
+      return {
+        key: `c:${level}`,
+        label: String(level),
+        status: 'done',
+        best: `${level * 10} coups`,
+        perfect: level === 2,
+      };
+    }
+    if (level === 3) return { key: 'c:3', label: '3', status: 'open', best: null, perfect: false };
+    return { key: `c:${level}`, label: String(level), status: 'locked', best: null, perfect: false };
   };
   const positions: PlayerPosition[] = [
     { player: 'abc123', name: 'léa', level: 2, live: true, me: true },
@@ -66,6 +74,13 @@ describe('grille', () => {
     expect(cells[3]?.disabled).toBe(true);
     expect(cells[3]?.textContent).toBe('🔒');
     expect(grid.querySelector('.pager-label')?.textContent).toContain('1 – 20');
+  });
+
+  it('distingue un niveau réussi avec le meilleur score possible', () => {
+    const cells = [...render().querySelectorAll<HTMLButtonElement>('.level')];
+    expect(cells[0]?.classList.contains('perfect')).toBe(false);
+    expect(cells[1]?.classList.contains('perfect')).toBe(true);
+    expect(cells[1]?.querySelector('.level-best')?.textContent).toBe('💎20 coups');
   });
 
   it('lance un niveau jouable et ignore un niveau verrouillé', () => {
@@ -210,7 +225,13 @@ describe('grille sans score', () => {
     const grid = renderLevelGrid({
       progress: { unlocked: 2, total: 9999 },
       page: 0,
-      tile: (level) => ({ key: `c:${level}`, label: String(level), status: level === 1 ? 'done' : 'open', best: null }),
+      tile: (level) => ({
+        key: `c:${level}`,
+        label: String(level),
+        status: level === 1 ? 'done' : 'open',
+        best: null,
+        perfect: false,
+      }),
       positions: [],
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
@@ -223,7 +244,13 @@ describe('grille sans score', () => {
     const grid = renderLevelGrid({
       progress: { unlocked: 2, total: 9999 },
       page: 0,
-      tile: (level) => ({ key: `c:${level}`, label: String(level), status: level === 1 ? 'done' : 'open', best: '7' }),
+      tile: (level) => ({
+        key: `c:${level}`,
+        label: String(level),
+        status: level === 1 ? 'done' : 'open',
+        best: '7',
+        perfect: false,
+      }),
       positions: [],
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),

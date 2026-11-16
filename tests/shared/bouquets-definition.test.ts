@@ -126,3 +126,9 @@ describe('replays', () => {
     expect(bouquets.replay('c:1', 'zz')).toBeNull();
   });
 });
+
+describe('meilleur score possible', () => {
+  it('reste inconnu : aucune recherche exhaustive ne le prouve', () => {
+    expect(bouquets.bestPossible('c:1')).toBeNull();
+  });
+});

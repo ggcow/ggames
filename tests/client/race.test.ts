@@ -52,7 +52,7 @@ describe('badge du record', () => {
 
   it('montre le détenteur et son score, avec la phrase complète en titre', () => {
     const view = createGameView(state({ 'c:1': [{ player: 'p1', value: 12, run: 'r1' }] }), 'p1', 'fr');
-    const badge = recordBadge(view, 'c:1', moves, PLATFORM_STRINGS.fr, vi.fn());
+    const badge = recordBadge(view, 'c:1', moves, PLATFORM_STRINGS.fr, null, vi.fn());
     expect(badge?.textContent).toBe(`🏆${avatarOf('p1')}12 coups`);
     expect(badge?.getAttribute('title')).toBe('Record : Léa (12 coups)');
     expect(badge?.querySelector('.avatar')).not.toBeNull();
@@ -60,8 +60,8 @@ describe('badge du record', () => {
 
   it('ne montre rien sans record ou pour un jeu sans score', () => {
     const view = createGameView(state({ 'c:1': [{ player: 'p1', value: 12, run: 'r1' }] }), 'p1', 'fr');
-    expect(recordBadge(view, 'c:2', moves, PLATFORM_STRINGS.fr, vi.fn())).toBeNull();
-    expect(recordBadge(view, 'c:1', null, PLATFORM_STRINGS.fr, vi.fn())).toBeNull();
+    expect(recordBadge(view, 'c:2', moves, PLATFORM_STRINGS.fr, null, vi.fn())).toBeNull();
+    expect(recordBadge(view, 'c:1', null, PLATFORM_STRINGS.fr, null, vi.fn())).toBeNull();
   });
 
   it('montre tous les détenteurs d’un record partagé et ouvre le podium', () => {
@@ -72,7 +72,7 @@ describe('badge du record', () => {
     ];
     const view = createGameView(state({ 'c:1': records }), 'p1', 'fr');
     const openPodium = vi.fn();
-    const badge = recordBadge(view, 'c:1', moves, PLATFORM_STRINGS.fr, openPodium);
+    const badge = recordBadge(view, 'c:1', moves, PLATFORM_STRINGS.fr, null, openPodium);
     expect(badge?.querySelectorAll('.avatar')).toHaveLength(2);
     expect(badge?.getAttribute('title')).toBe('Record : Tom, Léa (12 coups)');
     badge?.click();
@@ -82,7 +82,7 @@ describe('badge du record', () => {
   it('résume au-delà de trois détenteurs ex æquo', () => {
     const records = ['p1', 'p2', 'p3', 'p4', 'p5'].map((player) => ({ player, value: 9, run: `r${player}` }));
     const view = createGameView(state({ 'c:1': records }), 'p1', 'fr');
-    const badge = recordBadge(view, 'c:1', moves, PLATFORM_STRINGS.fr, vi.fn());
+    const badge = recordBadge(view, 'c:1', moves, PLATFORM_STRINGS.fr, null, vi.fn());
     expect(badge?.querySelectorAll('.avatar')).toHaveLength(3);
     expect(badge?.querySelector('small')?.textContent).toBe('+2');
   });
@@ -108,14 +108,34 @@ describe('classement d’un niveau', () => {
   const ranks = (list: HTMLElement) => [...list.querySelectorAll('.rank')].map((rank) => rank.textContent);
 
   it('partage le rang des ex æquo et marque sa propre ligne', () => {
-    const list = scoreList(records, view, (value) => `${value} coups`);
+    const list = scoreList(records, view, (value) => `${value} coups`, null);
     expect(ranks(list)).toEqual(['1', '1', '3', '3', '5']);
     expect(list.querySelectorAll('li.me')).toHaveLength(1);
     expect(list.querySelector('li.me')?.textContent).toContain('p2');
   });
 
   it('garde au podium tous les ex æquo des trois premiers rangs', () => {
-    const podium = scoreList(records, view, (value) => `${value} coups`, 3);
+    const podium = scoreList(records, view, (value) => `${value} coups`, null, 3);
     expect(ranks(podium)).toEqual(['1', '1', '3', '3']);
+  });
+});
+
+describe('meilleur score possible', () => {
+  const view = createGameView(
+    { players: [{ id: 'p1', name: 'Léa', created: 1, avatar: null }], progress: [], records: {} },
+    'p1',
+    'fr',
+  );
+
+  it('marque d’un diamant le badge du record et chaque score parfait du classement', () => {
+    const records = [
+      { player: 'p1', value: 9, run: 'r1' },
+      { player: 'p2', value: 11, run: 'r2' },
+    ];
+    const withRecords = { ...view, state: { ...view.state, records: { 'c:1': records } } };
+    const badge = recordBadge(withRecords, 'c:1', (value) => `${value} coups`, PLATFORM_STRINGS.fr, 9, vi.fn());
+    expect(badge?.textContent?.startsWith('💎')).toBe(true);
+    const list = scoreList(records, view, (value) => `${value} coups`, 9);
+    expect([...list.querySelectorAll('b')].map((b) => b.textContent)).toEqual(['💎 9 coups', '11 coups']);
   });
 });

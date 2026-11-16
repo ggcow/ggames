@@ -56,7 +56,13 @@ describe('jeu', () => {
   it('suit la campagne commune : progression, cases, noms et niveau suivant', () => {
     const v = view({ records: { 'c:1': [{ player: ME, value: 12, run: 'r1' }] } });
     expect(bouquetsClient.levelProgress(v, ME)).toEqual({ unlocked: 2, total: MAX_LEVEL });
-    expect(bouquetsClient.levelTile(1, v)).toEqual({ key: 'c:1', label: '1', status: 'done', best: '12 coups' });
+    expect(bouquetsClient.levelTile(1, v)).toEqual({
+      key: 'c:1',
+      label: '1',
+      status: 'done',
+      best: '12 coups',
+      perfect: false,
+    });
     expect(bouquetsClient.levelTile(3, v).status).toBe('locked');
     expect(bouquetsClient.keyLabel('c:5', 'fr')).toBe('Niveau 5');
     expect(bouquetsClient.keyLabel('c:5', 'zh')).toBe('第 5 关');

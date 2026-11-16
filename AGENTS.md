@@ -35,6 +35,8 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   gagnées sur les niveaux déjà réussis par le joueur.
 - Classements : à égalité, même rang (1, 1, 3). Le badge du record d'un niveau montre tous ses détenteurs ex
   æquo ; le toucher ouvre le podium du niveau (les trois premiers rangs).
+- Score parfait : quand le meilleur score possible d'un niveau est prouvé (`bestPossible()`), l'atteindre est
+  marqué d'un 💎 (case du niveau, classements, record, fin de partie).
 - Un replay ne révèle jamais une solution meilleure que la sienne : on ne voit le replay d'un autre joueur que sur
   un niveau qu'on a soi-même réussi avec un score au moins aussi bon. La fiche d'un joueur ne liste que les niveaux
   réussis par les deux ; les replays encore hors de portée y sont verrouillés.
@@ -100,7 +102,8 @@ src/
       campaign.ts          campagne de niveaux commune : clés `c:<n>`, déblocage
       random.ts            hasard reproductible pour générer les niveaux (graine, mélange)
       moves.ts             score des jeux au tour par tour : coups joués, moins un par annulation
-      fioles/              règles, replays, niveaux enregistrés (levels.ts) et leur générateur (generate.ts)
+      fioles/              règles, replays, niveaux enregistrés (levels.ts), leur générateur (generate.ts)
+                           et le meilleur score possible de chacun (optimal.ts)
       bouquets/            idem ; le générateur mesure la difficulté avec des parties simulées
   worker/                  serveur Cloudflare
     index.ts               routeur HTTP -> Durable Object
@@ -117,6 +120,7 @@ pages-staging/             même relais pour l'environnement de test
 tests/                     Vitest : shared/ (node), client/ (happy-dom), worker/ (runtime Cloudflare réel)
 scripts/build.ts           construction de dist/
 scripts/levels.ts          écrit les niveaux enregistrés d'un jeu à partir de son generate.ts
+scripts/optimal.ts         écrit le meilleur score possible de chaque niveau d'un jeu (recherche exhaustive)
 ```
 
 ### Plateforme et jeux
@@ -124,7 +128,8 @@ scripts/levels.ts          écrit les niveaux enregistrés d'un jeu à partir de
 La plateforme ne connaît aucune règle de jeu. Un jeu fournit :
 
 - côté partagé, une `GameDefinition` (`src/shared/games/game.ts`) : ordre des scores, validation des clés de
-  partie, déblocage par la progression (`isUnlocked()`), et `replay()` qui rejoue une partie et calcule son score ;
+  partie, déblocage par la progression (`isUnlocked()`), `replay()` qui rejoue une partie et calcule son score,
+  et `bestPossible()`, le meilleur score prouvé d'une clé (`null` s'il n'est pas connu) ;
 - côté client, un `ClientGame` (`src/client/games/client-game.ts`) : nom, icône (emoji ou image servie par le
   site), libellés, avancement de chaque joueur
   et case de chaque niveau (`levelProgress()`, `levelOf()`, `levelTile()`), écrans de jeu et de replay, et `formatValue` pour afficher un score
@@ -161,7 +166,8 @@ Erreurs attendues : valeurs `Result` renvoyées par le Durable Object, convertie
    l'enregistrer dans `src/shared/games/registry.ts`. Un jeu à niveaux utilise la campagne commune
    (`shared/games/campaign.ts`) et `campaignMethods()` côté client ; son `generate.ts` produit ses 100 niveaux,
    écrits une fois pour toutes dans `levels.ts` par `npm run levels -- <jeu>` (générateur à déclarer dans
-   `scripts/levels.ts`).
+   `scripts/levels.ts`). Si une recherche exhaustive le permet, `npm run optimal -- <jeu>` écrit le meilleur
+   score possible de chaque niveau dans `optimal.ts` (recherche à déclarer dans `scripts/optimal.ts`).
 2. `src/client/games/<jeu>/` : `index.ts` qui exporte un `ClientGame`, `strings.ts` (fr + zh), écrans ;
    l'enregistrer dans `src/client/games/registry.ts`. Ses images éventuelles vont dans `site/games/<jeu>/`.
 3. Tests : règles et replays dans `tests/shared/`, interface dans `tests/client/`, une partie complète via
@@ -187,17 +193,18 @@ Aucune modification de la plateforme ne doit être nécessaire. Si elle l'est, c
 
 ## Commandes
 
-| Commande                  | Rôle                                                                         |
-| ------------------------- | ---------------------------------------------------------------------------- |
-| `npm run dev`             | serveur local complet (site + API + temps réel) sur http://localhost:8787    |
-| `npm run check`           | lint + types + build + tous les tests : doit passer avant chaque commit      |
-| `npm run test:watch`      | tests en continu                                                             |
-| `npm run format`          | formatage et corrections automatiques Biome                                  |
-| `npm run types`           | régénère `worker-configuration.d.ts` après un changement de `wrangler.jsonc` |
-| `npm run levels -- <jeu>` | écrit les niveaux enregistrés d'un nouveau jeu (jamais d'un jeu publié)      |
-| `npm run release`         | nouvelle version : CHANGELOG, numéro de version, commit et tag               |
-| `npm run deploy`          | déploiement manuel de la production (normalement fait par la CI sur un tag)  |
-| `npm run deploy:staging`  | déploiement de l'environnement de test (Worker + Pages staging)              |
+| Commande                   | Rôle                                                                         |
+| -------------------------- | ---------------------------------------------------------------------------- |
+| `npm run dev`              | serveur local complet (site + API + temps réel) sur http://localhost:8787    |
+| `npm run check`            | lint + types + build + tous les tests : doit passer avant chaque commit      |
+| `npm run test:watch`       | tests en continu                                                             |
+| `npm run format`           | formatage et corrections automatiques Biome                                  |
+| `npm run types`            | régénère `worker-configuration.d.ts` après un changement de `wrangler.jsonc` |
+| `npm run levels -- <jeu>`  | écrit les niveaux enregistrés d'un nouveau jeu (jamais d'un jeu publié)      |
+| `npm run optimal -- <jeu>` | écrit le meilleur score possible de chaque niveau d'un jeu                   |
+| `npm run release`          | nouvelle version : CHANGELOG, numéro de version, commit et tag               |
+| `npm run deploy`           | déploiement manuel de la production (normalement fait par la CI sur un tag)  |
+| `npm run deploy:staging`   | déploiement de l'environnement de test (Worker + Pages staging)              |
 
 ## Git
 

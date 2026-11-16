@@ -28,4 +28,6 @@ export interface GameDefinition {
   isUnlocked(key: string, won: ReadonlySet<string>): boolean;
   /** Rejoue une partie. `null` si le replay est invalide (action impossible, format incorrect). */
   replay(key: string, replay: string): ReplayOutcome | null;
+  /** Meilleur score possible sur une clé, prouvé par une recherche exhaustive ; `null` s'il n'est pas connu. */
+  bestPossible(key: string): number | null;
 }

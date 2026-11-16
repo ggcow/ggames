@@ -18,6 +18,7 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
 - La progression de chacun (niveaux réussis, parties, temps de jeu), les classements et le replay des parties
   gagnées sur les niveaux que tu as toi-même réussis. À égalité, même rang ; toucher le 🏆 d'un niveau en
   partie montre son podium.
+- Fioles : chaque niveau a un meilleur score possible, calculé une fois pour toutes. L'atteindre vaut un 💎.
 - La fiche d'un ami ne liste que les niveaux que vous avez tous les deux réussis, et son replay ne s'ouvre que si
   tu as fait aussi bien ou mieux que lui : un replay ne révèle jamais une solution meilleure que la tienne.
 - Un replay montre le chemin final de la partie, sans les coups annulés.

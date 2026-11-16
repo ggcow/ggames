@@ -9,8 +9,9 @@ import {
   playActions,
   startBoard,
 } from '../../src/shared/games/fioles/definition.ts';
-import { isSolvable } from '../../src/shared/games/fioles/generate.ts';
+import { isSolvable, minimalMoves } from '../../src/shared/games/fioles/generate.ts';
 import { LEVELS } from '../../src/shared/games/fioles/levels.ts';
+import { OPTIMAL } from '../../src/shared/games/fioles/optimal.ts';
 import { isSolved } from '../../src/shared/games/fioles/rules.ts';
 import { fiolesLevel, solve } from '../support/fioles-solver.ts';
 
@@ -113,5 +114,25 @@ describe('replays', () => {
   it('refuse une clé invalide', () => {
     expect(startBoard('x:1')).toBeNull();
     expect(fioles.replay('x:1', '')).toBeNull();
+  });
+});
+
+describe('meilleur score possible', () => {
+  it('donne une valeur par niveau de la campagne, et rien pour une clé inconnue', () => {
+    expect(OPTIMAL).toHaveLength(MAX_LEVEL);
+    expect(fioles.bestPossible('c:1')).toBe(OPTIMAL[0]);
+    expect(fioles.bestPossible(`c:${MAX_LEVEL}`)).toBe(OPTIMAL[MAX_LEVEL - 1]);
+    expect(fioles.bestPossible('c:0')).toBeNull();
+    expect(fioles.bestPossible('n’importe quoi')).toBeNull();
+  });
+
+  it.each([1, 2, 3])('est atteint par une vraie partie au niveau %i', (level) => {
+    const win = solve(fiolesLevel(level));
+    if (!win) throw new Error('solution attendue');
+    expect(fioles.replay(`c:${level}`, encodeActions(win))).toEqual({ finished: true, value: OPTIMAL[level - 1] });
+  });
+
+  it.each([1, 10, 50, 100])('correspond à la recherche exhaustive au niveau %i', (level) => {
+    expect(minimalMoves(fiolesLevel(level), 5_000_000)).toBe(OPTIMAL[level - 1]);
   });
 });

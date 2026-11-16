@@ -96,4 +96,7 @@ export const bouquets: GameDefinition = {
     if (firstSolved !== -1 && firstSolved !== states.length - 1) return null;
     return { finished: firstSolved !== -1, value: countMoves(actions) };
   },
+  // Les couches cachées font exploser le nombre de positions : aucune recherche exhaustive ne prouve encore
+  // le meilleur score d'un niveau.
+  bestPossible: () => null,
 };

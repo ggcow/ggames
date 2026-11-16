@@ -143,14 +143,16 @@ function renderTile(options: LevelGridOptions, level: number): HTMLElement {
   return h(
     'button',
     {
-      class: `level ${state}`,
+      class: `level ${state}${tile.status === 'done' && tile.perfect ? ' perfect' : ''}`,
       disabled: state === 'locked',
       attrs: { 'aria-label': `${tile.label} ${t[`level_${state}`]}${players ? ` — ${players}` : ''}` },
       on: { click: () => options.onPlay(tile.key) },
     },
     noTranslate(h('span', { class: 'level-number' }, state === 'locked' ? '🔒' : tile.label)),
     state === 'join' ? h('span', { class: 'level-best' }, t.join) : null,
-    tile.status === 'done' ? noTranslate(h('span', { class: 'level-best' }, tile.best ?? '✓')) : null,
+    tile.status === 'done'
+      ? noTranslate(h('span', { class: 'level-best' }, tile.perfect ? '💎' : null, tile.best ?? '✓'))
+      : null,
     tile.status === 'open' ? h('span', { class: 'level-best' }, t.play) : null,
     here.length > 0
       ? h(
