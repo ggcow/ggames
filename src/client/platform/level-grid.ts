@@ -13,9 +13,6 @@ export const PAGE_SIZE = 20;
 /** Avatars affichés au plus sur une case ; au-delà, un compteur « +n ». */
 const MAX_MARKERS = 3;
 
-/** Avatars affichés au plus des détenteurs du record sur une case. */
-const MAX_RECORD_MARKERS = 2;
-
 /**
  * Nombre de pages à afficher : jusqu'à la page qui contient le premier niveau encore verrouillé,
  * pour montrer ce qui reste à débloquer, sans dépasser le nombre total de niveaux.
@@ -134,24 +131,20 @@ function renderPager(options: LevelGridOptions, first: number, last: number): HT
   );
 }
 
-/** Détenteurs du record du niveau : leurs avatars, avec un petit 💎 si ce record est parfait. */
-function renderRecord(tile: LevelTile, t: PlatformStrings): HTMLElement {
-  const extra = tile.holders.length - MAX_RECORD_MARKERS;
-  const names = tile.holders.map((holder) => holder.name).join(', ');
+/** Avatar du détenteur du record, avec un petit 💎 si ce record est parfait. */
+function renderRecord(tile: LevelTile, t: PlatformStrings): HTMLElement | null {
+  const holder = tile.holders[0];
+  if (!holder) return null;
+  const names = tile.holders.map((entry) => entry.name).join(', ');
   const label = `${t.recordNames(names)}${tile.recordPerfect ? ` ${t.perfectScore}` : ''}`;
   return h(
     'span',
     { class: 'level-record', attrs: { title: label } },
-    ...tile.holders
-      .slice(0, MAX_RECORD_MARKERS)
-      .map((holder) =>
-        h(
-          'span',
-          { class: `record-holder ${tile.recordPerfect ? 'perfect' : ''}` },
-          avatar(holder.player, holder.name, 'xs'),
-        ),
-      ),
-    extra > 0 ? noTranslate(h('small', { class: 'level-more' }, `+${extra}`)) : null,
+    h(
+      'span',
+      { class: `record-holder ${tile.recordPerfect ? 'perfect' : ''}` },
+      avatar(holder.player, holder.name, 'xs'),
+    ),
   );
 }
 
@@ -175,9 +168,13 @@ function renderTile(options: LevelGridOptions, level: number): HTMLElement {
     noTranslate(h('span', { class: 'level-number' }, state === 'locked' ? '🔒' : tile.label)),
     state === 'join' ? h('span', { class: 'level-best' }, t.join) : null,
     tile.status === 'done'
-      ? noTranslate(h('span', { class: 'level-best' }, tile.perfect ? '💎 ' : null, tile.best ?? '✓'))
+      ? h(
+          'span',
+          { class: 'level-score' },
+          noTranslate(h('span', { class: 'level-best' }, tile.perfect ? '💎 ' : null, tile.best ?? '✓')),
+          renderRecord(tile, t),
+        )
       : null,
-    tile.status === 'done' && tile.holders.length > 0 ? renderRecord(tile, t) : null,
     tile.status === 'open' ? h('span', { class: 'level-best' }, t.play) : null,
     here.length > 0
       ? h(

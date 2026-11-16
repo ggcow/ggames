@@ -128,9 +128,9 @@ describe('grille', () => {
       onPlay: vi.fn(),
     });
     const cell = grid.querySelectorAll<HTMLElement>('.level')[0];
-    expect(cell?.querySelectorAll('.record-holder')).toHaveLength(2);
-    expect(cell?.querySelectorAll('.record-holder.perfect')).toHaveLength(2);
-    expect(cell?.querySelector('.level-more')?.textContent).toBe('+1');
+    expect(cell?.querySelectorAll('.record-holder')).toHaveLength(1);
+    expect(cell?.querySelector('.record-holder.perfect')).not.toBeNull();
+    expect(cell?.querySelector('.level-score .level-record')).not.toBeNull();
     expect(cell?.querySelector('.level-record')?.getAttribute('title')).toBe('Record : Léa, Tom, Zoé Score parfait');
   });
 

@@ -37,10 +37,10 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   æquo ; le toucher ouvre le podium du niveau (les trois premiers rangs).
 - Score parfait : quand le meilleur score possible d'un niveau est prouvé (`bestPossible()`), l'atteindre est
   marqué d'un 💎 (case du niveau, classements, record, fin de partie).
-- La case d'un niveau montre le meilleur score du joueur en nombre, sans unité, et le 💎 s'il est parfait ; sous
-  ce score, l'avatar du détenteur du record, avec un petit 💎 si ce record est parfait (ex æquo compris). La fiche
-  d'un joueur donne par niveau le nombre d'essais, le temps de la première victoire et le nombre d'essais qu'il a
-  fallu, le 💎 et la médaille du podium (or, argent, bronze ; ex æquo compris).
+- La case d'un niveau montre le meilleur score du joueur en nombre, sans unité, et le 💎 s'il est parfait ; à
+  côté de ce score, l'avatar du détenteur du record, avec un petit 💎 si ce record est parfait (ex æquo compris). La
+  fiche d'un joueur donne par niveau le nombre d'essais, le temps de la première victoire et le nombre d'essais
+  qu'il a fallu, le 💎 et la médaille du podium (or, argent, bronze ; ex æquo compris).
 - Un replay ne révèle jamais une solution meilleure que la sienne : on ne voit le replay d'un autre joueur que sur
   un niveau qu'on a soi-même réussi avec un score au moins aussi bon. La fiche d'un joueur ne liste que les niveaux
   réussis par les deux ; les replays encore hors de portée y sont verrouillés.

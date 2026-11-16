@@ -1048,45 +1048,41 @@ input[type="range"] {
   line-height: 1;
 }
 .level-best {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 900;
   line-height: 1;
   white-space: nowrap;
 }
-/* Détenteurs du record du niveau, sous le meilleur score de la case. */
-.level-record {
+/* Ligne du score : mon meilleur score, puis l'avatar du détenteur du record. */
+.level-score {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 17px;
+  gap: 3px;
+  max-width: 100%;
+}
+.level-record {
+  display: flex;
+  align-items: center;
 }
 .level-record .avatar {
-  width: 17px;
-  height: 17px;
+  width: 16px;
+  height: 16px;
   font-size: 13px;
   box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.3);
 }
-/* Détenteurs ex æquo : avatars serrés l'un contre l'autre. */
+/* Petit diamant du détenteur quand le record est le meilleur score possible. */
 .record-holder {
   position: relative;
   display: flex;
 }
-.record-holder + .record-holder {
-  margin-left: -5px;
-}
-/* Petit diamant du détenteur quand le record est le meilleur score possible. */
 .record-holder.perfect::after {
   content: "💎";
   position: absolute;
-  right: -4px;
+  right: -3px;
   bottom: -4px;
   font-size: 8px;
   line-height: 1;
-}
-.level-more {
-  margin-left: 2px;
-  font-size: 9px;
-  font-weight: 800;
 }
 .level.done {
   background: linear-gradient(180deg, #69db7c, var(--green));
