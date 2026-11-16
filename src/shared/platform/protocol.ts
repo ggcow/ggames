@@ -243,6 +243,8 @@ export type ServerMessage =
   | { type: 'voice'; note: VoiceNote }
   | { type: 'race_voice'; note: RaceVoice }
   | { type: 'race_voice_read'; read: RaceVoiceRead }
+  /** Note de course supprimée : chaque destinataire l'a écoutée ou a quitté le niveau. */
+  | { type: 'race_voice_gone'; id: string }
   /** Des données ont changé : les clients concernés rechargent. `game` null = données de joueurs. */
   | { type: 'changed'; game: GameId | null };
 
@@ -391,6 +393,10 @@ export function parseServerMessage(raw: string): ServerMessage | null {
   if (msg['type'] === 'race_voice_read') {
     const read = parseRaceVoiceRead(msg['read']);
     return read ? { type: 'race_voice_read', read } : null;
+  }
+  if (msg['type'] === 'race_voice_gone') {
+    const id = msg['id'];
+    return isId(id) ? { type: 'race_voice_gone', id } : null;
   }
   if (msg['type'] === 'presence' && Array.isArray(msg['online'])) {
     return { type: 'presence', online: msg['online'].map(parsePresence).filter((p): p is Presence => p !== null) };

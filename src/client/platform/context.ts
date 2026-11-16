@@ -38,6 +38,7 @@ export interface ScreenHandle {
   onReaction?(reaction: ReactionNotice): void;
   onRaceVoice?(note: RaceVoice): void;
   onRaceVoiceRead?(read: RaceVoiceRead): void;
+  onRaceVoiceGone?(id: string): void;
 }
 
 /** Clés qu'un joueur a gagnées au moins une fois. */

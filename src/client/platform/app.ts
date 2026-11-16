@@ -214,6 +214,10 @@ export class App {
       this.screen?.onRaceVoiceRead?.(message.read);
       return;
     }
+    if (message.type === 'race_voice_gone') {
+      this.screen?.onRaceVoiceGone?.(message.id);
+      return;
+    }
     const game = routeGame(this.route);
     if (message.game === null || game === null || message.game === game) this.screen?.onDataChanged?.();
   }

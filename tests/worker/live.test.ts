@@ -31,6 +31,7 @@ async function connect(token: string) {
   const voices: VoiceNote[] = [];
   const raceVoices: RaceVoice[] = [];
   const raceVoiceReads: RaceVoiceRead[] = [];
+  const raceVoicesGone: string[] = [];
   const waiters: (() => void)[] = [];
   ws.addEventListener('message', (event) => {
     const msg = typeof event.data === 'string' ? parseServerMessage(event.data) : null;
@@ -40,6 +41,7 @@ async function connect(token: string) {
     if (msg?.type === 'voice') voices.push(msg.note);
     if (msg?.type === 'race_voice') raceVoices.push(msg.note);
     if (msg?.type === 'race_voice_read') raceVoiceReads.push(msg.read);
+    if (msg?.type === 'race_voice_gone') raceVoicesGone.push(msg.id);
     for (const resolve of waiters.splice(0)) resolve();
   });
   const next = () => new Promise<void>((resolve) => waiters.push(resolve));
@@ -91,6 +93,10 @@ async function connect(token: string) {
       await next();
     }
   }
+  /** Attend la suppression d'une note de course. */
+  async function raceVoiceGone(id: string): Promise<void> {
+    while (!raceVoicesGone.includes(id)) await next();
+  }
   const send = (msg: ClientMessage) => ws.send(JSON.stringify(msg));
   return {
     ws,
@@ -100,6 +106,7 @@ async function connect(token: string) {
     voiceUntil,
     raceVoiceUntil,
     raceVoiceReadUntil,
+    raceVoiceGone,
     reactions,
     chats,
     voices,
@@ -330,11 +337,67 @@ describe('temps réel', () => {
     });
     expect(secondRead.body).toEqual({ readCount: 2, total: 2 });
     await liveA.raceVoiceReadUntil((read) => read.id === note.id && read.readCount === 2);
+    await liveA.raceVoiceGone(note.id);
     expect((await call<RaceVoice[]>('/api/games/fioles/voices?key=c%3A1', { token: a.token })).body).toEqual([]);
 
     liveA.ws.close(1000, 'bye');
     liveB.ws.close(1000, 'bye');
     liveC.ws.close(1000, 'bye');
+  });
+
+  it('supprime une note de course quand les destinataires restants quittent le niveau', async () => {
+    const a = await newPlayer();
+    const b = await newPlayer();
+    const c = await newPlayer();
+    const liveA = await connect(a.token);
+    const liveB = await connect(b.token);
+    const liveC = await connect(c.token);
+    await liveA.until((online) => [b, c].every((p) => online.some((item) => item.player === p.player.id)));
+    for (const live of [liveA, liveB, liveC]) {
+      live.send({ type: 'activity', game: 'fioles', key: 'c:3', state: '', value: 0 });
+    }
+    await liveA.until((online) => online.filter((p) => p.key === 'c:3').length === 3);
+
+    const note = (await uploadRaceVoice(a.token, 'fioles', 'c:3', new Uint8Array([1]))).body;
+    await liveB.raceVoiceUntil((item) => item.id === note.id);
+    await call(`/api/race-voices/${note.id}/read`, { method: 'POST', token: b.token });
+    await liveA.raceVoiceReadUntil((read) => read.id === note.id && read.readCount === 1);
+
+    liveC.send({ type: 'activity', game: 'fioles', key: 'c:4', state: '', value: 0 });
+    await liveA.raceVoiceGone(note.id);
+    expect((await call<RaceVoice[]>('/api/games/fioles/voices?key=c%3A3', { token: a.token })).body).toEqual([]);
+
+    liveA.ws.close(1000, 'bye');
+    liveB.ws.close(1000, 'bye');
+    liveC.ws.close(1000, 'bye');
+  });
+
+  it('garde une note de course tant qu’un destinataire présent ne l’a pas écoutée', async () => {
+    const a = await newPlayer();
+    const b = await newPlayer();
+    const c = await newPlayer();
+    const liveA = await connect(a.token);
+    const liveB = await connect(b.token);
+    const liveC = await connect(c.token);
+    await liveA.until((online) => [b, c].every((p) => online.some((item) => item.player === p.player.id)));
+    for (const live of [liveA, liveB, liveC]) {
+      live.send({ type: 'activity', game: 'fioles', key: 'c:5', state: '', value: 0 });
+    }
+    await liveA.until((online) => online.filter((p) => p.key === 'c:5').length === 3);
+
+    const note = (await uploadRaceVoice(a.token, 'fioles', 'c:5', new Uint8Array([1]))).body;
+    await liveC.raceVoiceUntil((item) => item.id === note.id);
+
+    liveB.ws.close(1000, 'bye');
+    await liveA.until((online) => !online.some((p) => p.player === b.player.id));
+    const forC = await call<RaceVoice[]>('/api/games/fioles/voices?key=c%3A5', { token: c.token });
+    expect(forC.body.map((item) => item.id)).toEqual([note.id]);
+
+    liveC.ws.close(1000, 'bye');
+    await liveA.raceVoiceGone(note.id);
+    expect((await call<RaceVoice[]>('/api/games/fioles/voices?key=c%3A5', { token: a.token })).body).toEqual([]);
+
+    liveA.ws.close(1000, 'bye');
   });
 
   it('refuse une note de course hors du niveau joué', async () => {

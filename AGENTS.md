@@ -50,7 +50,8 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   longueur et en débit.
 - Le salon accepte des notes vocales comme des messages normaux. Pendant une course, on peut aussi envoyer
   des messages vocaux courts : une note disparaît pour chaque destinataire après son écoute, reste visible
-  pour ceux qui ne l'ont pas encore écoutée, et expire au bout d'une heure.
+  pour ceux qui ne l'ont pas encore écoutée, et expire au bout d'une heure. Elle disparaît pour tous, auteur
+  compris, dès que chaque destinataire l'a écoutée ou a quitté le niveau.
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Score d'un jeu au tour par tour : le nombre de coups joués ; Annuler en retire un, Recommencer repart de zéro.
 - Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct.

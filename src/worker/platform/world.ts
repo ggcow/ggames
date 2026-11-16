@@ -321,7 +321,7 @@ export class World extends DurableObject<Env> {
       type: 'race_voice_read',
       read: { id, player: me.id, readCount: counts.readCount, total: counts.total },
     });
-    if (counts.total > 0 && counts.readCount >= counts.total) this.store.deleteRaceVoice(id);
+    this.settleRaceVoices(meta.game, meta.key);
     return ok(counts);
   }
 
@@ -435,15 +435,18 @@ export class World extends DurableObject<Env> {
         : idleAttachment(current.player, current.name, now);
     ws.serializeAttachment(next);
     this.broadcastPresence();
+    if (current.game !== next.game || current.key !== next.key) this.leftKey(current);
   }
 
   override async webSocketClose(ws: WebSocket, code: number, reason: string): Promise<void> {
     ws.close(code, reason);
     this.broadcastPresence(ws);
+    this.leftKey(readAttachment(ws), ws);
   }
 
   override async webSocketError(ws: WebSocket): Promise<void> {
     this.broadcastPresence(ws);
+    this.leftKey(readAttachment(ws), ws);
   }
 
   /* ---------- Interne ---------- */
@@ -540,6 +543,24 @@ export class World extends DurableObject<Env> {
     });
   }
 
+  /** Une connexion quitte le niveau qu'elle jouait : ses notes de course n'attendent peut-être plus personne. */
+  private leftKey(previous: Attachment, closing?: WebSocket): void {
+    if (previous.game !== null && previous.key !== null) this.settleRaceVoices(previous.game, previous.key, closing);
+  }
+
+  /**
+   * Supprime les notes de course que plus personne n'écoutera : chaque destinataire l'a écoutée ou n'est plus
+   * sur le niveau. L'auteur, lui, peut encore y être.
+   */
+  private settleRaceVoices(game: GameId, key: string, closing?: WebSocket): void {
+    const present = new Set(this.playersOn(game, key, closing));
+    for (const [id, unread] of this.store.unreadRaceVoiceRecipients(game, key)) {
+      if (unread.some((player) => present.has(player))) continue;
+      this.store.deleteRaceVoice(id);
+      this.broadcastToKey(game, key, { type: 'race_voice_gone', id });
+    }
+  }
+
   /** Joueurs connectés : une entrée par joueur, sa connexion la plus récemment active. */
   private presence(exclude?: WebSocket): Presence[] {
     const latest = new Map<string, Attachment>();
@@ -565,9 +586,10 @@ export class World extends DurableObject<Env> {
   }
 
   /** Joueurs connectés sur un niveau donné, sans doublon entre leurs appareils. */
-  private playersOn(game: GameId, key: string): PlayerId[] {
+  private playersOn(game: GameId, key: string, exclude?: WebSocket): PlayerId[] {
     const players = new Set<PlayerId>();
     for (const ws of this.ctx.getWebSockets()) {
+      if (ws === exclude) continue;
       const attachment = readAttachment(ws);
       if (attachment.game === game && attachment.key === key) players.add(attachment.player);
     }

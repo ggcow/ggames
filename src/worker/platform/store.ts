@@ -491,6 +491,28 @@ export class PlatformStore {
     return { readCount: row.read_count, total: row.total };
   }
 
+  /** Notes d'un niveau, chacune avec ses destinataires qui ne l'ont pas encore écoutée. */
+  unreadRaceVoiceRecipients(game: GameId, key: string): Map<string, PlayerId[]> {
+    const rows = this.sql
+      .exec<{ id: string; player: string | null }>(
+        `SELECT v.id, r.player
+         FROM race_voices v
+         LEFT JOIN race_voice_recipients r ON r.note = v.id
+           AND NOT EXISTS(SELECT 1 FROM race_voice_reads x WHERE x.note = v.id AND x.player = r.player)
+         WHERE v.game = ? AND v.key = ?`,
+        game,
+        key,
+      )
+      .toArray();
+    const unread = new Map<string, PlayerId[]>();
+    for (const row of rows) {
+      const players = unread.get(row.id) ?? [];
+      if (row.player !== null) players.push(row.player);
+      unread.set(row.id, players);
+    }
+    return unread;
+  }
+
   deleteRaceVoice(id: string): void {
     this.sql.exec('DELETE FROM race_voice_reads WHERE note = ?', id);
     this.sql.exec('DELETE FROM race_voice_recipients WHERE note = ?', id);

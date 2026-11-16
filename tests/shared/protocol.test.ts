@@ -157,6 +157,12 @@ describe('messages temps réel', () => {
       read,
     });
     expect(parseServerMessage(JSON.stringify({ type: 'race_voice_read', read: { ...read, total: -1 } }))).toBeNull();
+
+    expect(parseServerMessage(JSON.stringify({ type: 'race_voice_gone', id: 'abc123' }))).toEqual({
+      type: 'race_voice_gone',
+      id: 'abc123',
+    });
+    expect(parseServerMessage(JSON.stringify({ type: 'race_voice_gone', id: 12 }))).toBeNull();
   });
 });
 

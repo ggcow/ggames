@@ -312,11 +312,13 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
       total: read.total,
       read: note.read || read.player === ctx.me.id,
     };
-    if (updated.player === ctx.me.id && updated.total > 0 && updated.readCount >= updated.total) {
-      raceVoices = raceVoices.filter((item) => item.id !== read.id);
-    } else {
-      raceVoices = raceVoices.map((item) => (item.id === read.id ? updated : item));
-    }
+    raceVoices = raceVoices.map((item) => (item.id === read.id ? updated : item));
+    renderVoices();
+  };
+
+  const hideRaceVoice = (id: string) => {
+    if (!raceVoices.some((item) => item.id === id)) return;
+    raceVoices = raceVoices.filter((item) => item.id !== id);
     renderVoices();
   };
 
@@ -477,6 +479,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     onReaction: showReaction,
     onRaceVoice: showRaceVoice,
     onRaceVoiceRead: showRaceVoiceRead,
+    onRaceVoiceGone: hideRaceVoice,
     dispose: () => {
       disposed = true;
       recorder?.dispose();
