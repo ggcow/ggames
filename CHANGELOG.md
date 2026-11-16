@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.15](https://github.com/ggcow/ggames/compare/v0.5.14...v0.5.15) (2026-11-16)
+
+### Fonctionnalités
+
+* **client:** afficher le meilleur score court et les statistiques de niveau ([98a9319](https://github.com/ggcow/ggames/commit/98a9319657b45575065f7c78fcb4e7f906324ad2))
+
 ## [0.5.14](https://github.com/ggcow/ggames/compare/v0.5.13...v0.5.14) (2026-11-16)
 
 ### Fonctionnalités
