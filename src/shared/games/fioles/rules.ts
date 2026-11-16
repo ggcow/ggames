@@ -67,6 +67,47 @@ export function pour(board: Board, from: number, to: number): number {
   return moved;
 }
 
+/* ---------- Recherche d'une solution ---------- */
+
+/** Issue d'une recherche : solution trouvée, plateau prouvé impossible, ou recherche trop longue. */
+export type SearchResult = { kind: 'solved'; explored: number } | { kind: 'impossible' } | { kind: 'too-long' };
+
+// L'ordre des fioles ne change rien à la suite de la partie : deux plateaux qui ne diffèrent que par cet
+// ordre sont la même position, ce qui évite aussi de tourner en rond.
+const positionKey = (board: ReadonlyBoard): string => boardToString(board).split('.').sort().join('|');
+
+/**
+ * Recherche en profondeur avec mémorisation des positions vues, coups vers une même couleur d'abord.
+ * Explore au plus `limit` positions.
+ */
+export function searchSolution(start: ReadonlyBoard, limit: number): SearchResult {
+  const seen = new Set<string>([positionKey(start)]);
+  const stack: Board[] = [cloneBoard(start)];
+  let explored = 0;
+  for (let board = stack.pop(); board; board = stack.pop()) {
+    if (isSolved(board)) return { kind: 'solved', explored };
+    if (++explored > limit) return { kind: 'too-long' };
+    const towardEmpty: Board[] = [];
+    const towardColor: Board[] = [];
+    board.forEach((source, from) => {
+      if (source.length === 0 || isTubeDone(source)) return;
+      const uniform = source.every((color) => color === source[0]);
+      board.forEach((target, to) => {
+        if (from === to || !canPour(source, target)) return;
+        if (target.length === 0 && uniform) return; // déplacer une fiole unie vers une vide ne sert à rien
+        const next = cloneBoard(board);
+        pour(next, from, to);
+        const key = positionKey(next);
+        if (seen.has(key)) return;
+        seen.add(key);
+        (target.length > 0 ? towardColor : towardEmpty).push(next);
+      });
+    });
+    stack.push(...towardEmpty, ...towardColor); // pile : les coups vers une même couleur sont explorés en premier
+  }
+  return { kind: 'impossible' };
+}
+
 /* ---------- Encodage texte ---------- */
 
 /** Fioles -> texte, ex. "abca.bcab.cabc.." : une lettre par boule, '.' entre les fioles. */

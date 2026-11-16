@@ -218,11 +218,13 @@ describe('indicateur en direct', () => {
       [3, 2, 3, 2],
     ];
     expect(boardStatus(stuck, 3)).toBe('stuck');
+    // Des versements restent possibles, mais aucun ne mène à la victoire.
+    expect(boardStatus(parseBoard('cacb.bacc.bab.a') ?? [], 3)).toBe('stuck');
 
     const close = [[0, 0, 0, 0], [1, 1, 2, 2], [2, 2, 1, 1], []];
     expect(boardStatus(close, 2)).toBe('close');
 
-    const far = [[0, 0, 0, 1], [1, 1, 2, 2], [2, 2, 3, 3], [3, 3, 1, 1], []];
+    const far = [[0, 0, 0, 1], [1, 1, 2, 2], [2, 2, 3, 3], [3, 3, 1, 0], []];
     expect(boardStatus(far, 2)).toBe('far');
   });
 

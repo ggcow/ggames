@@ -56,7 +56,8 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - Avatar d'un joueur : un animal et une couleur dérivés de son identifiant (`avatar.ts`).
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Score d'un jeu au tour par tour : le nombre de coups joués ; Annuler en retire un, Recommencer repart de zéro.
-- Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct.
+- Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct. L'aperçu affiche
+  « Impasse » dès que le joueur ne peut plus gagner, même s'il lui reste des coups qui tournent en rond.
 - Interface en français et en chinois.
 - Les niveaux de chaque jeu sont générés une fois pour toutes et enregistrés dans le projet, jamais à la volée.
 - Premier jeu : **Fioles** (trier des couleurs dans des fioles), avec une campagne de 100 niveaux.

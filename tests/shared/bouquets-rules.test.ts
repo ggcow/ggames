@@ -8,6 +8,7 @@ import {
   flowerCount,
   frontOf,
   hasMove,
+  isDeadEnd,
   isPotEmpty,
   isSolved,
   liveState,
@@ -107,6 +108,46 @@ describe('état du plateau', () => {
     expect(hasMove([[[0, _, _]], [[1, 2, 3]]])).toBe(true);
     // Des places libres, mais seulement dans le pot qui porte la seule fleur.
     expect(hasMove([[[0, _, _]]])).toBe(false);
+  });
+
+  it('repère une partie perdue même quand des déplacements restent possibles', () => {
+    // Aucun coup du tout.
+    expect(
+      isDeadEnd([
+        { front: [0, 1, 2], hidden: 0 },
+        { front: [1, 2, 0], hidden: 1 },
+      ]),
+    ).toBe(true);
+    // Une place libre, aucune espèce visible par trois : les fleurs ne font que tourner.
+    expect(
+      isDeadEnd([
+        { front: [0, 1, 2], hidden: 1 },
+        { front: [3, 4, _], hidden: 1 },
+      ]),
+    ).toBe(true);
+    // Deux places libres ne suffisent pas à vider un devant de trois places.
+    expect(
+      isDeadEnd([
+        { front: [0, 1, _], hidden: 1 },
+        { front: [2, 3, _], hidden: 1 },
+      ]),
+    ).toBe(true);
+  });
+
+  it('laisse une chance tant qu’un bouquet ou une couche cachée reste atteignable', () => {
+    expect(
+      isDeadEnd([
+        { front: [0, 1, 0], hidden: 1 },
+        { front: [2, 0, _], hidden: 1 },
+      ]),
+    ).toBe(false);
+    expect(
+      isDeadEnd([
+        { front: [0, 1, _], hidden: 1 },
+        { front: [2, _, _], hidden: 0 },
+      ]),
+    ).toBe(false);
+    expect(isDeadEnd([{ front: [_, _, _], hidden: 0 }])).toBe(false);
   });
 
   it('donne le devant d’un pot', () => {

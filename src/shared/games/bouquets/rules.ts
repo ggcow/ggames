@@ -148,6 +148,26 @@ export interface LivePot {
 export const liveState = (board: ReadonlyBoard): string =>
   board.map((pot) => frontOf(pot).map(slotLetter).join('') + String(pot.length - 1)).join('.');
 
+/**
+ * Vrai si, d'après ce qu'on voit des pots, la partie ne peut plus être gagnée, même s'il reste des coups.
+ * Un coup ne fait que déplacer une fleur vers une place libre : le nombre de places libres ne change qu'en
+ * formant un bouquet ou en faisant avancer une couche. Avec au moins une place libre, trois fleurs pareilles
+ * visibles peuvent toujours être réunies ; avec trois places libres, un devant peut toujours être vidé pour
+ * faire avancer sa couche cachée. Sans l'un ou l'autre, les déplacements tournent en rond. Sans couche
+ * cachée, chaque espèce restante est visible par trois : seul le premier cas se présente.
+ */
+export function isDeadEnd(pots: readonly LivePot[]): boolean {
+  if (pots.every((pot) => pot.hidden === 0 && isLayerEmpty(pot.front))) return false;
+  if (!hasMove(pots.map((pot) => [pot.front]))) return true;
+  const counts = new Map<Flower, number>();
+  for (const pot of pots) {
+    for (const slot of pot.front) if (slot !== null) counts.set(slot, (counts.get(slot) ?? 0) + 1);
+  }
+  if ([...counts.values()].some((count) => count >= SLOTS)) return false;
+  const free = pots.reduce((n, pot) => n + pot.front.filter((slot) => slot === null).length, 0);
+  return free < SLOTS;
+}
+
 /** Texte -> pots vus de l'extérieur. `null` si ce n'est pas un état valide. */
 export function parseLiveState(text: string): LivePot[] | null {
   const parts = text.split('.');

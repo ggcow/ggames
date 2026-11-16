@@ -8,50 +8,22 @@ import {
   boardToString,
   CAP,
   type Color,
-  canPour,
-  cloneBoard,
-  isSolved,
   isTubeDone,
   MAX_COLORS,
-  pour,
   type ReadonlyBoard,
+  searchSolution,
 } from './rules.ts';
 
 /* ---------- Solveur ---------- */
 
-const stateKey = (board: ReadonlyBoard): string => boardToString(board).split('.').sort().join('|');
-
 /**
- * Effort du solveur : nombre d'états explorés (recherche en profondeur avec mémorisation) avant de trouver
- * une solution. `null` si le plateau est impossible ou demande plus de `limit` états.
- * Sert à vérifier qu'un plateau est faisable et à estimer sa difficulté.
+ * Effort du solveur : nombre d'états explorés avant de trouver une solution. `null` si le plateau est
+ * impossible ou demande plus de `limit` états. Sert à vérifier qu'un plateau est faisable et à estimer sa
+ * difficulté.
  */
 export function solverEffort(start: ReadonlyBoard, limit: number): number | null {
-  const seen = new Set<string>([stateKey(start)]);
-  const stack: Board[] = [cloneBoard(start)];
-  let explored = 0;
-  for (let board = stack.pop(); board; board = stack.pop()) {
-    if (isSolved(board)) return explored;
-    if (++explored > limit) return null;
-    const towardEmpty: Board[] = [];
-    const towardColor: Board[] = [];
-    board.forEach((source, from) => {
-      if (source.length === 0 || isTubeDone(source)) return;
-      const uniform = source.every((color) => color === source[0]);
-      board.forEach((target, to) => {
-        if (from === to || !canPour(source, target)) return;
-        if (target.length === 0 && uniform) return; // déplacer une fiole unie vers une vide ne sert à rien
-        const next = cloneBoard(board);
-        pour(next, from, to);
-        const key = stateKey(next);
-        if (seen.has(key)) return;
-        seen.add(key);
-        (target.length > 0 ? towardColor : towardEmpty).push(next);
-      });
-    });
-    stack.push(...towardEmpty, ...towardColor); // pile : les coups vers une même couleur sont explorés en premier
-  }
-  return null;
+  const result = searchSolution(start, limit);
+  return result.kind === 'solved' ? result.explored : null;
 }
 
 export const isSolvable = (start: ReadonlyBoard, limit: number): boolean => solverEffort(start, limit) !== null;

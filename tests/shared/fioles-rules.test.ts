@@ -7,6 +7,7 @@ import {
   isTubeDone,
   parseBoard,
   pour,
+  searchSolution,
 } from '../../src/shared/games/fioles/rules.ts';
 
 describe('versement', () => {
@@ -54,6 +55,23 @@ describe('état', () => {
   it('reconnaît un plateau résolu', () => {
     expect(isSolved([[0, 0, 0, 0], [], [1, 1, 1, 1]])).toBe(true);
     expect(isSolved([[0, 0, 0], [0], [1, 1, 1, 1]])).toBe(false);
+  });
+});
+
+describe('recherche d’une solution', () => {
+  it('trouve une solution quand il en existe une', () => {
+    expect(searchSolution(parseBoard('abab.baba..') ?? [], 300).kind).toBe('solved');
+    expect(searchSolution([[0, 0, 0, 0], []], 0)).toEqual({ kind: 'solved', explored: 0 });
+  });
+
+  it('prouve qu’un plateau est perdu même s’il reste des versements qui tournent en rond', () => {
+    const board = parseBoard('cacb.bacc.bab.a') ?? [];
+    expect(canPour(board[0] ?? [], board[2] ?? [])).toBe(true);
+    expect(searchSolution(board, 300)).toEqual({ kind: 'impossible' });
+  });
+
+  it('abandonne au-delà du nombre de positions permis', () => {
+    expect(searchSolution(parseBoard('abab.baba..') ?? [], 1)).toEqual({ kind: 'too-long' });
   });
 });
 

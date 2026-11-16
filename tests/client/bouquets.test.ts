@@ -381,6 +381,15 @@ describe('indicateur en direct', () => {
     expect(
       potsStatus(
         [
+          { front: [0, 1, 2], hidden: 1 },
+          { front: [3, 4, _], hidden: 1 },
+        ],
+        4,
+      ),
+    ).toBe('stuck');
+    expect(
+      potsStatus(
+        [
           { front: [0, 0, _], hidden: 0 },
           { front: [0, _, _], hidden: 0 },
         ],

@@ -21,6 +21,7 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
   tu as fait aussi bien ou mieux que lui : un replay ne révèle jamais une solution meilleure que la tienne.
 - Un replay montre le chemin final de la partie, sans les coups annulés.
 - Quand un ami joue, son plateau s'affiche en direct ; toucher son nom permet de jouer le même niveau.
+  « Impasse » s'affiche dès qu'il ne peut plus gagner, même s'il lui reste quelques coups.
 - Pendant une course, envoie des réactions rapides (emojis ou phrases) aux joueurs du même niveau. Elles
   disparaissent après quelques secondes et ne sont pas conservées.
 - Un salon global est intégré à l'accueil et à la page d'un jeu. Les 50 derniers messages sont conservés
