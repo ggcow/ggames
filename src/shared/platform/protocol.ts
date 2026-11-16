@@ -97,9 +97,15 @@ export interface GameState {
 /** Détail d'un joueur sur une clé. */
 export interface KeyProgress {
   key: string;
+  /** Parties jouées sur la clé, victoires comprises. */
   attempts: number;
-  wins: number;
+  /** Parties jouées jusqu'à la première victoire comprise ; null tant que la clé n'est pas gagnée. */
+  firstWinAttempts: number | null;
+  /** Durée de la partie qui a apporté la première victoire ; null tant que la clé n'est pas gagnée. */
+  firstWinDurationMs: number | null;
   best: RunSummary | null;
+  /** Rang de son meilleur score sur la clé, ex æquo compris (1, 1, 3) ; null sans victoire. */
+  rank: number | null;
   /**
    * Le demandeur peut regarder le replay de `best` : c'est sa propre fiche, ou il a fait aussi bien sur ce niveau.
    * Sinon, ce replay lui montrerait comment faire mieux.

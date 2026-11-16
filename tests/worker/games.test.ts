@@ -127,7 +127,17 @@ describe('parties', () => {
     expect(state.body.players.map((p) => p.id)).toEqual(expect.arrayContaining([me.player.id, other.player.id]));
 
     const detail = await call<PlayerGameDetail>(`/api/games/fioles/players/${me.player.id}`, { token: me.token });
-    expect(detail.body.keys).toEqual([{ key: 'c:1', attempts: 2, wins: 1, best: won.body.run, replayVisible: true }]);
+    expect(detail.body.keys).toEqual([
+      {
+        key: 'c:1',
+        attempts: 2,
+        firstWinAttempts: 2,
+        firstWinDurationMs: 9000,
+        best: won.body.run,
+        rank: 1,
+        replayVisible: true,
+      },
+    ]);
 
     expect((await call(`/api/runs/${abandoned.body.run.id}`, { token: me.token })).status).toBe(404);
     const run = await call<Run>(`/api/runs/${won.body.run.id}`, { token: me.token });
@@ -155,7 +165,15 @@ describe('parties', () => {
       token: me.token,
     });
     expect(shared.body.keys).toEqual([
-      { key: 'c:1', attempts: 1, wins: 1, best: friendWin.body.run, replayVisible: true },
+      {
+        key: 'c:1',
+        attempts: 1,
+        firstWinAttempts: 1,
+        firstWinDurationMs: 1,
+        best: friendWin.body.run,
+        rank: 1,
+        replayVisible: true,
+      },
     ]);
     const run = await call<Run>(`/api/runs/${friendWin.body.run.id}`, { token: me.token });
     expect(run.body).toEqual({ ...friendWin.body.run, replay: WIN_1 });
@@ -184,7 +202,15 @@ describe('parties', () => {
       replay: encodeActions(detour(LEVEL_1, WIN_1.length / 2)),
     });
     expect((await detail()).body.keys).toEqual([
-      { key: 'c:1', attempts: 1, wins: 1, best: friendWin.body.run, replayVisible: false },
+      {
+        key: 'c:1',
+        attempts: 1,
+        firstWinAttempts: 1,
+        firstWinDurationMs: 1,
+        best: friendWin.body.run,
+        rank: 1,
+        replayVisible: false,
+      },
     ]);
     expect((await watch()).status).toBe(404);
 
@@ -247,7 +273,17 @@ describe('parties', () => {
     expect(lost.status).toBe(200);
 
     const detail = await call<PlayerGameDetail>(`/api/games/fioles/players/${me.player.id}`, { token: me.token });
-    expect(detail.body.keys).toEqual([{ key: 'c:1', attempts: 1, wins: 0, best: null, replayVisible: true }]);
+    expect(detail.body.keys).toEqual([
+      {
+        key: 'c:1',
+        attempts: 1,
+        firstWinAttempts: null,
+        firstWinDurationMs: null,
+        best: null,
+        rank: null,
+        replayVisible: true,
+      },
+    ]);
   });
 
   it('classe les joueurs par meilleur score et ne garde que le meilleur de chacun', async () => {
@@ -259,6 +295,32 @@ describe('parties', () => {
     const best = await submit(a.token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 });
     expect(best.body.records.map((r) => r.player)).toEqual([b.player.id, a.player.id]);
     expect(best.body.records.every((r) => r.value === WIN_1.length / 2)).toBe(true);
+  });
+
+  it('donne les essais et le temps de la première victoire, puis le rang ex æquo du meilleur score', async () => {
+    const a = await newPlayer();
+    const b = await newPlayer();
+    const c = await newPlayer();
+    const slower = encodeActions(detour(LEVEL_1, WIN_1.length / 2));
+
+    await submit(a.token, { key: 'c:1', status: 'lost', durationMs: 500, replay: WIN_1.slice(0, 2) });
+    await submit(a.token, { key: 'c:1', status: 'won', durationMs: 4000, replay: slower });
+    await submit(a.token, { key: 'c:1', status: 'won', durationMs: 2000, replay: WIN_1 });
+    await submit(b.token, { key: 'c:1', status: 'won', durationMs: 1000, replay: WIN_1 });
+    await submit(c.token, { key: 'c:1', status: 'won', durationMs: 1000, replay: slower });
+
+    const detailOf = async (token: string, player: string) =>
+      (await call<PlayerGameDetail>(`/api/games/fioles/players/${player}`, { token })).body.keys[0];
+
+    // La première victoire est la plus lente et arrive au deuxième essai ; son meilleur score est le 9 ex æquo.
+    expect(await detailOf(a.token, a.player.id)).toMatchObject({
+      attempts: 3,
+      firstWinAttempts: 2,
+      firstWinDurationMs: 4000,
+      rank: 1,
+    });
+    expect((await detailOf(b.token, b.player.id))?.rank).toBe(1);
+    expect((await detailOf(c.token, c.player.id))?.rank).toBe(3);
   });
 });
 

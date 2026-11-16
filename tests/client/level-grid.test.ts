@@ -41,7 +41,7 @@ describe('grille', () => {
         key: `c:${level}`,
         label: String(level),
         status: 'done',
-        best: `${level * 10} coups`,
+        best: String(level * 10),
         perfect: level === 2,
       };
     }
@@ -69,7 +69,7 @@ describe('grille', () => {
     const cells = [...grid.querySelectorAll<HTMLButtonElement>('.level')];
     expect(cells).toHaveLength(20);
     expect(cells[0]?.classList.contains('done')).toBe(true);
-    expect(cells[0]?.textContent).toContain('10 coups');
+    expect(cells[0]?.textContent).toContain('10');
     expect(cells[2]?.classList.contains('open')).toBe(true);
     expect(cells[3]?.disabled).toBe(true);
     expect(cells[3]?.textContent).toBe('🔒');
@@ -80,7 +80,7 @@ describe('grille', () => {
     const cells = [...render().querySelectorAll<HTMLButtonElement>('.level')];
     expect(cells[0]?.classList.contains('perfect')).toBe(false);
     expect(cells[1]?.classList.contains('perfect')).toBe(true);
-    expect(cells[1]?.querySelector('.level-best')?.textContent).toBe('💎20 coups');
+    expect(cells[1]?.querySelector('.level-best')?.textContent).toBe('💎 20');
   });
 
   it('lance un niveau jouable et ignore un niveau verrouillé', () => {

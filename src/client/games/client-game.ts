@@ -26,7 +26,7 @@ export interface LevelTile {
   /** Texte court affiché dans la case, ex. « 12 ». */
   label: string;
   status: LevelStatus;
-  /** Meilleur score du joueur, déjà formaté, ou null s'il n'a pas gagné ce niveau. */
+  /** Meilleur score du joueur en très court pour la case (le nombre seul), ou null s'il n'a pas gagné le niveau. */
   best: string | null;
   /** Vrai si ce meilleur score est le meilleur possible sur le niveau. */
   perfect: boolean;

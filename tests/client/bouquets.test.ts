@@ -60,7 +60,7 @@ describe('jeu', () => {
       key: 'c:1',
       label: '1',
       status: 'done',
-      best: '12 coups',
+      best: '12',
       perfect: false,
     });
     expect(bouquetsClient.levelTile(3, v).status).toBe('locked');

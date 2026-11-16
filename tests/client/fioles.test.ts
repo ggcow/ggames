@@ -61,7 +61,7 @@ describe('niveaux', () => {
       key: 'c:1',
       label: '1',
       status: 'done',
-      best: '9 coups',
+      best: '9',
       perfect: true,
     });
     expect(fiolesClient.levelTile(3, v)).toEqual({

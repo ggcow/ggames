@@ -18,12 +18,13 @@ export const campaignProgress = (view: GameView, player: PlayerId): LevelProgres
   total: MAX_LEVEL,
 });
 
-/** Case d'un niveau : réussi (avec le meilleur score formaté), jouable, ou verrouillé. */
+/** Case d'un niveau : réussi (avec le meilleur score en très court), jouable, ou verrouillé. */
 export function campaignTile(
   level: number,
   view: GameView,
   formatValue: ((value: number, lang: Lang) => string) | null,
   bestPossible: (key: string) => number | null,
+  formatBest: (value: number) => string,
 ): LevelTile {
   const key = campaignKey(level);
   const best = view.state.records[key]?.find((r) => r.player === view.me)?.value;
@@ -33,19 +34,20 @@ export function campaignTile(
     key,
     label: String(level),
     status,
-    best: best !== undefined && formatValue ? formatValue(best, view.lang) : null,
+    best: best !== undefined && formatValue ? formatBest(best) : null,
     perfect: best !== undefined && best === bestPossible(key),
   };
 }
 
 /**
- * Les méthodes de `ClientGame` liées à la campagne, à partir du libellé d'un niveau, du format des scores et
- * du meilleur score possible de chaque clé (`GameDefinition.bestPossible`).
+ * Les méthodes de `ClientGame` liées à la campagne, à partir du libellé d'un niveau, du format des scores, du
+ * meilleur score possible de chaque clé (`GameDefinition.bestPossible`) et du format très court d'une case.
  */
 export function campaignMethods(
   levelLabel: (level: number, lang: Lang) => string,
   formatValue: ((value: number, lang: Lang) => string) | null,
   bestPossible: (key: string) => number | null,
+  formatBest: (value: number) => string,
 ): Pick<ClientGame, 'keyLabel' | 'formatValue' | 'levelProgress' | 'levelOf' | 'levelTile' | 'nextKey'> {
   return {
     keyLabel(key, lang) {
@@ -55,7 +57,7 @@ export function campaignMethods(
     formatValue,
     levelProgress: campaignProgress,
     levelOf: parseCampaignKey,
-    levelTile: (level, view) => campaignTile(level, view, formatValue, bestPossible),
+    levelTile: (level, view) => campaignTile(level, view, formatValue, bestPossible, formatBest),
     nextKey(key) {
       const level = parseCampaignKey(key);
       return level === null || level >= MAX_LEVEL ? null : campaignKey(level + 1);

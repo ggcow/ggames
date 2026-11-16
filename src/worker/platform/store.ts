@@ -18,8 +18,8 @@ import type {
   VoiceNote,
 } from '../../shared/platform/protocol.ts';
 
-/** Avancement d'un joueur sur une clé, avant de savoir qui le regarde. */
-export type StoredKeyProgress = Omit<KeyProgress, 'replayVisible'>;
+/** Avancement d'un joueur sur une clé, avant de savoir qui le regarde et son rang. */
+export type StoredKeyProgress = Omit<KeyProgress, 'replayVisible' | 'rank'>;
 
 type PlayerRow = { id: string; name: string; created: number; avatar: string | null };
 type AccountRow = PlayerRow & { login: string };
@@ -48,7 +48,13 @@ type RunRow = {
 type RunWithReplayRow = RunRow & { replay: string };
 type ProgressRow = { player: string; completed: number; runs: number; play_time: number; last_played: number };
 type RecordRow = { key: string; player: string; value: number; run: string };
-type KeyRow = { key: string; attempts: number; wins: number; best: string | null };
+type KeyRow = {
+  key: string;
+  attempts: number;
+  first_win_attempts: number;
+  first_win_duration: number | null;
+  best: string | null;
+};
 type ChatRow = { id: string; player: string; name: string; text: string; created: number };
 type VoiceRow = { id: string; player: string; name: string; duration_ms: number; mime: string; created: number };
 type VoiceDataRow = { mime: string; data: ArrayBuffer };
@@ -328,7 +334,15 @@ export class PlatformStore {
     const dir = sqlOrder(order);
     const rows = this.sql
       .exec<KeyRow>(
-        `SELECT key, COUNT(*) AS attempts, SUM(status = 'won') AS wins,
+        `SELECT key, COUNT(*) AS attempts,
+                (SELECT COUNT(*) FROM runs b
+                   WHERE b.game = r.game AND b.player = r.player AND b.key = r.key
+                     AND b.rowid <= (SELECT c.rowid FROM runs c
+                                       WHERE c.game = r.game AND c.player = r.player AND c.key = r.key
+                                         AND c.status = 'won' ORDER BY c.rowid LIMIT 1)) AS first_win_attempts,
+                (SELECT c.duration_ms FROM runs c
+                   WHERE c.game = r.game AND c.player = r.player AND c.key = r.key AND c.status = 'won'
+                   ORDER BY c.rowid LIMIT 1) AS first_win_duration,
                 (SELECT id FROM runs b WHERE b.game = r.game AND b.player = r.player AND b.key = r.key
                    AND b.status = 'won' ORDER BY b.value ${dir}, b.ended LIMIT 1) AS best
          FROM runs r WHERE game = ? AND player = ? GROUP BY key`,
@@ -339,7 +353,8 @@ export class PlatformStore {
     return rows.map((row) => ({
       key: row.key,
       attempts: row.attempts,
-      wins: row.wins,
+      firstWinAttempts: row.first_win_duration === null ? null : row.first_win_attempts,
+      firstWinDurationMs: row.first_win_duration,
       best: row.best ? this.findRunSummary(row.best) : null,
     }));
   }

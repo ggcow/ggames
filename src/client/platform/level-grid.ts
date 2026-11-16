@@ -151,7 +151,7 @@ function renderTile(options: LevelGridOptions, level: number): HTMLElement {
     noTranslate(h('span', { class: 'level-number' }, state === 'locked' ? '🔒' : tile.label)),
     state === 'join' ? h('span', { class: 'level-best' }, t.join) : null,
     tile.status === 'done'
-      ? noTranslate(h('span', { class: 'level-best' }, tile.perfect ? '💎' : null, tile.best ?? '✓'))
+      ? noTranslate(h('span', { class: 'level-best' }, tile.perfect ? '💎 ' : null, tile.best ?? '✓'))
       : null,
     tile.status === 'open' ? h('span', { class: 'level-best' }, t.play) : null,
     here.length > 0

@@ -1048,8 +1048,9 @@ input[type="range"] {
   line-height: 1;
 }
 .level-best {
-  font-size: 10px;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
   white-space: nowrap;
 }
 .level.done {
@@ -1204,6 +1205,11 @@ input[type="range"] {
 .list-text small {
   color: var(--muted);
   font-weight: 600;
+}
+/* Badges d'une ligne de niveau : diamant du score parfait et médaille du podium. */
+.key-badge {
+  margin-left: 4px;
+  font-size: 15px;
 }
 .rank-score {
   display: flex;

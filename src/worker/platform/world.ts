@@ -33,6 +33,7 @@ import {
   type SubmitRunResponse,
   type VoiceNote,
 } from '../../shared/platform/protocol.ts';
+import { competitionRanks } from '../../shared/platform/ranking.ts';
 import { createId, createToken, hashPassword, sha256, verifyPassword } from './crypto.ts';
 import { fail, ok, type Result } from './result.ts';
 import { migrate } from './schema.ts';
@@ -361,21 +362,34 @@ export class World extends DurableObject<Env> {
     const keys = this.store
       .keyProgress(game.id, player.id, game.scoreOrder)
       .sort((a, b) => game.compareKeys(a.key, b.key));
+    const ranks = this.keyRanks(game, player.id);
+    const entries = keys.map((key) => ({ ...key, rank: ranks.get(key.key) ?? null }));
     const progress = this.store.progress(game.id, player.id)[0] ?? null;
     if (player.id === me.id)
-      return ok({ player, progress, keys: keys.map((key) => ({ ...key, replayVisible: true })) });
+      return ok({ player, progress, keys: entries.map((key) => ({ ...key, replayVisible: true })) });
     const mine = this.store.bestValues(game.id, me.id, game.scoreOrder);
     return ok({
       player,
       progress,
       // La fiche d'un ami ne liste que les niveaux réussis par les deux : les autres replays révéleraient
       // une solution, ou n'existent pas.
-      keys: keys.flatMap((key) => {
+      keys: entries.flatMap((key) => {
         const own = mine.get(key.key);
         if (!key.best || own === undefined) return [];
         return [{ ...key, replayVisible: isAtLeastAsGood(own, key.best.value, game.scoreOrder) }];
       }),
     });
+  }
+
+  /** Rang du meilleur score du joueur sur chaque clé, ex æquo compris (1, 1, 3). */
+  private keyRanks(game: GameDefinition, player: PlayerId): Map<string, number> {
+    const ranks = new Map<string, number>();
+    for (const [key, entries] of Object.entries(this.store.records(game.id, game.scoreOrder))) {
+      const index = entries.findIndex((entry) => entry.player === player);
+      const rank = index === -1 ? undefined : competitionRanks(entries, (a, b) => a.value === b.value)[index];
+      if (rank !== undefined) ranks.set(key, rank);
+    }
+    return ranks;
   }
 
   /**
