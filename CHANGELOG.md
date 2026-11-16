@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.8](https://github.com/ggcow/ggames/compare/v0.5.7...v0.5.8) (2026-11-16)
+
+### Fonctionnalités
+
+* **client:** occuper toute la fenêtre sur un écran large ([ad39e82](https://github.com/ggcow/ggames/commit/ad39e821699d2c36159d6103cb33caebccb1742d))
+
 ## [0.5.7](https://github.com/ggcow/ggames/compare/v0.5.6...v0.5.7) (2026-11-16)
 
 ### Fonctionnalités
