@@ -17,6 +17,7 @@ describe('catalogue des réactions', () => {
   it('retrouve une réaction par son code, sinon null', () => {
     expect(findReaction('thumbs')).toEqual({ kind: 'emoji', code: 'thumbs', emoji: '👍' });
     expect(findReaction('nice')).toEqual({ kind: 'text', code: 'nice' });
+    expect(findReaction('middle')).toEqual({ kind: 'emoji', code: 'middle', emoji: '🖕' });
     expect(findReaction('inconnu')).toBeNull();
     expect(isReactionCode('fire')).toBe(true);
     expect(isReactionCode('inconnu')).toBe(false);

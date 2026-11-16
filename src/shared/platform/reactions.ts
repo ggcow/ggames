@@ -8,6 +8,7 @@ export const REACTIONS = [
   { kind: 'emoji', code: 'wow', emoji: '😮' },
   { kind: 'emoji', code: 'party', emoji: '🎉' },
   { kind: 'emoji', code: 'sweat', emoji: '😅' },
+  { kind: 'emoji', code: 'middle', emoji: '🖕' },
   { kind: 'text', code: 'nice' },
   { kind: 'text', code: 'wait' },
   { kind: 'text', code: 'almost' },
