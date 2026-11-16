@@ -14,7 +14,7 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
   const { t, api } = ctx;
   let summaries: GameSummary[] | null = null;
   const onlineHost = h('div');
-  const screen = chatScreen(ctx);
+  const screen = chatScreen(ctx, 1);
 
   const renderPresence = () => {
     replaceChildren(

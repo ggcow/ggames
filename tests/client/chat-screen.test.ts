@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiClient } from '../../src/client/platform/api.ts';
 import { ChatStore } from '../../src/client/platform/chat.ts';
-import { chatScreen } from '../../src/client/platform/chat-panel.ts';
+import { chatScreen, panelColumn } from '../../src/client/platform/chat-panel.ts';
 import type { AppContext } from '../../src/client/platform/context.ts';
 import { LiveClient } from '../../src/client/platform/live.ts';
 import { createLocalStore } from '../../src/client/platform/storage.ts';
@@ -32,11 +32,12 @@ function context(): AppContext {
 describe('écran avec salon', () => {
   it('place le contenu puis le salon dans une même mise en page', () => {
     const host = document.createElement('div');
-    const screen = chatScreen(context());
+    const screen = chatScreen(context(), 2);
     screen.content.append(document.createElement('p'));
     screen.show(host);
     const layout = host.firstElementChild;
     expect(layout?.classList.contains('with-chat')).toBe(true);
+    expect(layout?.getAttribute('data-columns')).toBe('2');
     expect(layout?.children[0]).toBe(screen.content);
     expect(layout?.children[1]?.classList.contains('chat-section')).toBe(true);
     expect(layout?.children[1]?.querySelector('.section-title')?.textContent).toBe(PLATFORM_STRINGS.fr.chat);
@@ -45,7 +46,7 @@ describe('écran avec salon', () => {
 
   it('ne remonte pas le salon quand l’écran se redessine, sauf s’il a été retiré', () => {
     const host = document.createElement('div');
-    const screen = chatScreen(context());
+    const screen = chatScreen(context(), 2);
     screen.show(host);
     const input = host.querySelector<HTMLInputElement>('.chat-input');
     if (!input) throw new Error('saisie du salon attendue');
@@ -58,5 +59,15 @@ describe('écran avec salon', () => {
     screen.show(host);
     expect(host.querySelector('.with-chat')).not.toBeNull();
     screen.dispose();
+  });
+});
+
+describe('colonne de panneaux', () => {
+  it('garde ses panneaux dans l’ordre, l’un sous l’autre', () => {
+    const first = document.createElement('section');
+    const second = document.createElement('section');
+    const column = panelColumn(first, second, null);
+    expect(column.classList.contains('panel-column')).toBe(true);
+    expect([...column.children]).toEqual([first, second]);
   });
 });
