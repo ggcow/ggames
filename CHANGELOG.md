@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.5](https://github.com/ggcow/ggames/compare/v0.5.4...v0.5.5) (2026-11-16)
+
+### Fonctionnalités
+
+* **platform:** ajouter le doigt d'honneur aux réactions de course ([dc5175e](https://github.com/ggcow/ggames/commit/dc5175e50873e97bd4b0190b447cf509fd91d1e7))
+* **platform:** retirer une note de course de son écran d'une croix ([47608a8](https://github.com/ggcow/ggames/commit/47608a86cc2ecf378ad7ff0b62ff37401a8013d7))
+* **worker:** faire expirer les notes de course au bout de 30 secondes ([6324c92](https://github.com/ggcow/ggames/commit/6324c92841c37c3208dbf484f9ff40d2b0200e3c))
+
+### Corrections
+
+* **platform:** agrandir l'animal dans la pastille d'avatar ([484e6e4](https://github.com/ggcow/ggames/commit/484e6e4f56ef5cb0d609cd953d737f0c98f8b204))
+
 ## [0.5.4](https://github.com/ggcow/ggames/compare/v0.5.3...v0.5.4) (2026-11-16)
 
 ### Fonctionnalités
