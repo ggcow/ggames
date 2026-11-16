@@ -63,6 +63,8 @@ describe('niveaux', () => {
       status: 'done',
       best: '9',
       perfect: true,
+      holders: [{ player: ME, name: 'Moi' }],
+      recordPerfect: true,
     });
     expect(fiolesClient.levelTile(3, v)).toEqual({
       key: 'c:3',
@@ -70,6 +72,8 @@ describe('niveaux', () => {
       status: 'open',
       best: null,
       perfect: false,
+      holders: [],
+      recordPerfect: false,
     });
     expect(fiolesClient.levelTile(4, v)).toEqual({
       key: 'c:4',
@@ -77,8 +81,34 @@ describe('niveaux', () => {
       status: 'locked',
       best: null,
       perfect: false,
+      holders: [],
+      recordPerfect: false,
     });
     expect(fiolesClient.levelTile(8, v).status).toBe('locked');
+  });
+
+  it('donne les détenteurs du record ex æquo et le diamant du record parfait', () => {
+    const tied = view({
+      records: {
+        'c:1': [
+          { player: ME, value: 9, run: 'r1' },
+          { player: OTHER, value: 9, run: 'r2' },
+        ],
+      },
+    });
+    expect(fiolesClient.levelTile(1, tied).holders).toEqual([
+      { player: ME, name: 'Moi' },
+      { player: OTHER, name: 'Ami' },
+    ]);
+    expect(fiolesClient.levelTile(1, tied).recordPerfect).toBe(true);
+  });
+
+  it('ne marque pas parfait un record moins bon que le meilleur score possible', () => {
+    const worse = view({ records: { 'c:1': [{ player: OTHER, value: 12, run: 'r9' }] } });
+    const tile = fiolesClient.levelTile(1, worse);
+    expect(tile.perfect).toBe(false);
+    expect(tile.recordPerfect).toBe(false);
+    expect(tile.holders).toEqual([{ player: OTHER, name: 'Ami' }]);
   });
 
   it('nomme les clés et propose le niveau suivant', () => {

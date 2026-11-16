@@ -20,6 +20,12 @@ export type LevelStatus = 'locked' | 'open' | 'done';
 /** Situation d'une partie en cours, pour l'indicateur compact d'un aperçu. */
 export type LiveStatus = 'start' | 'far' | 'close' | 'stuck';
 
+/** Détenteur du record d'un niveau, pour la case de la grille. */
+export interface LevelHolder {
+  player: PlayerId;
+  name: string;
+}
+
 /** Case d'un niveau dans la grille. */
 export interface LevelTile {
   key: string;
@@ -30,6 +36,10 @@ export interface LevelTile {
   best: string | null;
   /** Vrai si ce meilleur score est le meilleur possible sur le niveau. */
   perfect: boolean;
+  /** Détenteurs du record du niveau, ex æquo compris ; vide tant que personne ne l'a gagné. */
+  holders: readonly LevelHolder[];
+  /** Vrai si le record du niveau vaut le meilleur score possible. */
+  recordPerfect: boolean;
 }
 
 /** Avancement d'un joueur dans les niveaux d'un jeu. */

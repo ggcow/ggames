@@ -30,12 +30,21 @@ export function campaignTile(
   const best = view.state.records[key]?.find((r) => r.player === view.me)?.value;
   const unlocked = campaignIsUnlocked(key, wonKeys(view.state, view.me));
   const status = best !== undefined ? 'done' : unlocked ? 'open' : 'locked';
+  const records = view.state.records[key] ?? [];
+  const record = records[0];
+  const possible = bestPossible(key);
   return {
     key,
     label: String(level),
     status,
     best: best !== undefined && formatValue ? formatBest(best) : null,
-    perfect: best !== undefined && best === bestPossible(key),
+    perfect: best !== undefined && best === possible,
+    holders: record
+      ? records
+          .filter((entry) => entry.value === record.value)
+          .map((entry) => ({ player: entry.player, name: view.playerName(entry.player) }))
+      : [],
+    recordPerfect: record !== undefined && record.value === possible,
   };
 }
 

@@ -17,11 +17,12 @@ export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame
 
   const openRun = (run: RunSummary) => ctx.navigate({ name: 'run', run: run.id });
 
-  /** Essais jusqu'à la première victoire et au total, puis temps de cette première victoire. */
+  /** Essais au total, puis la première victoire : son temps et le nombre d'essais qu'il a fallu. */
   const keyStats = (key: KeyProgress): string => {
-    if (key.firstWinAttempts === null || key.firstWinDurationMs === null) return `${t.attempts} ${key.attempts}`;
+    const total = `${t.attempts} ${key.attempts}`;
+    if (key.firstWinAttempts === null || key.firstWinDurationMs === null) return total;
     const time = formatDuration(key.firstWinDurationMs, ctx.lang);
-    return `${t.attemptsDetail(key.firstWinAttempts, key.attempts)} · ${t.firstWinTime(time)}`;
+    return `${total} · ${t.firstWin(time, key.firstWinAttempts)}`;
   };
 
   /** Score parfait et place au podium du niveau, en badges discrets. */

@@ -37,9 +37,9 @@ const detail: PlayerGameDetail = {
     },
     {
       key: 'c:2',
-      attempts: 12,
-      firstWinAttempts: 4,
-      firstWinDurationMs: 5000,
+      attempts: 2,
+      firstWinAttempts: 1,
+      firstWinDurationMs: 140_000,
       best: run('c:2', 999, 'r2'),
       rank: 4,
       replayVisible: true,
@@ -72,18 +72,19 @@ describe('fiche d’un joueur', () => {
     await vi.waitFor(() => expect(host.querySelectorAll('.list-row')).toHaveLength(2));
 
     const [first, second] = [...host.querySelectorAll<HTMLElement>('.list-row')];
-    expect(first?.querySelector('small')?.textContent).toBe('Essais 3 + 12 · 1re victoire en 9 s');
+    expect(first?.querySelector('small')?.textContent).toBe('Essais 12 · 1re victoire - 9 s - 3 essais');
     expect(first?.querySelector('strong')?.textContent).toContain('💎');
     expect(first?.querySelector('strong')?.textContent).toContain('🥇');
     expect(first?.querySelector<HTMLElement>('.key-badge')?.getAttribute('title')).toBe(
       PLATFORM_STRINGS.fr.perfectScore,
     );
 
-    // Quatrième du niveau : pas de médaille.
+    // Quatrième du niveau : pas de médaille. Victoire au premier essai : « 1 essai » au singulier.
+    expect(second?.querySelector('small')?.textContent).toBe('Essais 2 · 1re victoire - 2 min 20 s - 1 essai');
     expect(second?.querySelector('strong')?.textContent).not.toContain('🥇');
     expect(second?.querySelectorAll('.key-badge')).toHaveLength(0);
 
     expect(host.textContent).not.toContain('Victoires');
-    expect(host.textContent).toContain('Essais 3 + 12');
+    expect(host.textContent).toContain('Essais 12');
   });
 });

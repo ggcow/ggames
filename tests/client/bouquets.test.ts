@@ -62,6 +62,8 @@ describe('jeu', () => {
       status: 'done',
       best: '12',
       perfect: false,
+      holders: [{ player: ME, name: 'Moi' }],
+      recordPerfect: false,
     });
     expect(bouquetsClient.levelTile(3, v).status).toBe('locked');
     expect(bouquetsClient.keyLabel('c:5', 'fr')).toBe('Niveau 5');

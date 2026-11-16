@@ -43,10 +43,29 @@ describe('grille', () => {
         status: 'done',
         best: String(level * 10),
         perfect: level === 2,
+        holders: [{ player: 'def456', name: 'Tom' }],
+        recordPerfect: level === 2,
       };
     }
-    if (level === 3) return { key: 'c:3', label: '3', status: 'open', best: null, perfect: false };
-    return { key: `c:${level}`, label: String(level), status: 'locked', best: null, perfect: false };
+    if (level === 3)
+      return {
+        key: 'c:3',
+        label: '3',
+        status: 'open',
+        best: null,
+        perfect: false,
+        holders: [],
+        recordPerfect: false,
+      };
+    return {
+      key: `c:${level}`,
+      label: String(level),
+      status: 'locked',
+      best: null,
+      perfect: false,
+      holders: [],
+      recordPerfect: false,
+    };
   };
   const positions: PlayerPosition[] = [
     { player: 'abc123', name: 'léa', level: 2, live: true, me: true },
@@ -83,6 +102,38 @@ describe('grille', () => {
     expect(cells[1]?.querySelector('.level-best')?.textContent).toBe('💎 20');
   });
 
+  it('montre les détenteurs du record, ex æquo, avec leur petit diamant', () => {
+    const grid = renderLevelGrid({
+      progress: { unlocked: 2, total: 9999 },
+      page: 0,
+      tile: (level) => ({
+        key: `c:${level}`,
+        label: String(level),
+        status: level === 1 ? 'done' : 'open',
+        best: level === 1 ? '12' : null,
+        perfect: false,
+        holders:
+          level === 1
+            ? [
+                { player: 'aaa111', name: 'Léa' },
+                { player: 'bbb222', name: 'Tom' },
+                { player: 'ccc333', name: 'Zoé' },
+              ]
+            : [],
+        recordPerfect: level === 1,
+      }),
+      positions: [],
+      t: PLATFORM_STRINGS.fr,
+      onPage: vi.fn(),
+      onPlay: vi.fn(),
+    });
+    const cell = grid.querySelectorAll<HTMLElement>('.level')[0];
+    expect(cell?.querySelectorAll('.record-holder')).toHaveLength(2);
+    expect(cell?.querySelectorAll('.record-holder.perfect')).toHaveLength(2);
+    expect(cell?.querySelector('.level-more')?.textContent).toBe('+1');
+    expect(cell?.querySelector('.level-record')?.getAttribute('title')).toBe('Record : Léa, Tom, Zoé Score parfait');
+  });
+
   it('lance un niveau jouable et ignore un niveau verrouillé', () => {
     const onPlay = vi.fn();
     const cells = [...render(0, vi.fn(), onPlay).querySelectorAll<HTMLButtonElement>('.level')];
@@ -93,10 +144,10 @@ describe('grille', () => {
 
   it('place chaque joueur sur son niveau, en direct ou non', () => {
     const cells = render().querySelectorAll('.level');
-    expect(cells[1]?.querySelector('.avatar.live')?.getAttribute('aria-label')).toBe('léa — en jeu');
-    expect(cells[2]?.querySelector('.avatar')?.getAttribute('aria-label')).toMatch(/^Tom — /);
-    expect(cells[2]?.querySelector('.avatar.live')).toBeNull();
-    expect(cells[0]?.querySelector('.avatar')).toBeNull();
+    expect(cells[1]?.querySelector('.level-live .avatar.live')?.getAttribute('aria-label')).toBe('léa — en jeu');
+    expect(cells[2]?.querySelector('.level-live .avatar')?.getAttribute('aria-label')).toMatch(/^Tom — /);
+    expect(cells[2]?.querySelector('.level-live .avatar.live')).toBeNull();
+    expect(cells[0]?.querySelector('.level-live .avatar')).toBeNull();
   });
 
   it('propose de rejoindre un niveau verrouillé qu’un ami joue en direct', () => {
@@ -163,7 +214,7 @@ describe('grille', () => {
       onPage: vi.fn(),
       onPlay: vi.fn(),
     });
-    const markers = grid.querySelectorAll('.level')[0]?.querySelectorAll('.avatar');
+    const markers = grid.querySelectorAll('.level')[0]?.querySelectorAll('.level-live .avatar');
     expect(markers).toHaveLength(4);
     expect(markers?.[3]?.textContent).toBe('+2');
   });
@@ -231,6 +282,8 @@ describe('grille sans score', () => {
         status: level === 1 ? 'done' : 'open',
         best: null,
         perfect: false,
+        holders: [],
+        recordPerfect: false,
       }),
       positions: [],
       t: PLATFORM_STRINGS.fr,
@@ -250,6 +303,8 @@ describe('grille sans score', () => {
         status: level === 1 ? 'done' : 'open',
         best: '7',
         perfect: false,
+        holders: [],
+        recordPerfect: false,
       }),
       positions: [],
       t: PLATFORM_STRINGS.fr,
