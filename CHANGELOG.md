@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.12](https://github.com/ggcow/ggames/compare/v0.5.11...v0.5.12) (2026-11-16)
+
+### Fonctionnalités
+
+* **client:** placer En ligne et Joueurs à gauche de la grille sur un écran large ([838ad0e](https://github.com/ggcow/ggames/commit/838ad0ee24e8ee3db8da19169d3306c25d7cc7b6))
+
 ## [0.5.11](https://github.com/ggcow/ggames/compare/v0.5.10...v0.5.11) (2026-11-16)
 
 ### Corrections
