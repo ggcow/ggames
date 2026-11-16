@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.11](https://github.com/ggcow/ggames/compare/v0.5.10...v0.5.11) (2026-11-16)
+
+### Corrections
+
+* **client:** garder « En ligne » sous le premier panneau sur un écran large ([7352b81](https://github.com/ggcow/ggames/commit/7352b81a83df3c4221897e13dcb65c2e216eac8b))
+
 ## [0.5.10](https://github.com/ggcow/ggames/compare/v0.5.9...v0.5.10) (2026-11-16)
 
 ### Corrections
