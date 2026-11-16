@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.4](https://github.com/ggcow/ggames/compare/v0.5.3...v0.5.4) (2026-11-16)
+
+### Fonctionnalités
+
+* **platform:** enchaîner la lecture des notes vocales ([99b0c39](https://github.com/ggcow/ggames/commit/99b0c39d3c7736cbd71682a868740c89d76483d1))
+* **platform:** représenter chaque joueur par un animal ([dc759f6](https://github.com/ggcow/ggames/commit/dc759f6a369c8f43ba60bb0444b7c3b366abc4bf))
+* **platform:** retirer une note de course quand plus personne ne l'écoutera ([ca1f91a](https://github.com/ggcow/ggames/commit/ca1f91a361e7b423e9ec7118aff90b7e60920831))
+* **shared:** signaler l'impasse dès que la partie ne peut plus être gagnée ([27f73f0](https://github.com/ggcow/ggames/commit/27f73f0b8e0313aba4e15e82ad75a1ffc6d36966))
+
+### Corrections
+
+* **platform:** empiler notes vocales et réactions de course ([6025c36](https://github.com/ggcow/ggames/commit/6025c36267a1d02d11232161b40752f6e5e55e5b))
+
+### Documentation
+
+* mettre à jour la liste des tâches ([be567ab](https://github.com/ggcow/ggames/commit/be567ab7c9673d6d575a4d8ced79ec884d047b8a))
+
 ## [0.5.3](https://github.com/ggcow/ggames/compare/v0.5.2...v0.5.3) (2026-11-15)
 
 ## [0.5.2](https://github.com/ggcow/ggames/compare/v0.5.1...v0.5.2) (2026-11-15)
