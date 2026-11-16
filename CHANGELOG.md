@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.7](https://github.com/ggcow/ggames/compare/v0.5.6...v0.5.7) (2026-11-16)
+
+### Fonctionnalités
+
+* **client:** placer le salon à droite du contenu sur un écran large ([dbe3270](https://github.com/ggcow/ggames/commit/dbe3270775bdd0968346af8f3096c9c10501f8d4))
+
+### Corrections
+
+* **client:** poser les avatars sur un fond neutre et agrandir l'animal ([d4e1dea](https://github.com/ggcow/ggames/commit/d4e1deaae2a8c1c43e9cc89970f061c0d97729ed))
+
 ## [0.5.6](https://github.com/ggcow/ggames/compare/v0.5.5...v0.5.6) (2026-11-16)
 
 ### Fonctionnalités
