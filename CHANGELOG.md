@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.9](https://github.com/ggcow/ggames/compare/v0.5.8...v0.5.9) (2026-11-16)
+
+### Corrections
+
+* **client:** garder la taille des panneaux sur un écran large ([743a0bb](https://github.com/ggcow/ggames/commit/743a0bb75aa59d16db4932b120ac9540833e6190))
+
 ## [0.5.8](https://github.com/ggcow/ggames/compare/v0.5.7...v0.5.8) (2026-11-16)
 
 ### Fonctionnalités
