@@ -149,6 +149,8 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
   const recordingHost = h('div', { class: 'race-recording' });
   recordingHost.hidden = true;
   let raceVoices: RaceVoice[] = [];
+  /** Notes retirées de son écran par le joueur ; les autres joueurs les gardent. */
+  const dismissed = new Set<string>();
   let recording = false;
   let recordingSeconds = 0;
   let disposed = false;
@@ -198,6 +200,16 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
       play,
       h('span', { class: 'voice-duration' }, formatDuration(note.durationMs, ctx.lang)),
       mine ? h('small', { class: 'voice-read' }, `${note.readCount}/${note.total}`) : null,
+      h(
+        'button',
+        {
+          class: 'voice-dismiss',
+          type: 'button',
+          attrs: { 'aria-label': t.voiceDismiss },
+          on: { click: () => dismissRaceVoice(note.id) },
+        },
+        '✕',
+      ),
     );
   };
 
@@ -222,7 +234,13 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     );
   };
   /** Ses propres notes, et celles des autres pas encore écoutées. */
-  const visibleVoices = () => raceVoices.filter((note) => note.player === ctx.me.id || !note.read);
+  const visibleVoices = () =>
+    raceVoices.filter((note) => !dismissed.has(note.id) && (note.player === ctx.me.id || !note.read));
+  const dismissRaceVoice = (id: string) => {
+    dismissed.add(id);
+    if (voicePlayer.playing === id) voicePlayer.stop();
+    renderVoices();
+  };
   const renderVoices = () => {
     const visible = visibleVoices();
     playButtons.clear();

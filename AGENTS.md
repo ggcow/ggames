@@ -52,7 +52,8 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   des messages vocaux courts : une note disparaît pour chaque destinataire après son écoute, reste visible
   pour ceux qui ne l'ont pas encore écoutée, et expire au bout de 30 secondes. Elle disparaît pour tous, auteur
   compris, dès que chaque destinataire l'a écoutée ou a quitté le niveau. Écouter une note enchaîne sur
-  les notes des autres joueurs qui la suivent.
+  les notes des autres joueurs qui la suivent. Pendant une course, une croix retire une note de son seul
+  écran.
 - Avatar d'un joueur : un animal et une couleur dérivés de son identifiant (`avatar.ts`).
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Score d'un jeu au tour par tour : le nombre de coups joués ; Annuler en retire un, Recommencer repart de zéro.

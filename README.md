@@ -30,7 +30,8 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
   envoyer des messages vocaux : ils disparaissent pour chaque joueur après écoute, restent pour ceux qui
   ne les ont pas écoutés, et expirent au bout de 30 secondes. Une note disparaît pour tous, auteur compris,
   dès que chaque destinataire l'a écoutée ou a quitté le niveau. L'enregistrement dépend du navigateur.
-- Écouter une note vocale enchaîne sur les notes des autres joueurs qui la suivent.
+- Écouter une note vocale enchaîne sur les notes des autres joueurs qui la suivent. Pendant une course, une
+  croix retire une note de son propre écran.
 - Chaque joueur a un avatar : un animal sur une couleur, toujours les mêmes pour lui.
 - Interface en français et en chinois (bouton 中 / Fr en haut de l’écran).
 
