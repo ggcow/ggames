@@ -69,11 +69,14 @@ body {
   flex-direction: column;
   gap: 18px;
 }
-/* Fenêtre large : l'écran prend toute la largeur (débordant de la colonne de #app, centré sur elle). Chaque
-   panneau garde la largeur qu'il a sur un téléphone : autant de colonnes de panneaux que la fenêtre en
-   contient à côté du salon, en-tête et héros sur leur propre ligne. Le salon, à droite, reste visible pendant
-   le défilement. */
+/* Fenêtre large : l'écran prend toute la largeur de #app, qui s'élargit pour lui (100vw compterait la barre
+   de défilement). Chaque panneau garde la largeur qu'il a sur un téléphone : autant de colonnes de panneaux
+   que la fenêtre en contient à côté du salon, en-tête et héros sur leur propre ligne. Le salon, à droite,
+   reste visible pendant le défilement. */
 @media (min-width: 1040px) {
+  #app:has(> .with-chat) {
+    max-width: none;
+  }
   .with-chat {
     --panel: 488px;
     --columns: 1;
@@ -81,8 +84,6 @@ body {
     justify-content: center;
     align-items: flex-start;
     gap: 28px;
-    width: calc(100vw - 32px);
-    margin-left: calc(50% - 50vw + 16px);
   }
   .with-chat > .screen-content {
     display: grid;
