@@ -519,13 +519,19 @@ export class PlatformStore {
     this.sql.exec('DELETE FROM race_voices WHERE id = ?', id);
   }
 
-  pruneRaceVoices(before: number): void {
-    this.sql.exec('DELETE FROM race_voice_reads WHERE note IN (SELECT id FROM race_voices WHERE created < ?)', before);
-    this.sql.exec(
-      'DELETE FROM race_voice_recipients WHERE note IN (SELECT id FROM race_voices WHERE created < ?)',
-      before,
-    );
-    this.sql.exec('DELETE FROM race_voices WHERE created < ?', before);
+  /** Notes de course enregistrées avant `before`, avec leur niveau pour prévenir ses joueurs. */
+  raceVoicesBefore(before: number): { id: string; game: GameId; key: string }[] {
+    return this.sql
+      .exec<{ id: string; game: string; key: string }>(
+        'SELECT id, game, key FROM race_voices WHERE created < ?',
+        before,
+      )
+      .toArray();
+  }
+
+  /** Date d'enregistrement de la plus ancienne note de course, ou `null` s'il n'y en a pas. */
+  oldestRaceVoice(): number | null {
+    return this.sql.exec<{ oldest: number | null }>('SELECT MIN(created) AS oldest FROM race_voices').one().oldest;
   }
 
   gameSummaries(): Map<GameId, Omit<GameSummary, 'id'>> {

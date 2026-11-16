@@ -43,7 +43,7 @@ export const QUOTAS = { players: 200 } as const;
 
 const CHAT_HISTORY = 50;
 const SALON_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
-const RACE_VOICE_RETENTION_MS = 60 * 60 * 1000;
+const RACE_VOICE_RETENTION_MS = 30 * 1000;
 const VOICE_MIMES = ['audio/webm', 'audio/mp4', 'audio/ogg'] as const;
 
 const voiceMime = (value: unknown): string | null => {
@@ -240,7 +240,7 @@ export class World extends DurableObject<Env> {
     const game = findGame(gameId);
     if (!game || typeof key !== 'string' || !game.isValidKey(key)) return fail(400, 'invalid key');
     const now = Date.now();
-    this.store.pruneRaceVoices(now - RACE_VOICE_RETENTION_MS);
+    this.expireRaceVoices(now);
     return ok(this.store.recentRaceVoices(me.id, game.id, key, now - RACE_VOICE_RETENTION_MS));
   }
 
@@ -289,8 +289,9 @@ export class World extends DurableObject<Env> {
       read: false,
     };
     this.store.insertRaceVoice(note, data, recipients);
-    this.store.pruneRaceVoices(now - RACE_VOICE_RETENTION_MS);
+    this.expireRaceVoices(now);
     this.broadcastToKey(game.id, key, { type: 'race_voice', note });
+    await this.scheduleRaceVoiceExpiry();
     return ok(note);
   }
 
@@ -449,7 +450,30 @@ export class World extends DurableObject<Env> {
     this.leftKey(readAttachment(ws), ws);
   }
 
+  /** Échéance d'une note de course : la supprime et prévient les joueurs encore sur son niveau. */
+  override async alarm(): Promise<void> {
+    this.expireRaceVoices(Date.now());
+    await this.scheduleRaceVoiceExpiry();
+  }
+
   /* ---------- Interne ---------- */
+
+  /** Supprime les notes de course expirées et retire chacune de l'écran des joueurs de son niveau. */
+  private expireRaceVoices(now: number): void {
+    for (const note of this.store.raceVoicesBefore(now - RACE_VOICE_RETENTION_MS)) {
+      this.store.deleteRaceVoice(note.id);
+      this.broadcastToKey(note.game, note.key, { type: 'race_voice_gone', id: note.id });
+    }
+  }
+
+  /** Programme l'alarme à l'échéance de la plus ancienne note de course, sauf si une alarme plus proche existe. */
+  private async scheduleRaceVoiceExpiry(): Promise<void> {
+    const oldest = this.store.oldestRaceVoice();
+    if (oldest === null) return;
+    const at = oldest + RACE_VOICE_RETENTION_MS;
+    const current = await this.ctx.storage.getAlarm();
+    if (current === null || current > at) await this.ctx.storage.setAlarm(at);
+  }
 
   private async openSession(player: Account): Promise<SessionResponse> {
     const token = createToken();

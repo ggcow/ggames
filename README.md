@@ -28,7 +28,7 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
   7 jours.
 - Le salon accepte des notes vocales normales, conservées avec l'historique. Pendant une course, on peut
   envoyer des messages vocaux : ils disparaissent pour chaque joueur après écoute, restent pour ceux qui
-  ne les ont pas écoutés, et expirent au bout d'une heure. Une note disparaît pour tous, auteur compris,
+  ne les ont pas écoutés, et expirent au bout de 30 secondes. Une note disparaît pour tous, auteur compris,
   dès que chaque destinataire l'a écoutée ou a quitté le niveau. L'enregistrement dépend du navigateur.
 - Écouter une note vocale enchaîne sur les notes des autres joueurs qui la suivent.
 - Chaque joueur a un avatar : un animal sur une couleur, toujours les mêmes pour lui.

@@ -1,4 +1,4 @@
-import { env, runInDurableObject } from 'cloudflare:test';
+import { env, runDurableObjectAlarm, runInDurableObject } from 'cloudflare:test';
 import { exports } from 'cloudflare:workers';
 import { describe, expect, it } from 'vitest';
 import {
@@ -398,6 +398,41 @@ describe('temps réel', () => {
     expect((await call<RaceVoice[]>('/api/games/fioles/voices?key=c%3A5', { token: a.token })).body).toEqual([]);
 
     liveA.ws.close(1000, 'bye');
+  });
+
+  it('fait expirer une note de course au bout de 30 secondes et prévient les joueurs du niveau', async () => {
+    const a = await newPlayer();
+    const b = await newPlayer();
+    const liveA = await connect(a.token);
+    const liveB = await connect(b.token);
+    await liveA.until((online) => online.some((p) => p.player === b.player.id));
+    for (const live of [liveA, liveB]) {
+      live.send({ type: 'activity', game: 'fioles', key: 'c:6', state: '', value: 0 });
+    }
+    await liveA.until((online) => online.filter((p) => p.key === 'c:6').length === 2);
+
+    const note = (await uploadRaceVoice(a.token, 'fioles', 'c:6', new Uint8Array([1]))).body;
+    await liveB.raceVoiceUntil((item) => item.id === note.id);
+    const alarm = await runInDurableObject(world(), (_instance, state) => state.storage.getAlarm());
+    expect(alarm).not.toBeNull();
+    expect(alarm ?? 0).toBeLessThanOrEqual(note.at + 30_000);
+
+    await runInDurableObject(world(), (_instance, state) => {
+      state.storage.sql.exec('UPDATE race_voices SET created = ? WHERE id = ?', Date.now() - 31_000, note.id);
+    });
+    expect(await runDurableObjectAlarm(world())).toBe(true);
+    await liveA.raceVoiceGone(note.id);
+    await liveB.raceVoiceGone(note.id);
+    expect((await call<RaceVoice[]>('/api/games/fioles/voices?key=c%3A6', { token: b.token })).body).toEqual([]);
+    const audio = await exports.default.fetch(
+      new Request(`https://test.local/api/race-voices/${note.id}`, {
+        headers: { Authorization: `Bearer ${b.token}` },
+      }),
+    );
+    expect(audio.status).toBe(404);
+
+    liveA.ws.close(1000, 'bye');
+    liveB.ws.close(1000, 'bye');
   });
 
   it('refuse une note de course hors du niveau joué', async () => {

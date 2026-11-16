@@ -50,7 +50,7 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   longueur et en débit.
 - Le salon accepte des notes vocales comme des messages normaux. Pendant une course, on peut aussi envoyer
   des messages vocaux courts : une note disparaît pour chaque destinataire après son écoute, reste visible
-  pour ceux qui ne l'ont pas encore écoutée, et expire au bout d'une heure. Elle disparaît pour tous, auteur
+  pour ceux qui ne l'ont pas encore écoutée, et expire au bout de 30 secondes. Elle disparaît pour tous, auteur
   compris, dès que chaque destinataire l'a écoutée ou a quitté le niveau. Écouter une note enchaîne sur
   les notes des autres joueurs qui la suivent.
 - Avatar d'un joueur : un animal et une couleur dérivés de son identifiant (`avatar.ts`).
