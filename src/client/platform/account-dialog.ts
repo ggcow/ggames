@@ -1,4 +1,4 @@
-// FenÃªtre Â« Modifier Â» du compte : pseudo affichÃ© et identifiant de connexion, modifiables sÃ©parÃ©ment.
+// Fenêtre « Modifier » du compte : pseudo affiché et identifiant de connexion, modifiables séparément.
 
 import { type Account, cleanName, LIMITS } from '../../shared/platform/protocol.ts';
 import { type ApiClient, ApiError } from './api.ts';
@@ -10,11 +10,11 @@ export interface AccountDialogOptions {
   api: ApiClient;
   t: PlatformStrings;
   me: Account;
-  /** AppelÃ© Ã  la fermeture si le compte a changÃ©, mÃªme quand une seule des deux modifications a rÃ©ussi. */
+  /** Appelé à la fermeture si le compte a changé, même quand une seule des deux modifications a réussi. */
   onChanged(me: Account): void;
 }
 
-/** Ouvre la fenÃªtre. Le mot de passe n'est demandÃ© que pour changer d'identifiant. */
+/** Ouvre la fenêtre. Le mot de passe n'est demandé que pour changer d'identifiant. */
 export function openAccountDialog({ api, t, me, onChanged }: AccountDialogOptions): void {
   let current = me;
   const name = h('input', { type: 'text', value: me.name, maxLength: LIMITS.name, autocomplete: 'off' });
@@ -36,8 +36,8 @@ export function openAccountDialog({ api, t, me, onChanged }: AccountDialogOption
     if (current !== me) onChanged(current);
   };
 
-  // L'identifiant passe en premier : c'est lui qui peut Ã©chouer sur le mot de passe, et le pseudo n'est alors
-  // pas changÃ© Ã  moitiÃ© de l'enregistrement.
+  // L'identifiant passe en premier : c'est lui qui peut échouer sur le mot de passe, et le pseudo n'est alors
+  // pas changé à moitié de l'enregistrement.
   const apply = async () => {
     if (loginChanged()) current = await api.changeLogin({ login: login.value, password: password.value });
     if (cleanName(name.value) !== current.name) current = await api.rename(name.value);
