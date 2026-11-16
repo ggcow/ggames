@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.17](https://github.com/ggcow/ggames/compare/v0.5.16...v0.5.17) (2026-11-16)
+
+### Corrections
+
+* **client:** garder la case de niveau compacte avec le record ([124dc60](https://github.com/ggcow/ggames/commit/124dc60188e10a3a1038017bd7a36f47d15568a2))
+
 ## [0.5.16](https://github.com/ggcow/ggames/compare/v0.5.15...v0.5.16) (2026-11-16)
 
 ### Fonctionnalités
