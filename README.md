@@ -24,8 +24,9 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
   « Impasse » s'affiche dès qu'il ne peut plus gagner, même s'il lui reste quelques coups.
 - Pendant une course, envoie des réactions rapides (emojis ou phrases) aux joueurs du même niveau. Elles
   disparaissent après quelques secondes et ne sont pas conservées.
-- Un salon global est intégré à l'accueil et à la page d'un jeu : sous le contenu sur un téléphone, à droite
-  sur un écran large. Les 50 derniers messages sont conservés 7 jours.
+- Un salon global est intégré à l'accueil et à la page d'un jeu : sous le contenu sur un téléphone. Sur un
+  écran large, la page prend toute la fenêtre, le salon passe à droite et les autres blocs se rangent côte à
+  côte. Les 50 derniers messages sont conservés 7 jours.
 - Le salon accepte des notes vocales normales, conservées avec l'historique. Pendant une course, on peut
   envoyer des messages vocaux : ils disparaissent pour chaque joueur après écoute, restent pour ceux qui
   ne les ont pas écoutés, et expirent au bout de 30 secondes. Une note disparaît pour tous, auteur compris,

@@ -7,7 +7,7 @@ import { h, noTranslate, replaceChildren } from '../dom.ts';
 import { gameIcon } from '../game-icon.ts';
 import { formatDuration } from '../i18n.ts';
 import { currentPage, playerPositions, renderLevelGrid } from '../level-grid.ts';
-import { errorMessage, loading, screenHeader, section, toast } from '../ui.ts';
+import { errorMessage, loading, mainSection, screenHeader, section, toast } from '../ui.ts';
 import { renderOnline } from './online.ts';
 
 /** Page d'un jeu : grille des niveaux, joueurs en ligne, classement des joueurs. */
@@ -107,7 +107,7 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
       screen.content,
       screenHeader('', () => ctx.navigate({ name: 'hub' }), t),
       hero(state),
-      section(t.levels, gridHost),
+      mainSection(t.levels, gridHost),
       section(t.online, onlineHost),
       section(t.players, renderPlayers(state)),
     );

@@ -6,6 +6,7 @@ import type { AppContext } from '../../src/client/platform/context.ts';
 import { LiveClient } from '../../src/client/platform/live.ts';
 import { createLocalStore } from '../../src/client/platform/storage.ts';
 import { PLATFORM_STRINGS } from '../../src/client/platform/strings.ts';
+import { mainSection, section } from '../../src/client/platform/ui.ts';
 import type { Account } from '../../src/shared/platform/protocol.ts';
 
 const me: Account = { id: 'abc123', name: 'Léa', created: 1, login: 'lea', avatar: '🐶' };
@@ -58,5 +59,15 @@ describe('écran avec salon', () => {
     screen.show(host);
     expect(host.querySelector('.with-chat')).not.toBeNull();
     screen.dispose();
+  });
+});
+
+describe('sections', () => {
+  it('distingue la section principale, qui prend plus de place sur un écran large', () => {
+    const main = mainSection('Niveaux', document.createElement('div'));
+    expect(main.classList.contains('section')).toBe(true);
+    expect(main.classList.contains('main-section')).toBe(true);
+    expect(main.querySelector('.section-title')?.textContent).toBe('Niveaux');
+    expect(section('En ligne').classList.contains('main-section')).toBe(false);
   });
 });

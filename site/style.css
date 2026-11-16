@@ -69,16 +69,34 @@ body {
   flex-direction: column;
   gap: 18px;
 }
-/* Fenêtre large : le salon passe à droite du contenu et reste visible pendant le défilement. L'écran
-   déborde de la colonne de #app, centré sur elle. */
+/* Fenêtre large : l'écran prend toute la largeur (débordant de la colonne de #app, centré sur elle), le
+   salon passe à droite et reste visible pendant le défilement, et les sections du contenu se rangent côte à
+   côte en remplissant chaque ligne. En-tête, présentation et héros d'un jeu gardent toute la largeur. */
 @media (min-width: 900px) {
   .with-chat {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 360px;
     align-items: start;
     gap: 28px;
-    width: min(1040px, calc(100vw - 32px));
-    margin-left: calc(50% - min(520px, 50vw - 16px));
+    width: min(1600px, calc(100vw - 32px));
+    margin-left: calc(50% - min(800px, 50vw - 16px));
+  }
+  .with-chat > .screen-content {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 18px 24px;
+  }
+  .with-chat > .screen-content > * {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .with-chat > .screen-content > .section {
+    flex: 1 1 360px;
+  }
+  /* Section principale d'un écran (grille des niveaux) : deux fois la part des autres sur sa ligne. */
+  .with-chat > .screen-content > .section.main-section {
+    flex: 2 1 560px;
   }
   .chat-section {
     position: sticky;
@@ -828,6 +846,7 @@ input[type="range"] {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  container-type: inline-size;
 }
 .pager {
   display: flex;
@@ -851,6 +870,12 @@ input[type="range"] {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 10px;
+}
+/* Une page de 20 niveaux tient sur deux lignes quand la place le permet, plutôt que d'agrandir ses cases. */
+@container (min-width: 680px) {
+  .level-grid {
+    grid-template-columns: repeat(10, 1fr);
+  }
 }
 .level {
   --press: 5px;
