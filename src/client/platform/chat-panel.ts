@@ -216,19 +216,21 @@ export interface ChatScreen {
 }
 
 /**
- * `columns` : colonnes de panneaux que l'écran peut remplir sur une très grande fenêtre. Un écran à un seul
- * panneau principal reste sur une colonne, agrandie d'autant.
+ * Disposition sur une fenêtre large : `single`, une colonne de panneaux à côté du salon ; `side`, en plus,
+ * une colonne latérale à gauche (`sideColumn`) quand la fenêtre est assez large.
  */
-export function chatScreen(ctx: AppContext, columns: 1 | 2): ChatScreen {
+export type ChatScreenLayout = 'single' | 'side';
+
+export function chatScreen(ctx: AppContext, layout: ChatScreenLayout): ChatScreen {
   const content = h('div', { class: 'screen-content' });
   const chat = chatPanel(ctx);
   const aside = section(ctx.t.chat, chat.element);
   aside.classList.add('chat-section');
-  const layout = h('div', { class: 'with-chat', attrs: { 'data-columns': String(columns) } }, content, aside);
+  const element = h('div', { class: 'with-chat', attrs: { 'data-layout': layout } }, content, aside);
   return {
     content,
     show: (host) => {
-      if (layout.parentElement !== host) replaceChildren(host, layout);
+      if (element.parentElement !== host) replaceChildren(host, element);
     },
     dispose: chat.dispose,
   };
@@ -239,3 +241,7 @@ export function chatScreen(ctx: AppContext, columns: 1 | 2): ChatScreen {
  * l'autre, à côté de la colonne suivante ; sur un téléphone, elle s'efface et ses panneaux suivent le fil.
  */
 export const panelColumn = (...panels: Child[]): HTMLElement => h('div', { class: 'panel-column' }, ...panels);
+
+/** Colonne latérale d'un écran `side` : à gauche sur une fenêtre large, après le reste sur un téléphone. */
+export const sideColumn = (...panels: Child[]): HTMLElement =>
+  h('div', { class: 'panel-column side-column' }, ...panels);

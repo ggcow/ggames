@@ -49,8 +49,9 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   dans la page, sous le contenu sur un téléphone. Sur un écran large, l'accueil et la page d'un jeu
   remplissent la fenêtre : les panneaux gardent leurs proportions de téléphone, agrandis par paliers (`zoom`),
   le salon à droite sur toute la hauteur (`chatScreen()`). Les panneaux d'une même `panelColumn()` restent
-  empilés (En ligne toujours sous le premier panneau) ; seule la page d'un jeu passe sur deux colonnes sur un
-  très grand écran. L'écran de partie n'est pas concerné. L'historique est court (50 derniers messages, 7 jours) et les messages sont limités en
+  empilés. L'accueil reste sur une colonne (En ligne sous les jeux) ; la page d'un jeu met sa colonne
+  latérale (`sideColumn()` : En ligne puis Joueurs) à gauche de la grille dès que la fenêtre le permet.
+  L'écran de partie n'est pas concerné. L'historique est court (50 derniers messages, 7 jours) et les messages sont limités en
   longueur et en débit.
 - Le salon accepte des notes vocales comme des messages normaux. Pendant une course, on peut aussi envoyer
   des messages vocaux courts : une note disparaît pour chaque destinataire après son écoute, reste visible
