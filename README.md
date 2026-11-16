@@ -29,6 +29,7 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
   envoyer des messages vocaux : ils disparaissent pour chaque joueur après écoute, restent pour ceux qui
   ne les ont pas écoutés, et expirent au bout d'une heure. Une note disparaît pour tous, auteur compris,
   dès que chaque destinataire l'a écoutée ou a quitté le niveau. L'enregistrement dépend du navigateur.
+- Écouter une note vocale enchaîne sur les notes des autres joueurs qui la suivent.
 - Interface en français et en chinois (bouton 中 / Fr en haut de l’écran).
 
 ### Jeux

@@ -7,6 +7,7 @@ import { h, noTranslate, replaceChildren } from './dom.ts';
 import { formatDuration, formatTime } from './i18n.ts';
 import { createVoiceRecorder } from './recorder.ts';
 import { errorMessage, toast } from './ui.ts';
+import { createVoicePlayer, setPlayButton, type VoicePlayerError } from './voice-player.ts';
 
 export interface ChatPanel {
   element: HTMLElement;
@@ -18,10 +19,16 @@ type TimelineItem = { at: number; kind: 'text'; message: ChatMessage } | { at: n
 export function chatPanel(ctx: AppContext): ChatPanel {
   const { t } = ctx;
   const list = h('div', { class: 'chat-list', attrs: { 'aria-live': 'polite' } });
-  const audioCache = new Map<string, string>();
-  let currentAudio: HTMLAudioElement | null = null;
-  let currentButton: HTMLButtonElement | null = null;
-  let disposed = false;
+  const playButtons = new Map<string, HTMLButtonElement>();
+  const updatePlayButtons = () => {
+    for (const [id, button] of playButtons) setPlayButton(button, player.playing === id, t);
+  };
+  const player = createVoicePlayer({
+    load: (id) => ctx.api.voice(id),
+    onChange: updatePlayButtons,
+    onError: (error: VoicePlayerError) =>
+      toast(error.kind === 'playback' ? t.voicePlaybackError : errorMessage(error.error, t)),
+  });
 
   const messageRow = (message: ChatMessage) =>
     h(
@@ -41,52 +48,14 @@ export function chatPanel(ctx: AppContext): ChatPanel {
       ),
     );
 
-  const stopAudio = () => {
-    currentAudio?.pause();
-    currentAudio = null;
-    if (currentButton) {
-      currentButton.disabled = false;
-      currentButton.textContent = '▶';
-      currentButton = null;
+  /** Note touchée puis les notes des autres joueurs qui la suivent dans le fil. */
+  const playFrom = (note: VoiceNote) => {
+    if (player.playing === note.id) {
+      player.stop();
+      return;
     }
-  };
-
-  const preloadVoice = (note: VoiceNote) => {
-    if (audioCache.has(note.id)) return;
-    void ctx.api
-      .voice(note.id)
-      .then((blob) => {
-        if (!disposed) audioCache.set(note.id, URL.createObjectURL(blob));
-      })
-      .catch(() => undefined);
-  };
-
-  const playVoice = async (note: VoiceNote, button: HTMLButtonElement) => {
-    stopAudio();
-    button.disabled = true;
-    button.textContent = '⏸';
-    currentButton = button;
-    try {
-      let url = audioCache.get(note.id);
-      if (!url) {
-        const blob = await ctx.api.voice(note.id);
-        if (disposed) return;
-        url = URL.createObjectURL(blob);
-        audioCache.set(note.id, url);
-      }
-      if (disposed) return;
-      const audio = new Audio(url);
-      currentAudio = audio;
-      audio.addEventListener('ended', stopAudio);
-      audio.addEventListener('error', () => {
-        stopAudio();
-        toast(t.voiceError);
-      });
-      await audio.play();
-    } catch (error) {
-      stopAudio();
-      toast(errorMessage(error, t));
-    }
+    const later = ctx.chat.voices.filter((item) => item.at > note.at && item.player !== ctx.me.id);
+    player.play([note.id, ...later.sort((a, b) => a.at - b.at).map((item) => item.id)]);
   };
 
   const voiceRow = (note: VoiceNote) => {
@@ -97,10 +66,12 @@ export function chatPanel(ctx: AppContext): ChatPanel {
         class: 'voice-play',
         type: 'button',
         attrs: { 'aria-label': t.voicePlay },
-        on: { click: () => void playVoice(note, play) },
+        on: { click: () => playFrom(note) },
       },
       '▶',
     );
+    playButtons.set(note.id, play);
+    setPlayButton(play, player.playing === note.id, t);
     return h(
       'div',
       { class: `chat-message voice ${mine ? 'me' : ''}` },
@@ -133,7 +104,8 @@ export function chatPanel(ctx: AppContext): ChatPanel {
       ...ctx.chat.messages.map((message) => ({ at: message.at, kind: 'text' as const, message })),
       ...ctx.chat.voices.map((note) => ({ at: note.at, kind: 'voice' as const, note })),
     ].sort((a, b) => a.at - b.at);
-    for (const item of items) if (item.kind === 'voice') preloadVoice(item.note);
+    playButtons.clear();
+    for (const item of items) if (item.kind === 'voice') player.preload(item.note.id);
     replaceChildren(
       list,
       ...(items.length > 0
@@ -227,11 +199,8 @@ export function chatPanel(ctx: AppContext): ChatPanel {
   return {
     element,
     dispose: () => {
-      disposed = true;
       recorder.dispose();
-      stopAudio();
-      for (const url of audioCache.values()) URL.revokeObjectURL(url);
-      audioCache.clear();
+      player.dispose();
       unsubscribe();
     },
   };

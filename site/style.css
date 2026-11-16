@@ -497,11 +497,12 @@ input[type="range"] {
   font-size: 13px;
   font-weight: 900;
 }
-.voice-play:active:not(:disabled) {
+.voice-play:active {
   transform: translateY(2px);
 }
-.voice-play:disabled {
-  opacity: 0.7;
+.voice-play.playing {
+  background: var(--yellow);
+  color: var(--surface-edge);
 }
 .voice-duration {
   font-size: 14px;

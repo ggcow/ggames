@@ -23,6 +23,7 @@ import { reactionLabel } from '../reactions.ts';
 import { createVoiceRecorder, type VoiceRecorder } from '../recorder.ts';
 import type { PlatformStrings } from '../strings.ts';
 import { errorMessage, loading, screenHeader, showModal, toast } from '../ui.ts';
+import { createVoicePlayer, setPlayButton, type VoicePlayerError } from '../voice-player.ts';
 import { renderLiveBoards } from './online.ts';
 
 /** Record de la clé en badge compact pour l'en-tête : avatar du détenteur et score, phrase complète en titre. */
@@ -147,64 +148,33 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
   voiceHost.hidden = true;
   const recordingHost = h('div', { class: 'race-recording' });
   recordingHost.hidden = true;
-  const audioCache = new Map<string, string>();
   let raceVoices: RaceVoice[] = [];
   let recording = false;
   let recordingSeconds = 0;
-  let currentAudio: HTMLAudioElement | null = null;
-  let currentButton: HTMLButtonElement | null = null;
   let disposed = false;
 
-  const stopRaceAudio = () => {
-    currentAudio?.pause();
-    currentAudio = null;
-    if (currentButton) {
-      currentButton.disabled = false;
-      currentButton.textContent = '▶';
-      currentButton = null;
-    }
-  };
+  const playButtons = new Map<string, HTMLButtonElement>();
+  const voicePlayer = createVoicePlayer({
+    load: (id) => api.raceVoice(id),
+    onChange: () => {
+      for (const [id, button] of playButtons) setPlayButton(button, voicePlayer.playing === id, t);
+    },
+    onEnded: (id) => {
+      const note = raceVoices.find((item) => item.id === id);
+      if (note && note.player !== ctx.me.id) void api.markRaceVoiceRead(id).catch(() => undefined);
+    },
+    onError: (error: VoicePlayerError) =>
+      toast(error.kind === 'playback' ? t.voicePlaybackError : errorMessage(error.error, t)),
+  });
 
-  const preloadRaceVoice = (note: RaceVoice) => {
-    if (audioCache.has(note.id)) return;
-    void api
-      .raceVoice(note.id)
-      .then((blob) => {
-        if (!disposed) audioCache.set(note.id, URL.createObjectURL(blob));
-      })
-      .catch(() => undefined);
-  };
-
-  const playRaceVoice = async (note: RaceVoice, button: HTMLButtonElement) => {
-    stopRaceAudio();
-    button.disabled = true;
-    button.textContent = '⏸';
-    currentButton = button;
-    try {
-      let url = audioCache.get(note.id);
-      if (!url) {
-        const blob = await api.raceVoice(note.id);
-        if (disposed) return;
-        url = URL.createObjectURL(blob);
-        audioCache.set(note.id, url);
-      }
-      if (disposed) return;
-      const audio = new Audio(url);
-      currentAudio = audio;
-      audio.addEventListener('ended', () => {
-        const mine = note.player === ctx.me.id;
-        stopRaceAudio();
-        if (!mine) void api.markRaceVoiceRead(note.id).catch(() => undefined);
-      });
-      audio.addEventListener('error', () => {
-        stopRaceAudio();
-        toast(t.voiceError);
-      });
-      await audio.play();
-    } catch (error) {
-      stopRaceAudio();
-      toast(errorMessage(error, t));
+  /** Note touchée puis les notes des autres joueurs affichées en dessous. */
+  const playFrom = (note: RaceVoice) => {
+    if (voicePlayer.playing === note.id) {
+      voicePlayer.stop();
+      return;
     }
+    const later = visibleVoices().filter((item) => item.at > note.at && item.player !== ctx.me.id);
+    voicePlayer.play([note.id, ...later.map((item) => item.id)]);
   };
 
   const raceVoiceRow = (note: RaceVoice) => {
@@ -215,10 +185,12 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         class: 'voice-play',
         type: 'button',
         attrs: { 'aria-label': t.voicePlay },
-        on: { click: () => void playRaceVoice(note, play) },
+        on: { click: () => playFrom(note) },
       },
       '▶',
     );
+    playButtons.set(note.id, play);
+    setPlayButton(play, voicePlayer.playing === note.id, t);
     return h(
       'div',
       { class: 'race-voice' },
@@ -249,9 +221,12 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
       ),
     );
   };
+  /** Ses propres notes, et celles des autres pas encore écoutées. */
+  const visibleVoices = () => raceVoices.filter((note) => note.player === ctx.me.id || !note.read);
   const renderVoices = () => {
-    const visible = raceVoices.filter((note) => note.player === ctx.me.id || !note.read);
-    for (const note of visible) preloadRaceVoice(note);
+    const visible = visibleVoices();
+    playButtons.clear();
+    for (const note of visible) voicePlayer.preload(note.id);
     voiceHost.hidden = recording || visible.length === 0;
     replaceChildren(voiceHost, ...visible.map(raceVoiceRow));
   };
@@ -483,9 +458,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     dispose: () => {
       disposed = true;
       recorder?.dispose();
-      stopRaceAudio();
-      for (const url of audioCache.values()) URL.revokeObjectURL(url);
-      audioCache.clear();
+      voicePlayer.dispose();
       submitAbandon();
       unmountGame?.();
       closeReactions?.();
