@@ -526,7 +526,8 @@ input[type="range"] {
 .recording-time[hidden] {
   display: none;
 }
-.race-voices {
+/* Notes et réactions de course empilées dans une même colonne, pour qu'aucune ne cache l'autre. */
+.race-overlay {
   position: fixed;
   top: max(64px, env(safe-area-inset-top) + 56px);
   left: 50%;
@@ -537,6 +538,12 @@ input[type="range"] {
   gap: 6px;
   transform: translateX(-50%);
   pointer-events: none;
+}
+.race-voices {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 .race-voices > * {
   pointer-events: auto;
@@ -1060,16 +1067,10 @@ input[type="range"] {
   box-shadow: none;
 }
 .reaction-bubbles {
-  position: fixed;
-  top: max(104px, env(safe-area-inset-top) + 96px);
-  left: 50%;
-  z-index: 6;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  transform: translateX(-50%);
-  pointer-events: none;
 }
 .reaction-bubble {
   display: flex;

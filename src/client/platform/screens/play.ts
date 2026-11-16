@@ -426,9 +426,8 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
             mic,
           ),
           liveHost,
-          voiceHost,
+          h('div', { class: 'race-overlay' }, voiceHost, reactionHost),
           boardHost,
-          reactionHost,
         );
         renderLive();
         start();
