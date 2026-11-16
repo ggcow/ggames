@@ -5,6 +5,7 @@ import type {
   ReactionNotice,
   RecordEntry,
 } from '../../../shared/platform/protocol.ts';
+import { competitionRanks } from '../../../shared/platform/ranking.ts';
 import { findReaction, REACTIONS } from '../../../shared/platform/reactions.ts';
 import type { ClientGame, GameView, Unmount } from '../../games/client-game.ts';
 import { avatar } from '../avatar.ts';
@@ -26,25 +27,73 @@ import { errorMessage, loading, screenHeader, showModal, toast } from '../ui.ts'
 import { createVoicePlayer, setPlayButton, type VoicePlayerError } from '../voice-player.ts';
 import { renderLiveBoards } from './online.ts';
 
-/** Record de la clé en badge compact pour l'en-tête : avatar du détenteur et score, phrase complète en titre. */
+/** Rangs montrés par le podium d'un niveau. */
+const PODIUM_SIZE = 3;
+
+/** Avatars montrés au plus dans le badge du record quand plusieurs joueurs le partagent. */
+const BADGE_HOLDERS = 3;
+
+/**
+ * Record de la clé en badge compact pour l'en-tête : avatars de ses détenteurs (plusieurs à égalité) et score,
+ * phrase complète en titre. Le toucher ouvre le podium du niveau.
+ */
 export function recordBadge(
   view: GameView,
   key: string,
   format: ((value: number, lang: Lang) => string) | null,
   t: PlatformStrings,
+  openPodium: () => void,
 ): HTMLElement | null {
-  const best = view.state.records[key]?.[0];
+  const records = view.state.records[key] ?? [];
+  const best = records[0];
   if (!best || !format) return null;
-  const name = view.playerName(best.player);
+  const holders = records.filter((record) => record.value === best.value);
+  const names = holders.map((record) => view.playerName(record.player));
   const value = format(best.value, view.lang);
-  const text = t.record(name, value);
+  const text = t.record(names.join(', '), value);
+  const extra = holders.length - BADGE_HOLDERS;
   return h(
-    'span',
-    { class: 'chip record-badge', attrs: { title: text, 'aria-label': text } },
+    'button',
+    {
+      class: 'chip record-badge',
+      type: 'button',
+      attrs: { title: text, 'aria-label': text },
+      on: { click: openPodium },
+    },
     '🏆',
-    avatar(best.player, name, 'xs'),
+    ...holders.slice(0, BADGE_HOLDERS).map((record, index) => avatar(record.player, names[index] ?? '?', 'xs')),
+    extra > 0 ? noTranslate(h('small', null, `+${extra}`)) : null,
     value,
   );
+}
+
+/**
+ * Classement d'une clé, rangs partagés à égalité. `limit` ne garde que les rangs jusqu'à lui (le podium),
+ * donc parfois plus de `limit` lignes.
+ */
+export function scoreList(
+  records: readonly RecordEntry[],
+  view: GameView,
+  format: (value: number, lang: Lang) => string,
+  limit = Number.POSITIVE_INFINITY,
+): HTMLElement {
+  const ranks = competitionRanks(records, (a, b) => a.value === b.value);
+  const lines = records.flatMap((record, index) => {
+    const rank = ranks[index] ?? index + 1;
+    if (rank > limit) return [];
+    const name = view.playerName(record.player);
+    return [
+      h(
+        'li',
+        { class: record.player === view.me ? 'me' : '' },
+        noTranslate(h('span', { class: `rank rank-${rank}` }, String(rank))),
+        avatar(record.player, name, 'xs'),
+        noTranslate(h('span', { class: 'grow' }, name)),
+        h('b', null, format(record.value, view.lang)),
+      ),
+    ];
+  });
+  return h('ol', { class: 'scores' }, ...lines);
 }
 
 /**
@@ -315,7 +364,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     renderVoices();
   };
 
-  const renderRecord = () => replaceChildren(recordHost, view ? recordBadge(view, key, format, t) : null);
+  const renderRecord = () => replaceChildren(recordHost, view ? recordBadge(view, key, format, t, openPodium) : null);
 
   const renderLive = () => {
     const others = rivals();
@@ -357,23 +406,25 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
 
   /** Classement de la clé, affiché seulement pour un jeu qui a des scores. */
   const leaderboard = (records: RecordEntry[], value: number): Child[] => {
-    if (!format) return [];
-    const lines: Child[] = records.map((record, index) => {
-      const name = view?.playerName(record.player) ?? '?';
-      return h(
-        'li',
-        { class: record.player === ctx.me.id ? 'me' : '' },
-        noTranslate(h('span', { class: `rank rank-${index + 1}` }, String(index + 1))),
-        avatar(record.player, name, 'xs'),
-        noTranslate(h('span', { class: 'grow' }, name)),
-        h('b', null, format(record.value, ctx.lang)),
-      );
-    });
+    if (!format || !view) return [];
     return [
       h('p', { class: 'modal-value' }, format(value, ctx.lang)),
       h('h3', { class: 'section-title' }, t.leaderboard),
-      h('ol', { class: 'scores' }, ...lines),
+      scoreList(records, view, format),
     ];
+  };
+
+  /** Podium du niveau : les trois premiers rangs, ex æquo compris. */
+  const openPodium = () => {
+    if (!format || !view) return;
+    showModal(
+      [
+        h('div', { class: 'modal-emoji' }, '🏆'),
+        h('h2', null, game.keyLabel(key, ctx.lang)),
+        scoreList(view.state.records[key] ?? [], view, format, PODIUM_SIZE),
+      ],
+      [{ label: t.close }],
+    );
   };
 
   /** Niveau suivant, proposé seulement si sa propre progression l'a débloqué après cette victoire. */

@@ -1,4 +1,5 @@
 import type { GameState, PlayerProgress } from '../../../shared/platform/protocol.ts';
+import { competitionRanks } from '../../../shared/platform/ranking.ts';
 import type { ClientGame } from '../../games/client-game.ts';
 import { avatar } from '../avatar.ts';
 import { chatScreen, panelColumn, sideColumn } from '../chat-panel.ts';
@@ -97,7 +98,8 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
   const renderPlayers = (current: GameState) => {
     if (current.progress.length === 0) return h('p', { class: 'muted empty-line' }, t.noRuns);
     const names = new Map(current.players.map((p) => [p.id, p.name]));
-    return h('div', { class: 'rank-list' }, ...current.progress.map((p, i) => playerRow(p, i + 1, names)));
+    const ranks = competitionRanks(current.progress, (a, b) => a.completed === b.completed);
+    return h('div', { class: 'rank-list' }, ...current.progress.map((p, i) => playerRow(p, ranks[i] ?? i + 1, names)));
   };
 
   const render = () => {

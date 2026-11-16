@@ -16,7 +16,8 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
 - En partie, ton plateau occupe le bas de l'écran ; au-dessus, les plateaux des deux autres joueurs en petit.
 - Sur la grille, chaque joueur apparaît sur son niveau (celui qu'il joue s'il est en ligne).
 - La progression de chacun (niveaux réussis, parties, temps de jeu), les classements et le replay des parties
-  gagnées sur les niveaux que tu as toi-même réussis.
+  gagnées sur les niveaux que tu as toi-même réussis. À égalité, même rang ; toucher le 🏆 d'un niveau en
+  partie montre son podium.
 - La fiche d'un ami ne liste que les niveaux que vous avez tous les deux réussis, et son replay ne s'ouvre que si
   tu as fait aussi bien ou mieux que lui : un replay ne révèle jamais une solution meilleure que la tienne.
 - Un replay montre le chemin final de la partie, sans les coups annulés.

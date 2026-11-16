@@ -33,6 +33,8 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - L'accueil liste les jeux. Pour chaque jeu : la grille des 100 niveaux, 5 pages de 20 (réussis, jouable, verrouillés),
   la progression de chaque joueur (niveaux réussis, essais, temps), les classements, et le replay des parties
   gagnées sur les niveaux déjà réussis par le joueur.
+- Classements : à égalité, même rang (1, 1, 3). Le badge du record d'un niveau montre tous ses détenteurs ex
+  æquo ; le toucher ouvre le podium du niveau (les trois premiers rangs).
 - Un replay ne révèle jamais une solution meilleure que la sienne : on ne voit le replay d'un autre joueur que sur
   un niveau qu'on a soi-même réussi avec un score au moins aussi bon. La fiche d'un joueur ne liste que les niveaux
   réussis par les deux ; les replays encore hors de portée y sont verrouillés.

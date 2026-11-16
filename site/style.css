@@ -1262,6 +1262,16 @@ input[type="range"] {
   padding: 3px 8px 3px 6px;
   color: var(--yellow);
 }
+/* Détenteurs ex æquo du record : avatars serrés l'un sur l'autre. */
+.record-badge .avatar + .avatar {
+  margin-left: -8px;
+}
+.record-badge small {
+  color: var(--muted);
+}
+.record-badge:active {
+  transform: translateY(1px);
+}
 .play-host {
   display: flex;
   flex-direction: column;
