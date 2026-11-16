@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { LevelTile } from '../../src/client/games/client-game.ts';
-import { avatar, avatarColor, initial } from '../../src/client/platform/avatar.ts';
+import { avatar, avatarAnimal, avatarColor } from '../../src/client/platform/avatar.ts';
 import {
   currentPage,
   type PlayerPosition,
@@ -77,8 +77,8 @@ describe('grille', () => {
 
   it('place chaque joueur sur son niveau, en direct ou non', () => {
     const cells = render().querySelectorAll('.level');
-    expect(cells[1]?.querySelector('.avatar.live')?.textContent).toBe('L');
-    expect(cells[2]?.querySelector('.avatar')?.textContent).toBe('T');
+    expect(cells[1]?.querySelector('.avatar.live')?.getAttribute('aria-label')).toBe('léa — en jeu');
+    expect(cells[2]?.querySelector('.avatar')?.getAttribute('aria-label')).toMatch(/^Tom — /);
     expect(cells[2]?.querySelector('.avatar.live')).toBeNull();
     expect(cells[0]?.querySelector('.avatar')).toBeNull();
   });
@@ -172,12 +172,20 @@ describe('grille', () => {
 });
 
 describe('avatars', () => {
-  it('donne une couleur stable par joueur et l’initiale du pseudo', () => {
+  it('donne à chaque joueur une couleur et un animal stables', () => {
     expect(avatarColor('abc123')).toBe(avatarColor('abc123'));
-    expect(initial('  léa')).toBe('L');
-    expect(initial('小明')).toBe('小');
-    expect(initial('')).toBe('?');
-    expect(avatar('abc123', 'Tom', 'md').classList.contains('md')).toBe(true);
+    expect(avatarAnimal('abc123')).toBe(avatarAnimal('abc123'));
+    const element = avatar('abc123', 'Tom', 'md');
+    expect(element.classList.contains('md')).toBe(true);
+    expect(element.textContent).toBe(avatarAnimal('abc123'));
+    expect(element.getAttribute('aria-label')).toBe('Tom');
+  });
+
+  it('varie les animaux d’un joueur à l’autre, y compris à couleur égale', () => {
+    const ids = Array.from({ length: 200 }, (_, index) => `p${index}`);
+    expect(new Set(ids.map(avatarAnimal)).size).toBeGreaterThan(20);
+    const red = ids.filter((id) => avatarColor(id) === avatarColor('p0'));
+    expect(new Set(red.map(avatarAnimal)).size).toBeGreaterThan(5);
   });
 });
 

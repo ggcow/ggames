@@ -53,6 +53,7 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   pour ceux qui ne l'ont pas encore écoutée, et expire au bout d'une heure. Elle disparaît pour tous, auteur
   compris, dès que chaque destinataire l'a écoutée ou a quitté le niveau. Écouter une note enchaîne sur
   les notes des autres joueurs qui la suivent.
+- Avatar d'un joueur : un animal et une couleur dérivés de son identifiant (`avatar.ts`).
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Score d'un jeu au tour par tour : le nombre de coups joués ; Annuler en retire un, Recommencer repart de zéro.
 - Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct.

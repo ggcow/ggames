@@ -30,6 +30,7 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
   ne les ont pas écoutés, et expirent au bout d'une heure. Une note disparaît pour tous, auteur compris,
   dès que chaque destinataire l'a écoutée ou a quitté le niveau. L'enregistrement dépend du navigateur.
 - Écouter une note vocale enchaîne sur les notes des autres joueurs qui la suivent.
+- Chaque joueur a un avatar : un animal sur une couleur, toujours les mêmes pour lui.
 - Interface en français et en chinois (bouton 中 / Fr en haut de l’écran).
 
 ### Jeux
