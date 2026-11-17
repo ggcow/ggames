@@ -91,7 +91,9 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   sur chaque case parcourue, sans jamais en enlever ; un double toucher, un double clic ou un clic droit tente un panda. Un panda bien
   placé reste, une tentative ratée coûte une vie : trois vies, et la troisième erreur perd la partie (Rejouer
   la relance). Pas de score : seule la réussite compte (ni 💎, ni record, ni classement par score, ni Annuler) ;
-  essais, temps et replay restent, et le nombre d'erreurs est gardé avec chaque partie.
+  essais, temps et replay restent, et le nombre d'erreurs est gardé avec chaque partie. L'aperçu d'un autre
+  joueur ne révèle rien de la solution : la grille part grise, chaque bosquet où il a trouvé le panda prend sa
+  couleur, et ses vies s'affichent dessous ; l'état diffusé ne contient pas la case des pandas.
 
 ## Contraintes à ne jamais casser
 

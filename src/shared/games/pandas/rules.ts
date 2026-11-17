@@ -158,24 +158,43 @@ export function findSolutions(grid: Grid, limit: number, fixed: Pandas = []): So
 
 /* ---------- État diffusé en direct ---------- */
 
-/** État d'une partie pour les autres joueurs : la grille, avec une majuscule sur chaque case d'un panda. */
-export function liveState(grid: Grid, pandas: Pandas): string {
-  const text = gridToString(grid).split('');
-  let cell = 0;
-  return text
-    .map((char) => {
-      if (char === '.') return char;
-      const shown = pandas.includes(cell) ? char.toUpperCase() : char;
-      cell++;
-      return shown;
-    })
-    .join('');
+/** Ce que voient les autres joueurs d'une partie : la grille, les bosquets où un panda est trouvé, les erreurs. */
+export interface LiveView {
+  grid: Grid;
+  /** Bosquets dont le panda est trouvé ; sa case n'est pas diffusée, pour ne rien révéler de la solution. */
+  found: ReadonlySet<number>;
+  misses: number;
 }
 
-/** Grille et pandas d'un état diffusé par `liveState`, ou `null` s'il est illisible. */
-export function parseLiveState(state: string): { grid: Grid; pandas: Pandas } | null {
-  const grid = parseGrid(state.toLowerCase());
-  if (!grid) return null;
-  const pandas = [...state.split('.').join('')].flatMap((char, cell) => (char !== char.toLowerCase() ? [cell] : []));
-  return { grid, pandas };
+/**
+ * État d'une partie pour les autres joueurs : la grille, chaque case d'un bosquet trouvé en majuscule, puis `!`
+ * et le nombre d'erreurs. Ex. "AAaaa.aabbb!1". La case de chaque panda n'y figure pas.
+ */
+export function liveState(grid: Grid, pandas: Pandas, misses: number): string {
+  const found = new Set(pandas.map((cell) => grid.regions[cell]));
+  const text = gridToString(grid).split('');
+  let cell = 0;
+  const cells = text.map((char) => {
+    if (char === '.') return char;
+    const shown = found.has(grid.regions[cell]) ? char.toUpperCase() : char;
+    cell++;
+    return shown;
+  });
+  return `${cells.join('')}!${misses}`;
+}
+
+/** Vue d'un état diffusé par `liveState`, ou `null` s'il est illisible ou si un bosquet est à moitié trouvé. */
+export function parseLiveState(state: string): LiveView | null {
+  const match = /^([^!]+)!(\d)$/.exec(state);
+  const text = match?.[1] ?? '';
+  const grid = parseGrid(text.toLowerCase());
+  if (!match || !grid) return null;
+  const found = new Set<number>();
+  const hidden = new Set<number>();
+  [...text.split('.').join('')].forEach((char, cell) => {
+    const region = grid.regions[cell] ?? -1;
+    (char === char.toLowerCase() ? hidden : found).add(region);
+  });
+  if ([...found].some((region) => hidden.has(region))) return null;
+  return { grid, found, misses: Number(match[2]) };
 }

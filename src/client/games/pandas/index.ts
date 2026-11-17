@@ -25,12 +25,12 @@ export const pandasClient: ClientGame = {
 
   renderLiveState(state) {
     const live = parseLiveState(state);
-    return live ? renderMiniGrid(live.grid, live.pandas) : null;
+    return live ? renderMiniGrid(live) : null;
   },
 
   liveStatus(state, value) {
     const live = parseLiveState(state);
-    return live ? pandasStatus(live.grid, live.pandas, value) : null;
+    return live ? pandasStatus(live.grid, live.found.size, value) : null;
   },
 
   mountPlay(host, ctx) {

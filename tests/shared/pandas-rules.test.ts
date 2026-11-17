@@ -78,13 +78,22 @@ describe('solutions', () => {
 });
 
 describe('état en direct', () => {
-  it('écrit les pandas en majuscules sur la grille et les relit', () => {
-    const state = liveState(grid(), [1, 8, 24]);
-    expect(state).toBe('aAaaa.aaaBb.caabb.ddddb.ddddE');
-    expect(parseLiveState(state)).toEqual({ grid: grid(), pandas: [1, 8, 24] });
+  it('écrit en majuscules les bosquets trouvés, sans la case du panda, puis les erreurs, et les relit', () => {
+    const state = liveState(grid(), [1, 8, 24], 1);
+    expect(state).toBe('AAAAA.AAABB.cAABB.ddddB.ddddE!1');
+    const view = parseLiveState(state);
+    expect(view?.grid).toEqual(grid());
+    expect(view && [...view.found].sort()).toEqual([grid().regions[1], grid().regions[8], grid().regions[24]].sort());
+    expect(view?.misses).toBe(1);
+    expect(parseLiveState(liveState(grid(), [], 0))).toMatchObject({ found: new Set(), misses: 0 });
   });
 
-  it('refuse un état illisible', () => {
-    expect(parseLiveState('n’importe quoi')).toBeNull();
+  it.each([
+    'n’importe quoi',
+    'aaaaa.aaabb.caabb.ddddb.dddde',
+    'aaaaa.aaabb.caabb.ddddb.dddde!x',
+    'aAaaa.aaabb.caabb.ddddb.dddde!0',
+  ])('refuse un état illisible ou un bosquet à moitié trouvé : %s', (state) => {
+    expect(parseLiveState(state)).toBeNull();
   });
 });

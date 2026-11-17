@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { GameView } from '../../src/client/games/client-game.ts';
-import { cellSize, DOUBLE_TAP_MS, MIN_CELL, renderMiniGrid } from '../../src/client/games/pandas/board.ts';
+import {
+  cellSize,
+  DOUBLE_TAP_MS,
+  HIDDEN_REGION,
+  MIN_CELL,
+  REGION_COLORS,
+  renderMiniGrid,
+} from '../../src/client/games/pandas/board.ts';
 import { pandasClient } from '../../src/client/games/pandas/index.ts';
 import { mountPandasPlay } from '../../src/client/games/pandas/play.ts';
 import { mountPandasReplay } from '../../src/client/games/pandas/replay.ts';
@@ -81,7 +88,7 @@ describe('partie', () => {
 
   it('signale la grille vide dès le montage, avec trois vies et sans bouton Annuler', () => {
     const { host, onProgress } = mount();
-    expect(onProgress).toHaveBeenCalledWith({ state: liveState(grid, []), value: 0, replay: '' });
+    expect(onProgress).toHaveBeenCalledWith({ state: liveState(grid, [], 0), value: 0, replay: '' });
     expect(lives(host)?.textContent).toBe('❤️❤️❤️');
     expect(lives(host)?.getAttribute('aria-label')).toBe('3 vies restantes');
     expect([...host.querySelectorAll('.controls button')].map((button) => button.textContent)).toEqual([fr.restart]);
@@ -180,7 +187,7 @@ describe('partie', () => {
     expect(host.querySelectorAll('.pd-cell.panda, .pd-cell.miss')).toHaveLength(0);
     expect(cells(host)[6]?.textContent).toBe('');
     expect(lives(host)?.textContent).toBe('❤️❤️❤️');
-    expect(onProgress).toHaveBeenLastCalledWith({ state: liveState(grid, []), value: 0, replay: '' });
+    expect(onProgress).toHaveBeenLastCalledWith({ state: liveState(grid, [], 0), value: 0, replay: '' });
   });
 
   it('explique les commandes sous la grille', () => {
@@ -202,20 +209,39 @@ describe('replay', () => {
 });
 
 describe('aperçu et indicateur en direct', () => {
-  it('dessine l’aperçu d’un état valide, et rien d’autre', () => {
-    const mini = pandasClient.renderLiveState(liveState(grid, [1, 8]));
-    expect(mini?.querySelectorAll('.pd-cell')).toHaveLength(25);
-    expect(mini?.querySelectorAll('.pd-cell.panda')).toHaveLength(2);
+  it('montre sur l’aperçu les bosquets trouvés et les vies, sans la case d’aucun panda', () => {
+    const mini = pandasClient.renderLiveState(liveState(grid, [1, 8], 1));
+    const shown = [...(mini?.querySelectorAll<HTMLElement>('.pd-cell') ?? [])];
+    expect(shown).toHaveLength(25);
+    expect(mini?.querySelectorAll('.pd-cell.panda')).toHaveLength(0);
+    expect(mini?.textContent).not.toContain('🐼');
+    const found = new Set([grid.regions[1], grid.regions[8]]);
+    shown.forEach((cell, index) => {
+      const region = grid.regions[index] ?? 0;
+      expect(cell.style.background).toBe(found.has(region) ? REGION_COLORS[region] : HIDDEN_REGION);
+    });
+    expect(mini?.querySelector('.pd-mini-lives')?.textContent).toBe('❤️❤️🖤');
     expect(pandasClient.renderLiveState('n’importe quoi')).toBeNull();
-    expect(renderMiniGrid(grid, []).classList.contains('mini')).toBe(true);
+    expect(renderMiniGrid({ grid, found: new Set(), misses: 0 }).classList.contains('mini')).toBe(true);
+  });
+
+  it('diffuse à chaque tentative les bosquets trouvés et les erreurs', () => {
+    const { host, onProgress } = mount();
+    const found = solution[0] ?? 0;
+    cells(host)[found]?.click();
+    cells(host)[found]?.click();
+    cells(host)[0]?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    expect(onProgress).toHaveBeenLastCalledWith(
+      expect.objectContaining({ state: liveState(grid, [found], 1), value: 2 }),
+    );
   });
 
   it('distingue le début, la fin proche et le reste, sans impasse possible', () => {
-    expect(pandasStatus(grid, [], 0)).toBe('start');
-    expect(pandasStatus(grid, [1], 1)).toBe('far');
-    expect(pandasStatus(grid, [1, 8, 10], 3)).toBe('close');
-    expect(pandasStatus(grid, solution, 5)).toBe('close');
-    expect(pandasClient.liveStatus(liveState(grid, [1]), 2)).toBe('far');
+    expect(pandasStatus(grid, 0, 0)).toBe('start');
+    expect(pandasStatus(grid, 1, 1)).toBe('far');
+    expect(pandasStatus(grid, 3, 3)).toBe('close');
+    expect(pandasStatus(grid, solution.length, 5)).toBe('close');
+    expect(pandasClient.liveStatus(liveState(grid, [1], 1), 2)).toBe('far');
     expect(pandasClient.liveStatus('n’importe quoi', 0)).toBeNull();
   });
 

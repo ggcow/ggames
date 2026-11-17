@@ -1,6 +1,7 @@
 // Affichage d'une grille de Pandas. Aucun état : on redessine toute la grille à chaque changement.
 
-import { colOf, type Grid, type Pandas, rowOf } from '../../../shared/games/pandas/rules.ts';
+import { LIVES } from '../../../shared/games/pandas/definition.ts';
+import { colOf, type Grid, type LiveView, type Pandas, rowOf } from '../../../shared/games/pandas/rules.ts';
 import { h, replaceChildren } from '../../platform/dom.ts';
 import type { PandasStrings } from './strings.ts';
 
@@ -17,6 +18,9 @@ export const REGION_COLORS = [
   '#c0eb75',
   '#dee2e6',
 ] as const;
+
+/** Teinte d'un bosquet encore à trouver sur l'aperçu d'un autre joueur. */
+export const HIDDEN_REGION = '#868e96';
 
 /** Côté d'une case touchable au plus et au moins, en pixels. */
 const MAX_CELL = 56;
@@ -38,6 +42,8 @@ export interface GridOptions {
   missed?: number;
   /** Textes des cases pour les lecteurs d'écran ; sans eux, la grille n'est pas touchable. */
   strings?: PandasStrings;
+  /** Bosquets à montrer en couleur ; les autres sont gris. Par défaut, tous en couleur. */
+  revealed?: ReadonlySet<number>;
 }
 
 /** Écart maximal entre deux touchers sur la même case pour faire un double toucher. */
@@ -151,6 +157,13 @@ function borders(grid: Grid, cell: number): string[] {
   return sides;
 }
 
+/** Teinte d'une case : celle de son bosquet, ou grise si l'aperçu ne doit pas encore le montrer. */
+function regionColor(grid: Grid, cell: number, options: GridOptions): string {
+  const region = grid.regions[cell] ?? 0;
+  if (options.revealed && !options.revealed.has(region)) return HIDDEN_REGION;
+  return REGION_COLORS[region] ?? '';
+}
+
 function renderCell(grid: Grid, cell: number, pandas: Pandas, options: GridOptions): HTMLElement {
   const panda = pandas.includes(cell);
   const miss = options.misses?.includes(cell) ?? false;
@@ -162,11 +175,7 @@ function renderCell(grid: Grid, cell: number, pandas: Pandas, options: GridOptio
   const { strings } = options;
   const content = panda ? '🐼' : miss || mark ? '✕' : '';
   if (!strings) {
-    return h(
-      'div',
-      { class: classes.join(' '), style: { background: REGION_COLORS[grid.regions[cell] ?? 0] ?? '' } },
-      content,
-    );
+    return h('div', { class: classes.join(' '), style: { background: regionColor(grid, cell, options) } }, content);
   }
   const place = strings.cell(rowOf(cell, grid.size) + 1, colOf(cell, grid.size) + 1);
   const state = panda ? strings.panda : miss ? strings.miss : mark ? strings.mark : null;
@@ -176,7 +185,7 @@ function renderCell(grid: Grid, cell: number, pandas: Pandas, options: GridOptio
     {
       class: classes.join(' '),
       type: 'button',
-      style: { background: REGION_COLORS[grid.regions[cell] ?? 0] ?? '' },
+      style: { background: regionColor(grid, cell, options) },
       attrs: { 'aria-label': label, 'data-cell': String(cell) },
     },
     content,
@@ -193,9 +202,14 @@ export function renderGrid(host: HTMLElement, grid: Grid, pandas: Pandas, option
   replaceChildren(host, element);
 }
 
-/** Petite grille non interactive (aperçu en direct d'un autre joueur). */
-export function renderMiniGrid(grid: Grid, pandas: Pandas): HTMLElement {
+/**
+ * Aperçu en direct d'un autre joueur, sans rien révéler de la solution : la grille grise, chaque bosquet où il a
+ * trouvé le panda en couleur, et ses vies.
+ */
+export function renderMiniGrid(live: LiveView): HTMLElement {
   const host = h('div', { class: 'mini pd-mini' });
-  renderGrid(host, grid, pandas, { width: MINI_WIDTH, minCell: 8 });
+  renderGrid(host, live.grid, [], { width: MINI_WIDTH, minCell: 8, revealed: live.found });
+  const left = Math.max(0, LIVES - live.misses);
+  host.append(h('div', { class: 'pd-mini-lives' }, '❤️'.repeat(left) + '🖤'.repeat(LIVES - left)));
   return host;
 }

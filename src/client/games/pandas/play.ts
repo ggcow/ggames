@@ -58,7 +58,11 @@ export function mountPandasPlay(host: HTMLElement, options: PandasPlayOptions): 
   };
 
   const report = () =>
-    options.onProgress({ state: liveState(grid, state.pandas), value: cells.length, replay: encodeActions(cells) });
+    options.onProgress({
+      state: liveState(grid, state.pandas, state.misses.length),
+      value: cells.length,
+      replay: encodeActions(cells),
+    });
 
   /** Met ou enlève la croix d'une case encore libre. */
   const setMark = (cell: number, marked: boolean) => {

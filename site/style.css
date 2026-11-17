@@ -1941,6 +1941,13 @@ input[type="range"] {
 .pd-mini .pd-cell {
   border-width: 0;
 }
+.pd-mini-lives {
+  margin-top: 2px;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 1px;
+  line-height: 1;
+}
 .pd-mini .pd-cell.edge-top {
   border-top-width: 1px;
 }
