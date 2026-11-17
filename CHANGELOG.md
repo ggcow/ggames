@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.18](https://github.com/ggcow/ggames/compare/v0.5.17...v0.5.18) (2026-11-17)
+
+### Fonctionnalités
+
+* **client:** réduire la case de niveau au score parfait et montrer les ex æquo ([2cec52f](https://github.com/ggcow/ggames/commit/2cec52f7f7d6015f7dd515dbe4854dbcc46112a7))
+* **client:** réunir les ex æquo sur une ligne du classement d'un niveau ([e4a2729](https://github.com/ggcow/ggames/commit/e4a27295fe598e43eba47924418ae74e1c8f7c2b))
+
 ## [0.5.17](https://github.com/ggcow/ggames/compare/v0.5.16...v0.5.17) (2026-11-16)
 
 ### Corrections
