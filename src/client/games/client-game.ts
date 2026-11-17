@@ -89,8 +89,15 @@ export interface ClientGame {
   levelTile(level: number, view: GameView): LevelTile;
   /** Clé proposée après une victoire sur `key`, ou null. */
   nextKey(key: string, view: GameView): string | null;
+  /**
+   * Joueurs au plus dans une course sur un même niveau, soi compris. L'écran de partie montre un aperçu par
+   * autre joueur, côte à côte : la taille des aperçus du jeu la limite.
+   */
+  readonly raceSize: number;
   /** Aperçu de l'état diffusé par un joueur en train de jouer. */
   renderLiveState(state: string): HTMLElement | null;
+  /** Indication courte à côté du nom sur l'aperçu (score, vies…), ou null. */
+  liveTag(state: string, value: number, lang: Lang): string | null;
   /** Situation de la partie en cours, ou null si l'état est illisible. */
   liveStatus(state: string, value: number): LiveStatus | null;
   mountPlay(host: HTMLElement, ctx: PlayContext): Unmount;

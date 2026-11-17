@@ -56,15 +56,26 @@ export function renderOnline(others: readonly Presence[], ctx: AppContext): HTML
   );
 }
 
-/** Aperçus en direct des autres joueurs sur la même clé. */
+/** Aperçus côte à côte à partir desquels les cartes se resserrent pour tenir sur un téléphone. */
+const COMPACT_COLUMNS = 3;
+
+/**
+ * Aperçus en direct des autres joueurs sur la même clé, côte à côte : une colonne par place de la course, pour que
+ * leur taille ne change pas quand un joueur arrive ou repart. À trois colonnes et plus, les cartes se resserrent.
+ */
 export function renderLiveBoards(others: readonly Presence[], ctx: AppContext, gameId: string): HTMLElement | null {
   const game = findClientGame(gameId);
   if (!game || others.length === 0) return null;
+  const columns = game.raceSize - 1;
   return h(
     'div',
-    { class: 'live-boards' },
-    ...others.map((presence) => {
+    {
+      class: columns >= COMPACT_COLUMNS ? 'live-boards compact' : 'live-boards',
+      style: { '--previews': String(columns) },
+    },
+    ...others.slice(0, columns).map((presence) => {
       const status = presence.state ? game.liveStatus(presence.state, presence.value) : null;
+      const tag = presence.state ? game.liveTag(presence.state, presence.value, ctx.lang) : null;
       return h(
         'div',
         { class: 'live-board' },
@@ -73,7 +84,7 @@ export function renderLiveBoards(others: readonly Presence[], ctx: AppContext, g
           { class: 'live-board-head' },
           avatar(presence.player, presence.name, 'xs'),
           noTranslate(h('strong', null, presence.name)),
-          game.formatValue ? h('small', null, game.formatValue(presence.value, ctx.lang)) : null,
+          tag === null ? null : noTranslate(h('small', null, tag)),
         ),
         status ? h('span', { class: `live-status ${status}` }, liveStatusLabel(status, ctx.t)) : null,
         presence.state ? game.renderLiveState(presence.state) : null,

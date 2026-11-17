@@ -52,10 +52,12 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - Un replay se regarde sans les coups annulés : on voit le chemin final de la partie.
 - Progression individuelle : on joue le premier niveau pas encore gagné (et tous ceux d'avant).
 - Rejoindre : un niveau verrouillé qu'un ami joue en direct peut être rejoint (course sur le même plateau, trois
-  joueurs au plus). La victoire compte au classement mais ne fait pas avancer la progression. Le serveur accepte
-  une partie sur un niveau débloqué par le joueur ou par n'importe quel autre joueur, et refuse le reste.
-- Écran de partie pensé pour un téléphone : son plateau en grand en bas, au-dessus au plus deux aperçus des
-  autres joueurs en petit ; record et compteur de coups en badges compacts.
+  joueurs au plus, quatre aux Pandas). La victoire compte au classement mais ne fait pas avancer la
+  progression. Le serveur accepte une partie sur un niveau débloqué par le joueur ou par n'importe quel autre
+  joueur, et refuse le reste.
+- Écran de partie pensé pour un téléphone : son plateau en grand en bas, au-dessus les aperçus des autres
+  joueurs en petit, côte à côte (deux au plus, trois aux Pandas, dont les aperçus sont plus étroits) ; à côté du
+  nom, le score ou les vies ; record et compteur de coups en badges compacts.
 - Pendant une course, chaque joueur envoie des réactions rapides (emojis ou phrases courtes traduites) aux
   joueurs du même niveau. Elles ne sont pas conservées et ne concernent que la course en cours.
 - Un salon global est intégré à l'accueil et à la page d'un jeu : on échange des messages texte directement
@@ -94,7 +96,7 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   la relance). Pas de score : seule la réussite compte (ni 💎, ni record, ni classement par score, ni Annuler) ;
   essais, temps et replay restent, et le nombre d'erreurs est gardé avec chaque partie. L'aperçu d'un autre
   joueur ne révèle rien de la solution : la grille part grise, chaque bosquet où il a trouvé le panda prend sa
-  couleur, et ses vies s'affichent dessous ; l'état diffusé ne contient pas la case des pandas.
+  couleur, et ses vies s'affichent à côté de son nom ; l'état diffusé ne contient pas la case des pandas.
 - Quatrième jeu : **Parking** (faire glisser voitures et camions le long de leur axe pour libérer la sortie de
   la voiture rouge, sur un parking de 6 × 6 cases), avec une campagne de 100 niveaux dont la solution la plus
   courte s'allonge de 2 à 30 coups. Un glissement compte pour un coup, quelle que soit sa longueur ; on glisse
@@ -160,7 +162,9 @@ La plateforme ne connaît aucune règle de jeu. Un jeu fournit :
 - côté client, un `ClientGame` (`src/client/games/client-game.ts`) : nom, icône (emoji ou image servie par le
   site), libellés, avancement de chaque joueur
   et case de chaque niveau (`levelProgress()`, `levelOf()`, `levelTile()`), écrans de jeu et de replay, et `formatValue` pour afficher un score
-  (`null` si seule la réussite compte : la plateforme masque alors scores et classements par score).
+  (`null` si seule la réussite compte : la plateforme masque alors scores et classements par score) ; pour les
+  courses, `raceSize` (joueurs au plus, soi compris, selon la largeur de ses aperçus), l'aperçu
+  (`renderLiveState()`) et l'indication à côté du nom (`liveTag()` : score, vies…).
 
 La plateforme affiche la grille des niveaux (`src/client/platform/level-grid.ts`, 20 niveaux par page) à partir
 de `levelProgress()` et `levelTile()`, avec la position de chaque joueur (niveau joué en direct, sinon plus haut

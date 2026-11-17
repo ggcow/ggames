@@ -8,7 +8,7 @@ import { mountPlay } from '../../src/client/platform/screens/play.ts';
 import { createLocalStore } from '../../src/client/platform/storage.ts';
 import { PLATFORM_STRINGS } from '../../src/client/platform/strings.ts';
 import { closeModals } from '../../src/client/platform/ui.ts';
-import type { Account, GameState, SubmitRunResponse } from '../../src/shared/platform/protocol.ts';
+import type { Account, GameState, Presence, SubmitRunResponse } from '../../src/shared/platform/protocol.ts';
 import { pandasLevel, pandasSolution } from '../support/pandas.ts';
 
 const me: Account = { id: 'abc123', name: 'Léa', created: 1, login: 'lea', avatar: '🐶' };
@@ -18,8 +18,24 @@ const won: SubmitRunResponse = {
   records: [{ player: me.id, value: 5, run: 'r1' }],
 };
 
+/** Présence figée : les joueurs en direct que voit l'écran, sans connexion. */
+class StaticLive extends LiveClient {
+  readonly racers: readonly Presence[];
+
+  constructor(online: readonly Presence[]) {
+    super(() => {
+      throw new Error('pas de connexion dans ce test');
+    }, 'ws://test');
+    this.racers = online;
+  }
+
+  override get presence(): readonly Presence[] {
+    return this.racers;
+  }
+}
+
 /** Contexte réel, sans réseau : l'API simulée sert la partie et accepte la victoire. */
-function context(navigate: (route: unknown) => void): AppContext {
+function context(navigate: (route: unknown) => void, online: readonly Presence[] = []): AppContext {
   const api = new ApiClient(
     vi.fn(async (input: string) => {
       if (input === '/api/games/pandas') return new Response(JSON.stringify(state));
@@ -29,9 +45,7 @@ function context(navigate: (route: unknown) => void): AppContext {
   );
   return {
     api,
-    live: new LiveClient(() => {
-      throw new Error('pas de connexion dans ce test');
-    }, 'ws://test'),
+    live: new StaticLive(online),
     chat: new ChatStore(api, createLocalStore(null), me.id),
     lang: 'fr',
     t: PLATFORM_STRINGS.fr,
@@ -82,5 +96,33 @@ describe('fin de partie', () => {
     buttons[0]?.click();
     expect(host.querySelectorAll('.pd-cell.miss')).toHaveLength(0);
     expect(host.querySelector('.pd-lives')?.textContent).toBe('❤️❤️❤️');
+  });
+});
+
+describe('course rejointe', () => {
+  const racers = (count: number): Presence[] =>
+    ['p1', 'p2', 'p3', 'p4'].slice(0, count).map((player) => ({
+      player,
+      name: player,
+      game: 'pandas',
+      key: 'c:5',
+      state: null,
+      value: 0,
+    }));
+
+  it('rejoint aux Pandas un niveau verrouillé où trois amis font déjà la course, avec leurs trois aperçus', async () => {
+    const host = document.createElement('div');
+    mountPlay(host, context(vi.fn(), racers(3)), pandasClient, 'c:5');
+    await settle();
+    expect(host.querySelectorAll('.live-board')).toHaveLength(3);
+    expect(host.querySelector('.pd-cell')).not.toBeNull();
+  });
+
+  it('refuse une course de Pandas déjà à quatre joueurs', async () => {
+    const host = document.createElement('div');
+    mountPlay(host, context(vi.fn(), racers(4)), pandasClient, 'c:5');
+    await settle();
+    expect(host.querySelector('.pd-cell')).toBeNull();
+    expect(host.textContent).toContain('Cette course est complète : 4 joueurs au plus.');
   });
 });

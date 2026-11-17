@@ -94,6 +94,8 @@ export interface LevelGridOptions {
   page: number;
   tile: (level: number) => LevelTile;
   positions: readonly PlayerPosition[];
+  /** Joueurs au plus dans une course du jeu (`ClientGame.raceSize`). */
+  raceSize: number;
   t: PlatformStrings;
   onPage: (page: number) => void;
   onPlay: (key: string) => void;
@@ -168,7 +170,7 @@ function renderTile(options: LevelGridOptions, level: number): HTMLElement {
   const tile = options.tile(level);
   const here = options.positions.filter((p) => p.level === level);
   // Un niveau verrouillé qu'un ami joue en ce moment peut être rejoint, tant que la course n'est pas complète.
-  const joinable = canJoinRace(here.filter((p) => p.live).length);
+  const joinable = canJoinRace(here.filter((p) => p.live).length, options.raceSize);
   const state = tile.status === 'locked' && joinable ? 'join' : tile.status;
   const players = here.map((p) => `${p.name}${p.live ? ` (${t.inGame})` : ''}`).join(', ');
   const record = recordText(tile, t);

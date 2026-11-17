@@ -10,15 +10,7 @@ import { denseRanks, recordStanding } from '../../../shared/platform/ranking.ts'
 import { findReaction, REACTIONS } from '../../../shared/platform/reactions.ts';
 import type { ClientGame, GameView, Unmount } from '../../games/client-game.ts';
 import { avatar, avatarGroup } from '../avatar.ts';
-import {
-  type AppContext,
-  canJoinRace,
-  createGameView,
-  RACE_SIZE,
-  rivalsOn,
-  type ScreenHandle,
-  wonKeys,
-} from '../context.ts';
+import { type AppContext, canJoinRace, createGameView, rivalsOn, type ScreenHandle, wonKeys } from '../context.ts';
 import { type Child, h, noTranslate, replaceChildren } from '../dom.ts';
 import { formatDuration, type Lang } from '../i18n.ts';
 import { reactionLabel } from '../reactions.ts';
@@ -403,7 +395,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     reactionButton.hidden = others.length === 0 || recording;
     if (mic) mic.hidden = others.length === 0 && !recording;
     if (others.length === 0) closeReactions?.();
-    replaceChildren(liveHost, renderLiveBoards(others.slice(0, RACE_SIZE - 1), ctx, gameId));
+    replaceChildren(liveHost, renderLiveBoards(others, ctx, gameId));
   };
 
   const submitAbandon = () => {
@@ -495,7 +487,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
    */
   const canPlay = (state: GameState) => {
     const won = wonKeys(state, ctx.me.id);
-    return game.definition.isUnlocked(key, won) || won.has(key) || canJoinRace(rivals().length);
+    return game.definition.isUnlocked(key, won) || won.has(key) || canJoinRace(rivals().length, game.raceSize);
   };
 
   const showLocked = () =>
@@ -507,7 +499,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         { class: 'empty' },
         h('span', { class: 'empty-icon' }, '🔒'),
         h('h2', null, t.locked),
-        h('p', { class: 'muted' }, rivals().length >= RACE_SIZE ? t.raceFull : t.lockedHint),
+        h('p', { class: 'muted' }, rivals().length >= game.raceSize ? t.raceFull(game.raceSize) : t.lockedHint),
       ),
     );
 

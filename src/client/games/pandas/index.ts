@@ -5,7 +5,7 @@ import { parseLiveState } from '../../../shared/games/pandas/rules.ts';
 import { h } from '../../platform/dom.ts';
 import { campaignMethods } from '../campaign.ts';
 import type { ClientGame } from '../client-game.ts';
-import { renderMiniGrid } from './board.ts';
+import { livesText, RACE_SIZE, renderMiniGrid } from './board.ts';
 import { mountPandasPlay } from './play.ts';
 import { mountPandasReplay } from './replay.ts';
 import { pandasStatus } from './status.ts';
@@ -23,9 +23,16 @@ export const pandasClient: ClientGame = {
     pandas.bestPossible,
   ),
 
+  raceSize: RACE_SIZE,
+
   renderLiveState(state) {
     const live = parseLiveState(state);
     return live ? renderMiniGrid(live) : null;
+  },
+
+  liveTag(state) {
+    const live = parseLiveState(state);
+    return live ? livesText(live.misses) : null;
   },
 
   liveStatus(state, value) {

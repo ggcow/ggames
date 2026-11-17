@@ -44,6 +44,7 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
           played: (player) => played.has(player),
           levelOf: (key) => game.levelOf(key),
         }),
+        raceSize: game.raceSize,
         t,
         onPage: (next) => {
           page = next;

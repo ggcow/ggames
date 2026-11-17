@@ -2,6 +2,7 @@
 
 import { bouquets, startBoard } from '../../../shared/games/bouquets/definition.ts';
 import { parseLiveState } from '../../../shared/games/bouquets/rules.ts';
+import { RACE_SIZE } from '../../platform/context.ts';
 import { h } from '../../platform/dom.ts';
 import { campaignMethods } from '../campaign.ts';
 import type { ClientGame } from '../client-game.ts';
@@ -22,6 +23,8 @@ export const bouquetsClient: ClientGame = {
     (value, lang) => BOUQUETS_STRINGS[lang].moves(value),
     bouquets.bestPossible,
   ),
+
+  raceSize: RACE_SIZE,
 
   renderLiveState(state) {
     const pots = parseLiveState(state);

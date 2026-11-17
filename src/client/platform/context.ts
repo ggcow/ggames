@@ -51,8 +51,9 @@ export function wonKeys(state: GameState, player: PlayerId): Set<string> {
 }
 
 /**
- * Joueurs au plus dans une course, soi compris : sur un écran de téléphone, on n'a la place que pour son
- * plateau et deux aperçus.
+ * Joueurs au plus dans une course, soi compris, pour un jeu dont les aperçus ont la taille habituelle : sur un
+ * écran de téléphone, on n'a la place que pour son plateau et deux aperçus. Chaque jeu fixe la sienne
+ * (`ClientGame.raceSize`).
  */
 export const RACE_SIZE = 3;
 
@@ -61,8 +62,8 @@ export function rivalsOn(presence: readonly Presence[], me: PlayerId, game: Game
   return presence.filter((p) => p.player !== me && p.game === game && p.key === key);
 }
 
-/** Une course rejointe a encore de la place pour soi. */
-export const canJoinRace = (liveCount: number): boolean => liveCount > 0 && liveCount < RACE_SIZE;
+/** Une course rejointe a encore de la place pour soi, avec `liveCount` joueurs déjà en direct. */
+export const canJoinRace = (liveCount: number, raceSize: number): boolean => liveCount > 0 && liveCount < raceSize;
 
 export function createGameView(state: GameState, me: PlayerId, lang: Lang): GameView {
   const names = new Map(state.players.map((p) => [p.id, p.name]));

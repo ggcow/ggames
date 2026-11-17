@@ -1,4 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
+import { bouquetsClient } from '../../src/client/games/bouquets/index.ts';
+import { fiolesClient } from '../../src/client/games/fioles/index.ts';
+import { pandasClient } from '../../src/client/games/pandas/index.ts';
+import { parkingClient } from '../../src/client/games/parking/index.ts';
 import { avatarOf } from '../../src/client/platform/avatar.ts';
 import { canJoinRace, createGameView, RACE_SIZE, rivalsOn } from '../../src/client/platform/context.ts';
 import { recordBadge, recordNote, scoreList } from '../../src/client/platform/screens/play.ts';
@@ -27,12 +31,21 @@ describe('course en direct', () => {
     expect(rivalsOn(online, 'me', 'fioles', 'c:3').map((p) => p.player)).toEqual(['léa', 'ana']);
   });
 
-  it('accepte un joueur de plus tant que la course n’a pas trois joueurs', () => {
+  it('accepte un joueur de plus tant que la course n’est pas complète', () => {
     expect(RACE_SIZE).toBe(3);
-    expect(canJoinRace(0)).toBe(false);
-    expect(canJoinRace(1)).toBe(true);
-    expect(canJoinRace(2)).toBe(true);
-    expect(canJoinRace(3)).toBe(false);
+    expect(canJoinRace(0, RACE_SIZE)).toBe(false);
+    expect(canJoinRace(1, RACE_SIZE)).toBe(true);
+    expect(canJoinRace(2, RACE_SIZE)).toBe(true);
+    expect(canJoinRace(3, RACE_SIZE)).toBe(false);
+    expect(canJoinRace(3, 4)).toBe(true);
+    expect(canJoinRace(4, 4)).toBe(false);
+  });
+
+  it('fixe la taille de la course de chaque jeu : quatre aux Pandas, trois ailleurs', () => {
+    expect(fiolesClient.raceSize).toBe(RACE_SIZE);
+    expect(bouquetsClient.raceSize).toBe(RACE_SIZE);
+    expect(parkingClient.raceSize).toBe(RACE_SIZE);
+    expect(pandasClient.raceSize).toBe(4);
   });
 });
 

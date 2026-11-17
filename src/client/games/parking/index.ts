@@ -2,6 +2,7 @@
 
 import { parking, startBoard } from '../../../shared/games/parking/definition.ts';
 import { parseBoard } from '../../../shared/games/parking/rules.ts';
+import { RACE_SIZE } from '../../platform/context.ts';
 import { h } from '../../platform/dom.ts';
 import { campaignMethods } from '../campaign.ts';
 import type { ClientGame } from '../client-game.ts';
@@ -21,6 +22,8 @@ export const parkingClient: ClientGame = {
     (value, lang) => PARKING_STRINGS[lang].moves(value),
     parking.bestPossible,
   ),
+
+  raceSize: RACE_SIZE,
 
   renderLiveState(state) {
     const board = parseBoard(state);

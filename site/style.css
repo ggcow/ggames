@@ -1514,10 +1514,10 @@ input[type="range"] {
   font-size: 15px;
   white-space: nowrap;
 }
-/* Deux aperçus au plus, côte à côte, sans défilement. */
+/* Un aperçu par autre place de la course (`--previews`), côte à côte, sans défilement. */
 .live-boards {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--previews, 2), minmax(0, 1fr));
   gap: 10px;
 }
 .live-board {
@@ -1547,6 +1547,21 @@ input[type="range"] {
   color: var(--yellow);
   font-weight: 800;
   white-space: nowrap;
+}
+/* Trois aperçus et plus : cartes resserrées pour tenir sur 375 px. */
+.live-boards.compact {
+  gap: 6px;
+}
+.live-boards.compact .live-board {
+  padding: 4px 6px;
+}
+.live-boards.compact .live-board-head {
+  gap: 4px;
+  font-size: 11px;
+}
+.live-boards.compact .live-board-head small {
+  font-size: 9px;
+  letter-spacing: -1px;
 }
 .live-status {
   align-self: flex-start;
@@ -1970,19 +1985,16 @@ input[type="range"] {
 .pd-cell.shake {
   animation: shake 0.3s;
 }
+/* Aperçu calé à gauche, sous le nom et les vies. */
+.pd-mini {
+  justify-content: flex-start;
+}
 .pd-mini .pd-grid {
   border-radius: 4px;
   box-shadow: 0 0 0 1px var(--pd-edge);
 }
 .pd-mini .pd-cell {
   border-width: 0;
-}
-.pd-mini-lives {
-  margin-top: 2px;
-  text-align: center;
-  font-size: 10px;
-  letter-spacing: 1px;
-  line-height: 1;
 }
 .pd-mini .pd-cell.edge-top {
   border-top-width: 1px;

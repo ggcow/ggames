@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LevelTile } from '../../src/client/games/client-game.ts';
 import { avatar, avatarOf, setAvatar, setAvatars, takenAvatars } from '../../src/client/platform/avatar.ts';
+import { RACE_SIZE } from '../../src/client/platform/context.ts';
 import {
   currentPage,
   type PlayerPosition,
@@ -61,6 +62,7 @@ describe('grille', () => {
       page,
       tile,
       positions,
+      raceSize: RACE_SIZE,
       t: PLATFORM_STRINGS.fr,
       onPage,
       onPlay,
@@ -101,6 +103,7 @@ describe('grille', () => {
         recordPerfect,
       }),
       positions: [],
+      raceSize: RACE_SIZE,
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay: vi.fn(),
@@ -165,6 +168,7 @@ describe('grille', () => {
       page: 0,
       tile,
       positions: [{ player: 'abc123', name: 'Léa', level: 8, live: true, me: false }],
+      raceSize: RACE_SIZE,
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay,
@@ -177,19 +181,29 @@ describe('grille', () => {
     expect(onPlay).toHaveBeenCalledWith('c:8');
   });
 
-  it('ne propose pas de rejoindre une course déjà complète', () => {
-    const grid = renderLevelGrid({
+  const raceGrid = (live: number, raceSize: number) =>
+    renderLevelGrid({
       progress: { unlocked: 3, total: 9999 },
       page: 0,
       tile,
-      positions: ['a1', 'b2', 'c3'].map((player) => ({ player, name: player, level: 8, live: true, me: false })),
+      positions: ['a1', 'b2', 'c3', 'd4']
+        .slice(0, live)
+        .map((player) => ({ player, name: player, level: 8, live: true, me: false })),
+      raceSize,
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay: vi.fn(),
-    });
-    const cell = grid.querySelectorAll<HTMLButtonElement>('.level')[7];
+    }).querySelectorAll<HTMLButtonElement>('.level')[7];
+
+  it('ne propose pas de rejoindre une course déjà complète', () => {
+    const cell = raceGrid(RACE_SIZE, RACE_SIZE);
     expect(cell?.classList.contains('locked')).toBe(true);
     expect(cell?.disabled).toBe(true);
+  });
+
+  it('propose de rejoindre selon la taille de course du jeu', () => {
+    expect(raceGrid(3, 4)?.classList.contains('join')).toBe(true);
+    expect(raceGrid(4, 4)?.classList.contains('locked')).toBe(true);
   });
 
   it('permet d’aller jusqu’à la page du joueur le plus avancé', () => {
@@ -198,6 +212,7 @@ describe('grille', () => {
       page: 0,
       tile,
       positions: [{ player: 'abc123', name: 'Léa', level: 45, live: false, me: false }],
+      raceSize: RACE_SIZE,
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay: vi.fn(),
@@ -218,6 +233,7 @@ describe('grille', () => {
       page: 0,
       tile,
       positions: crowd,
+      raceSize: RACE_SIZE,
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay: vi.fn(),
@@ -237,6 +253,7 @@ describe('grille', () => {
       page: 0,
       tile,
       positions: [],
+      raceSize: RACE_SIZE,
       t: PLATFORM_STRINGS.fr,
       onPage,
       onPlay: vi.fn(),
@@ -297,6 +314,7 @@ describe('traduction automatique', () => {
         ],
       }),
       positions: [],
+      raceSize: RACE_SIZE,
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay: vi.fn(),

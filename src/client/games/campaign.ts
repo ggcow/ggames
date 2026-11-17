@@ -50,13 +50,13 @@ export function campaignTile(
 
 /**
  * Les méthodes de `ClientGame` liées à la campagne, à partir du libellé d'un niveau, du format des scores et du
- * meilleur score possible de chaque clé (`GameDefinition.bestPossible`).
+ * meilleur score possible de chaque clé (`GameDefinition.bestPossible`). L'indication d'un aperçu est son score.
  */
 export function campaignMethods(
   levelLabel: (level: number, lang: Lang) => string,
   formatValue: ((value: number, lang: Lang) => string) | null,
   bestPossible: (key: string) => number | null,
-): Pick<ClientGame, 'keyLabel' | 'formatValue' | 'levelProgress' | 'levelOf' | 'levelTile' | 'nextKey'> {
+): Pick<ClientGame, 'keyLabel' | 'formatValue' | 'levelProgress' | 'levelOf' | 'levelTile' | 'nextKey' | 'liveTag'> {
   return {
     keyLabel(key, lang) {
       const level = parseCampaignKey(key);
@@ -70,5 +70,7 @@ export function campaignMethods(
       const level = parseCampaignKey(key);
       return level === null || level >= MAX_LEVEL ? null : campaignKey(level + 1);
     },
+    // Le score de la partie en cours, pour un jeu qui en a un.
+    liveTag: (_state, value, lang) => (formatValue ? formatValue(value, lang) : null),
   };
 }

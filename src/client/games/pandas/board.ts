@@ -26,8 +26,14 @@ export const HIDDEN_REGION = '#868e96';
 const MAX_CELL = 56;
 export const MIN_CELL = 30;
 
-/** Largeur d'un aperçu : deux aperçus tiennent côte à côte sur un écran de 375 px. */
-export const MINI_WIDTH = 140;
+/**
+ * Largeur d'un aperçu : trois aperçus tiennent côte à côte sur un écran de 375 px, ce qui permet une course à
+ * quatre (`RACE_SIZE`).
+ */
+export const MINI_WIDTH = 88;
+
+/** Joueurs au plus dans une course de Pandas, soi compris. */
+export const RACE_SIZE = 4;
 
 export interface GridOptions {
   /** Largeur disponible en pixels. */
@@ -202,14 +208,18 @@ export function renderGrid(host: HTMLElement, grid: Grid, pandas: Pandas, option
   replaceChildren(host, element);
 }
 
+/** Vies d'un joueur, en cœurs : pleins pour celles qui restent, noirs pour celles perdues. */
+export function livesText(misses: number): string {
+  const left = Math.max(0, LIVES - misses);
+  return '❤️'.repeat(left) + '🖤'.repeat(LIVES - left);
+}
+
 /**
  * Aperçu en direct d'un autre joueur, sans rien révéler de la solution : la grille grise, chaque bosquet où il a
- * trouvé le panda en couleur, et ses vies.
+ * trouvé le panda en couleur. Ses vies vont à côté de son nom (`liveTag`).
  */
 export function renderMiniGrid(live: LiveView): HTMLElement {
   const host = h('div', { class: 'mini pd-mini' });
   renderGrid(host, live.grid, [], { width: MINI_WIDTH, minCell: 8, revealed: live.found });
-  const left = Math.max(0, LIVES - live.misses);
-  host.append(h('div', { class: 'pd-mini-lives' }, '❤️'.repeat(left) + '🖤'.repeat(LIVES - left)));
   return host;
 }

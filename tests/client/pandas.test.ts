@@ -209,7 +209,7 @@ describe('replay', () => {
 });
 
 describe('aperçu et indicateur en direct', () => {
-  it('montre sur l’aperçu les bosquets trouvés et les vies, sans la case d’aucun panda', () => {
+  it('montre sur l’aperçu les bosquets trouvés, sans la case d’aucun panda, et les vies à côté du nom', () => {
     const mini = pandasClient.renderLiveState(liveState(grid, [1, 8], 1));
     const shown = [...(mini?.querySelectorAll<HTMLElement>('.pd-cell') ?? [])];
     expect(shown).toHaveLength(25);
@@ -220,7 +220,10 @@ describe('aperçu et indicateur en direct', () => {
       const region = grid.regions[index] ?? 0;
       expect(cell.style.background).toBe(found.has(region) ? REGION_COLORS[region] : HIDDEN_REGION);
     });
-    expect(mini?.querySelector('.pd-mini-lives')?.textContent).toBe('❤️❤️🖤');
+    expect(mini?.textContent).toBe('');
+    expect(pandasClient.liveTag(liveState(grid, [1, 8], 1), 2, 'fr')).toBe('❤️❤️🖤');
+    expect(pandasClient.liveTag(liveState(grid, [], 3), 3, 'zh')).toBe('🖤🖤🖤');
+    expect(pandasClient.liveTag('n’importe quoi', 0, 'fr')).toBeNull();
     expect(pandasClient.renderLiveState('n’importe quoi')).toBeNull();
     expect(renderMiniGrid({ grid, found: new Set(), misses: 0 }).classList.contains('mini')).toBe(true);
   });

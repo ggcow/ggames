@@ -14,7 +14,7 @@ import {
 import { type Grid, isSolved, liveState } from '../../../shared/games/pandas/rules.ts';
 import { h } from '../../platform/dom.ts';
 import { frameBadge, frameButton, mountPuzzleFrame } from '../puzzle-frame.ts';
-import { bindGridInput, renderGrid } from './board.ts';
+import { bindGridInput, livesText, renderGrid } from './board.ts';
 import type { PandasStrings } from './strings.ts';
 
 export interface PandasPlayOptions {
@@ -44,7 +44,7 @@ export function mountPandasPlay(host: HTMLElement, options: PandasPlayOptions): 
 
   const render = () => {
     const left = LIVES - state.misses.length;
-    lives.textContent = '❤️'.repeat(left) + '🖤'.repeat(LIVES - left);
+    lives.textContent = livesText(state.misses.length);
     lives.setAttribute('aria-label', strings.lives(left));
     restart.disabled = finished;
     renderGrid(table, grid, state.pandas, {

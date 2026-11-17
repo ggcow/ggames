@@ -12,8 +12,8 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
 - Pour chaque jeu : une grille de 100 niveaux sur 5 pages. Chacun avance à son rythme : un niveau se débloque
   quand tous les précédents sont gagnés.
 - Si un ami joue un niveau que tu n'as pas encore débloqué, tu peux le rejoindre et faire la course avec lui
-  (trois joueurs au plus). La victoire compte au classement, mais ta progression reste la tienne.
-- En partie, ton plateau occupe le bas de l'écran ; au-dessus, les plateaux des deux autres joueurs en petit.
+  (trois joueurs au plus, quatre aux Pandas). La victoire compte au classement, mais ta progression reste la tienne.
+- En partie, ton plateau occupe le bas de l'écran ; au-dessus, les plateaux des autres joueurs en petit.
   Après une victoire, Rejouer relance le même niveau pour améliorer ton score.
 - Sur la grille, chaque joueur qui a déjà joué apparaît sur son niveau (celui qu'il joue s'il est en ligne).
 - La progression de chacun (niveaux réussis, parties, temps de jeu), les classements et le replay des parties

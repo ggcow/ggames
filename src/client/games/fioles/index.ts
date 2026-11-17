@@ -2,6 +2,7 @@
 
 import { fioles, startBoard } from '../../../shared/games/fioles/definition.ts';
 import { parseBoard } from '../../../shared/games/fioles/rules.ts';
+import { RACE_SIZE } from '../../platform/context.ts';
 import { h } from '../../platform/dom.ts';
 import { campaignMethods } from '../campaign.ts';
 import type { ClientGame } from '../client-game.ts';
@@ -21,6 +22,8 @@ export const fiolesClient: ClientGame = {
     (value, lang) => FIOLES_STRINGS[lang].moves(value),
     fioles.bestPossible,
   ),
+
+  raceSize: RACE_SIZE,
 
   renderLiveState(state) {
     const board = parseBoard(state);
