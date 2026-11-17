@@ -25,9 +25,10 @@ export function mountPlayer(host: HTMLElement, ctx: AppContext, game: ClientGame
     return `${total} · ${t.firstWin(time, key.firstWinAttempts)}`;
   };
 
-  /** Score parfait et place au podium du niveau, en badges discrets. */
+  /** Score parfait et place au podium du niveau, en badges discrets ; aucun pour un jeu sans score. */
   const keyBadges = (key: KeyProgress): Child[] => {
     const badges: Child[] = [];
+    if (game.formatValue === null) return badges;
     if (key.best && game.definition.bestPossible(key.key) === key.best.value) {
       badges.push(h('span', { class: 'key-badge', attrs: { title: t.perfectScore } }, '💎'));
     }

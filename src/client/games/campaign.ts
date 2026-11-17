@@ -18,8 +18,16 @@ export const campaignProgress = (view: GameView, player: PlayerId): LevelProgres
   total: MAX_LEVEL,
 });
 
-/** Case d'un niveau : réussi, jouable ou verrouillé, son record et ses détenteurs ex æquo. */
-export function campaignTile(level: number, view: GameView, bestPossible: (key: string) => number | null): LevelTile {
+/**
+ * Case d'un niveau : réussi, jouable ou verrouillé, son record et ses détenteurs ex æquo. Un jeu sans score
+ * (`scored` faux) n'a pas de record : la case ne nomme aucun détenteur.
+ */
+export function campaignTile(
+  level: number,
+  view: GameView,
+  bestPossible: (key: string) => number | null,
+  scored: boolean,
+): LevelTile {
   const key = campaignKey(level);
   const records = view.state.records[key] ?? [];
   const mine = records.find((record) => record.player === view.me);
@@ -31,9 +39,11 @@ export function campaignTile(level: number, view: GameView, bestPossible: (key: 
     label: String(level),
     status: mine ? 'done' : unlocked ? 'open' : 'locked',
     perfect: mine !== undefined && mine.value === possible,
-    holders: records
-      .filter((entry) => entry.value === record?.value)
-      .map((entry) => ({ player: entry.player, name: view.playerName(entry.player) })),
+    holders: scored
+      ? records
+          .filter((entry) => entry.value === record?.value)
+          .map((entry) => ({ player: entry.player, name: view.playerName(entry.player) }))
+      : [],
     recordPerfect: record !== undefined && record.value === possible,
   };
 }
@@ -55,7 +65,7 @@ export function campaignMethods(
     formatValue,
     levelProgress: campaignProgress,
     levelOf: parseCampaignKey,
-    levelTile: (level, view) => campaignTile(level, view, bestPossible),
+    levelTile: (level, view) => campaignTile(level, view, bestPossible, formatValue !== null),
     nextKey(key) {
       const level = parseCampaignKey(key);
       return level === null || level >= MAX_LEVEL ? null : campaignKey(level + 1);

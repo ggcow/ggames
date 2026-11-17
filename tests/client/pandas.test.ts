@@ -39,17 +39,24 @@ const mount = () => {
 };
 
 describe('jeu', () => {
-  it('suit la campagne commune et marque parfait un niveau gagné sans coup de trop', () => {
+  it('suit la campagne commune, sans score : ni diamant ni record sur les cases', () => {
     expect(pandasClient.definition.id).toBe('pandas');
     expect(pandasClient.icon).toEqual({ kind: 'emoji', emoji: '🐼' });
     const v = view({
       records: { 'c:1': [{ player: ME, value: 5, run: 'r1' }], 'c:2': [{ player: ME, value: 7, run: 'r2' }] },
     });
     expect(pandasClient.levelProgress(v, ME)).toEqual({ unlocked: 3, total: MAX_LEVEL });
-    expect(pandasClient.levelTile(1, v)).toMatchObject({ status: 'done', perfect: true, recordPerfect: true });
-    expect(pandasClient.levelTile(2, v)).toMatchObject({ status: 'done', perfect: false });
+    expect(pandasClient.levelTile(1, v)).toEqual({
+      key: 'c:1',
+      label: '1',
+      status: 'done',
+      perfect: false,
+      holders: [],
+      recordPerfect: false,
+    });
+    expect(pandasClient.levelTile(3, v).status).toBe('open');
     expect(pandasClient.keyLabel('c:5', 'zh')).toBe('第 5 关');
-    expect(pandasClient.formatValue?.(1, 'fr')).toBe('1 coup');
+    expect(pandasClient.formatValue).toBeNull();
   });
 
   it('a les mêmes textes dans chaque langue', () => {
@@ -84,7 +91,7 @@ describe('partie', () => {
     expect(cells(host)[4]?.classList.contains('clash')).toBe(true);
   });
 
-  it('gagne en posant la solution et produit un replay au meilleur score possible', () => {
+  it('gagne en posant la solution et produit un replay valide', () => {
     const { host, onWin } = mount();
     for (const cell of solution) {
       cells(host)[cell]?.click();

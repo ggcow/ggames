@@ -48,11 +48,10 @@ describe('définition', () => {
     expect(pandas.isUnlocked('c:3', new Set(['c:1']))).toBe(false);
   });
 
-  it('compte une victoire directe au meilleur score possible : un coup par ligne', () => {
+  it('reconnaît une victoire et n’a pas de meilleur score possible : seule la réussite compte', () => {
     const win = pandasWin(30);
     expect(pandas.replay('c:30', encodeActions(win))).toEqual({ finished: true, value: win.length });
-    expect(pandas.bestPossible('c:30')).toBe(win.length);
-    expect(pandas.bestPossible('x:1')).toBeNull();
+    expect(pandas.bestPossible('c:30')).toBeNull();
   });
 
   it('compte chaque essai et chaque retrait, et retire un coup par annulation', () => {

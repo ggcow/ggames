@@ -90,9 +90,6 @@ export const pandas: GameDefinition = {
     if (firstSolved !== -1 && firstSolved !== states.length - 1) return null;
     return { finished: firstSolved !== -1, value: countMoves(actions) };
   },
-  // Il faut poser un panda par ligne, et chaque pose est un coup : une grille de côté n se gagne au mieux en n
-  // coups, sans essai ni retrait.
-  bestPossible(key) {
-    return startGrid(key)?.size ?? null;
-  },
+  // Pas de score : avec les croix et Annuler, tout joueur finit au minimum de coups ; seule la réussite compte.
+  bestPossible: () => null,
 };

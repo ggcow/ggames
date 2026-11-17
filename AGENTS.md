@@ -87,8 +87,9 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   un devant se vide), avec une campagne de 100 niveaux de difficulté croissante et des illustrations peintes.
 - Troisième jeu : **Pandas** (un panda par ligne, par colonne et par bosquet coloré, sans que deux pandas se
   touchent, même en diagonale), avec une campagne de 100 grilles de 5 à 10 cases de côté, chacune à solution
-  unique. Un toucher fait passer une case de vide à croix (repère gratuit), à panda, puis à vide ; poser ou
-  retirer un panda est un coup. Le meilleur score possible d'une grille est son côté.
+  unique. Un toucher fait passer une case de vide à croix (repère gratuit), à panda, puis à vide. Pas de score :
+  avec les croix et Annuler, tout le monde finirait au minimum de coups. Seule la réussite compte (ni 💎, ni
+  record, ni classement par score) ; essais, temps et replay restent.
 
 ## Contraintes à ne jamais casser
 
@@ -182,8 +183,7 @@ Erreurs attendues : valeurs `Result` renvoyées par le Durable Object, convertie
    (`shared/games/campaign.ts`) et `campaignMethods()` côté client ; son `generate.ts` produit ses 100 niveaux,
    écrits une fois pour toutes dans `levels.ts` par `npm run levels -- <jeu>` (générateur à déclarer dans
    `scripts/levels.ts`). Si une recherche exhaustive le permet, `npm run optimal -- <jeu>` écrit le meilleur
-   score possible de chaque niveau dans `optimal.ts` (recherche à déclarer dans `scripts/optimal.ts`) ; si les
-   règles le donnent directement (Pandas : un coup par ligne), `bestPossible()` le calcule sans fichier.
+   score possible de chaque niveau dans `optimal.ts` (recherche à déclarer dans `scripts/optimal.ts`).
 2. `src/client/games/<jeu>/` : `index.ts` qui exporte un `ClientGame`, `strings.ts` (fr + zh), écrans ;
    l'enregistrer dans `src/client/games/registry.ts`. Ses images éventuelles vont dans `site/games/<jeu>/`.
 3. Tests : règles et replays dans `tests/shared/`, interface dans `tests/client/`, une partie complète via

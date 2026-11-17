@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fiolesClient } from '../../src/client/games/fioles/index.ts';
+import { pandasClient } from '../../src/client/games/pandas/index.ts';
 import { ApiClient } from '../../src/client/platform/api.ts';
 import { ChatStore } from '../../src/client/platform/chat.ts';
 import type { AppContext } from '../../src/client/platform/context.ts';
@@ -86,5 +87,15 @@ describe('fiche d’un joueur', () => {
 
     expect(host.textContent).not.toContain('Victoires');
     expect(host.textContent).toContain('Essais 12');
+  });
+
+  it('garde essais, temps et replay d’un jeu sans score, sans diamant, médaille ni score', async () => {
+    const host = document.createElement('div');
+    mountPlayer(host, context(), pandasClient, me.id);
+    await vi.waitFor(() => expect(host.querySelectorAll('.list-row')).toHaveLength(2));
+    const first = host.querySelector<HTMLElement>('.list-row');
+    expect(first?.querySelector('small')?.textContent).toBe('Essais 12 · 1re victoire - 9 s - 3 essais');
+    expect(host.querySelectorAll('.key-badge')).toHaveLength(0);
+    expect(first?.querySelector('button')?.textContent).toBe(PLATFORM_STRINGS.fr.watchReplay);
   });
 });

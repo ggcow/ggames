@@ -18,7 +18,8 @@ export const pandasClient: ClientGame = {
   icon: { kind: 'emoji', emoji: '🐼' },
   ...campaignMethods(
     (level, lang) => PANDAS_STRINGS[lang].level(level),
-    (value, lang) => PANDAS_STRINGS[lang].moves(value),
+    // Seule la réussite compte : ni score, ni classement par score, ni record.
+    null,
     pandas.bestPossible,
   ),
 
