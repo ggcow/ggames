@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.23](https://github.com/ggcow/ggames/compare/v0.5.22...v0.5.23) (2026-11-17)
+
+### Fonctionnalités
+
+* **pandas:** course à quatre, vies à côté du nom ([89161ce](https://github.com/ggcow/ggames/commit/89161cef4382a8a10430d6de38354cdc931aee19))
+
 ## [0.5.22](https://github.com/ggcow/ggames/compare/v0.5.21...v0.5.22) (2026-11-17)
 
 ### Fonctionnalités
