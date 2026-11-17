@@ -9,7 +9,7 @@ export default {
     'scope-enum': [
       2,
       'always',
-      ['platform', 'worker', 'client', 'shared', 'fioles', 'bouquets', 'ci', 'deps', 'release'],
+      ['platform', 'worker', 'client', 'shared', 'fioles', 'bouquets', 'pandas', 'ci', 'deps', 'release'],
     ],
     'subject-case': [0],
     'body-max-line-length': [2, 'always', 100],

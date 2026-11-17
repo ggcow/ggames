@@ -169,8 +169,9 @@ describe('messages temps réel', () => {
 });
 
 describe('registre des jeux', () => {
-  it('contient fioles et bouquets, et ignore les identifiants inconnus', () => {
-    expect([...GAMES.keys()]).toEqual(['fioles', 'bouquets']);
+  it('contient fioles, bouquets et pandas, et ignore les identifiants inconnus', () => {
+    expect([...GAMES.keys()]).toEqual(['fioles', 'bouquets', 'pandas']);
+    expect(findGame('pandas')?.id).toBe('pandas');
     expect(findGame('bouquets')?.id).toBe('bouquets');
     expect(findGame('fioles')?.id).toBe('fioles');
     expect(findGame('autre')).toBeNull();

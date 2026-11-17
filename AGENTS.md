@@ -84,6 +84,10 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - Premier jeu : **Fioles** (trier des couleurs dans des fioles), avec une campagne de 100 niveaux.
 - Deuxième jeu : **Bouquets** (réunir trois fleurs pareilles devant un pot ; des couches cachées avancent quand
   un devant se vide), avec une campagne de 100 niveaux de difficulté croissante et des illustrations peintes.
+- Troisième jeu : **Pandas** (un panda par ligne, par colonne et par bosquet coloré, sans que deux pandas se
+  touchent, même en diagonale), avec une campagne de 100 grilles de 5 à 10 cases de côté, chacune à solution
+  unique. Un toucher fait passer une case de vide à croix (repère gratuit), à panda, puis à vide ; poser ou
+  retirer un panda est un coup. Le meilleur score possible d'une grille est son côté.
 
 ## Contraintes à ne jamais casser
 
@@ -114,6 +118,7 @@ src/
       fioles/              règles, replays, niveaux enregistrés (levels.ts), leur générateur (generate.ts)
                            et le meilleur score possible de chacun (optimal.ts)
       bouquets/            idem ; le générateur mesure la difficulté avec des parties simulées
+      pandas/              règles, solveur, replays, grilles enregistrées et leur générateur (solution unique)
   worker/                  serveur Cloudflare
     index.ts               routeur HTTP -> Durable Object
     http.ts                réponses JSON, lecture du corps, jeton
@@ -176,7 +181,8 @@ Erreurs attendues : valeurs `Result` renvoyées par le Durable Object, convertie
    (`shared/games/campaign.ts`) et `campaignMethods()` côté client ; son `generate.ts` produit ses 100 niveaux,
    écrits une fois pour toutes dans `levels.ts` par `npm run levels -- <jeu>` (générateur à déclarer dans
    `scripts/levels.ts`). Si une recherche exhaustive le permet, `npm run optimal -- <jeu>` écrit le meilleur
-   score possible de chaque niveau dans `optimal.ts` (recherche à déclarer dans `scripts/optimal.ts`).
+   score possible de chaque niveau dans `optimal.ts` (recherche à déclarer dans `scripts/optimal.ts`) ; si les
+   règles le donnent directement (Pandas : un coup par ligne), `bestPossible()` le calcule sans fichier.
 2. `src/client/games/<jeu>/` : `index.ts` qui exporte un `ClientGame`, `strings.ts` (fr + zh), écrans ;
    l'enregistrer dans `src/client/games/registry.ts`. Ses images éventuelles vont dans `site/games/<jeu>/`.
 3. Tests : règles et replays dans `tests/shared/`, interface dans `tests/client/`, une partie complète via
@@ -227,7 +233,7 @@ Aucune modification de la plateforme ne doit être nécessaire. Si elle l'est, c
   ```
 
   Types : `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `build`, `ci`, `chore`, `style`.
-  Portées : `platform`, `worker`, `client`, `shared`, `fioles`, `bouquets`, `ci`, `deps`, `release`.
+  Portées : `platform`, `worker`, `client`, `shared`, `fioles`, `bouquets`, `pandas`, `ci`, `deps`, `release`.
 - Un commit = un changement cohérent qui passe `npm run check`. Pas de commit « wip » ni « fix typo » isolé
   d'un changement qu'il corrige.
 - Hook `pre-commit` : Biome sur les fichiers indexés + vérification des types.

@@ -892,6 +892,11 @@ input[type="range"] {
   --theme-b: #e8590c;
   --theme-edge: #a61e4d;
 }
+.theme-pandas {
+  --theme-a: #69db7c;
+  --theme-b: #2b8a3e;
+  --theme-edge: #1b5e20;
+}
 .game-icon {
   width: 64px;
   height: 64px;
@@ -1853,6 +1858,89 @@ input[type="range"] {
   padding: 2px 0 0;
 }
 
+/* ---------- Plateau (pandas) ---------- */
+
+/* Une grille de --n cases de côté --cs ; un trait épais sépare deux bosquets. */
+.pd-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), var(--cs));
+  width: max-content;
+  margin: 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px var(--pd-edge);
+  --pd-edge: #1b1340;
+}
+.pd-cell {
+  width: var(--cs);
+  height: var(--cs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0.5px solid rgba(0, 0, 0, 0.15);
+  color: rgba(27, 19, 64, 0.5);
+  font-size: calc(var(--cs) * 0.42);
+  font-weight: 900;
+  line-height: 1;
+}
+/* Couleur opaque : une couleur de texte transparente pâlirait aussi l'emoji du panda. */
+.pd-cell.panda {
+  color: #000;
+  font-size: calc(var(--cs) * 0.68);
+}
+.pd-cell.edge-top {
+  border-top: 2.5px solid var(--pd-edge);
+}
+.pd-cell.edge-bottom {
+  border-bottom: 2.5px solid var(--pd-edge);
+}
+.pd-cell.edge-left {
+  border-left: 2.5px solid var(--pd-edge);
+}
+.pd-cell.edge-right {
+  border-right: 2.5px solid var(--pd-edge);
+}
+/* Panda qui enfreint une règle : cerclé de rouge, le joueur voit tout de suite lequel. */
+.pd-cell.clash {
+  box-shadow: inset 0 0 0 3px #e03131;
+}
+.pd-mini .pd-grid {
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px var(--pd-edge);
+}
+.pd-mini .pd-cell {
+  border-width: 0;
+}
+.pd-mini .pd-cell.edge-top {
+  border-top-width: 1px;
+}
+.pd-mini .pd-cell.edge-bottom {
+  border-bottom-width: 1px;
+}
+.pd-mini .pd-cell.edge-left {
+  border-left-width: 1px;
+}
+.pd-mini .pd-cell.edge-right {
+  border-right-width: 1px;
+}
+.board-host.solved .pd-grid {
+  animation: pd-solved 0.6s ease-out;
+}
+@keyframes pd-solved {
+  50% {
+    box-shadow:
+      0 0 0 2px var(--pd-edge),
+      0 0 18px 6px var(--green);
+  }
+}
+.pd-hint {
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 /* ---------- États ---------- */
 
 .empty {
@@ -2016,7 +2104,8 @@ input[type="range"] {
   .modal-box,
   .reaction-bubble,
   .bq-pot.revealed .bq-slot.front .bq-flower,
-  .bq-pot.shake {
+  .bq-pot.shake,
+  .board-host.solved .pd-grid {
     animation: none;
   }
   :root {

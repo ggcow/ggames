@@ -6,6 +6,7 @@ import { writeFileSync } from 'node:fs';
 import { generateLevels as bouquets } from '../src/shared/games/bouquets/generate.ts';
 import { MAX_LEVEL } from '../src/shared/games/campaign.ts';
 import { generateLevels as fioles } from '../src/shared/games/fioles/generate.ts';
+import { generateLevels as pandas } from '../src/shared/games/pandas/generate.ts';
 
 /**
  * Générateur de chaque jeu : les niveaux 1 à `count`, encodés comme le jeu les relit. `progress` reçoit le
@@ -14,6 +15,7 @@ import { generateLevels as fioles } from '../src/shared/games/fioles/generate.ts
 const GENERATORS: Record<string, (count: number, progress: (level: number) => void) => string[]> = {
   fioles,
   bouquets,
+  pandas,
 };
 
 const game = process.argv[2] ?? '';
