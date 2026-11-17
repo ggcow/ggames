@@ -59,26 +59,32 @@ export interface PositionsInput {
   me: PlayerId;
   /** Plus haut niveau jouable d'un joueur. */
   unlockedOf: (player: PlayerId) => number;
+  /** Le joueur a déjà joué au moins une partie de ce jeu. */
+  played: (player: PlayerId) => boolean;
   /** Niveau désigné par une clé, ou null. */
   levelOf: (key: string) => number | null;
 }
 
 /**
  * Position de chaque joueur : le niveau qu'il joue s'il est en ligne dans ce jeu, sinon le plus haut niveau
- * qu'il a débloqué. Triées du plus avancé au moins avancé.
+ * qu'il a débloqué. Un joueur qui n'a jamais joué à ce jeu et n'y joue pas en direct n'a pas de position : il
+ * encombrerait le premier niveau. Triées du plus avancé au moins avancé.
  */
 export function playerPositions(input: PositionsInput): PlayerPosition[] {
   return input.players
-    .map((player) => {
+    .flatMap((player) => {
       const presence = input.online.find((p) => p.player === player.id && p.game === input.gameId && p.key);
       const liveLevel = presence?.key ? input.levelOf(presence.key) : null;
-      return {
-        player: player.id,
-        name: player.name,
-        level: liveLevel ?? input.unlockedOf(player.id),
-        live: liveLevel !== null,
-        me: player.id === input.me,
-      };
+      if (liveLevel === null && !input.played(player.id)) return [];
+      return [
+        {
+          player: player.id,
+          name: player.name,
+          level: liveLevel ?? input.unlockedOf(player.id),
+          live: liveLevel !== null,
+          me: player.id === input.me,
+        },
+      ];
     })
     .sort((a, b) => b.level - a.level || a.name.localeCompare(b.name));
 }

@@ -332,6 +332,7 @@ describe('positions des joueurs', () => {
       gameId: 'fioles',
       me: 'aaa111',
       unlockedOf: (id) => unlocked[id] ?? 1,
+      played: () => true,
       levelOf: (key) => Number(key.slice(2)),
     });
     expect(positions).toEqual([
@@ -348,9 +349,23 @@ describe('positions des joueurs', () => {
       gameId: 'fioles',
       me: 'aaa111',
       unlockedOf: () => 3,
+      played: () => true,
       levelOf: () => null,
     });
     expect(position).toMatchObject({ level: 3, live: false, me: true });
+  });
+
+  it('écarte un joueur qui n’a jamais joué à ce jeu, sauf s’il y joue en direct', () => {
+    const positions = playerPositions({
+      players,
+      online: [presence('ccc333', 'fioles', 'c:1')],
+      gameId: 'fioles',
+      me: 'aaa111',
+      unlockedOf: () => 1,
+      played: (id) => id === 'bbb222',
+      levelOf: (key) => Number(key.slice(2)),
+    });
+    expect(positions.map((position) => position.player)).toEqual(['bbb222', 'ccc333']);
   });
 
   it('trouve la page d’un niveau', () => {

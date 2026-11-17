@@ -155,7 +155,7 @@ La plateforme ne connaît aucune règle de jeu. Un jeu fournit :
 
 La plateforme affiche la grille des niveaux (`src/client/platform/level-grid.ts`, 20 niveaux par page) à partir
 de `levelProgress()` et `levelTile()`, avec la position de chaque joueur (niveau joué en direct, sinon plus haut
-niveau débloqué).
+niveau débloqué). Un joueur qui n'a jamais joué à ce jeu n'y apparaît que s'il y joue en direct.
 
 ### Modèle de données (SQLite du Durable Object `World`)
 

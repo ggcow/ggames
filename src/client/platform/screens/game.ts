@@ -27,6 +27,7 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
     if (!state) return;
     const view = createGameView(state, ctx.me.id, ctx.lang);
     const progress = game.levelProgress(view, ctx.me.id);
+    const played = new Set(state.progress.map((entry) => entry.player));
     page ??= currentPage(progress);
     replaceChildren(
       gridHost,
@@ -40,6 +41,7 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
           gameId,
           me: ctx.me.id,
           unlockedOf: (player) => game.levelProgress(view, player).unlocked,
+          played: (player) => played.has(player),
           levelOf: (key) => game.levelOf(key),
         }),
         t,
