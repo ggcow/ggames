@@ -1713,25 +1713,6 @@ input[type="range"] {
   display: flex;
   justify-content: center;
 }
-/*
- * Cartes resserrées : aperçu collé à gauche, sous le nom, et l'état à sa droite s'il reste la place (sinon
- * dessous), pour ne pas laisser de vide sur un écran large.
- */
-.live-boards.compact .live-board {
-  flex-flow: row wrap;
-  align-items: flex-start;
-  column-gap: 6px;
-}
-.live-boards.compact .live-board-head {
-  flex-basis: 100%;
-}
-.live-boards.compact .mini {
-  order: 1;
-  justify-content: flex-start;
-}
-.live-boards.compact .live-status {
-  order: 2;
-}
 .mini .board {
   gap: 4px;
   padding: 2px 0;
@@ -2006,11 +1987,17 @@ input[type="range"] {
 .pd-cell.shake {
   animation: shake 0.3s;
 }
+/* L'aperçu s'étire à la largeur de sa carte, en cases carrées. */
 .pd-mini .pd-grid {
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  width: 100%;
   border-radius: 4px;
   box-shadow: 0 0 0 1px var(--pd-edge);
 }
 .pd-mini .pd-cell {
+  width: auto;
+  height: auto;
+  aspect-ratio: 1;
   border-width: 0;
 }
 .pd-mini .pd-cell.edge-top {

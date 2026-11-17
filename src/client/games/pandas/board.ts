@@ -27,8 +27,8 @@ const MAX_CELL = 56;
 export const MIN_CELL = 30;
 
 /**
- * Largeur d'un aperçu : trois aperçus tiennent côte à côte sur un écran de 375 px, ce qui permet une course à
- * quatre (`RACE_SIZE`).
+ * Largeur de calcul des cases d'un aperçu, que la feuille de style étire ensuite à la largeur de sa carte : trois
+ * aperçus tiennent côte à côte sur un écran de 375 px, ce qui permet une course à quatre (`RACE_SIZE`).
  */
 export const MINI_WIDTH = 88;
 
