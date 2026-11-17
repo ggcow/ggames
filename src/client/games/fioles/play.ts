@@ -13,7 +13,7 @@ import {
   type ReadonlyBoard,
 } from '../../../shared/games/fioles/rules.ts';
 import { countMoves } from '../../../shared/games/moves.ts';
-import { frameButton, mountPuzzleFrame, moveCounter } from '../puzzle-frame.ts';
+import { frameBadge, frameButton, mountPuzzleFrame } from '../puzzle-frame.ts';
 import { renderBoard, shake } from './board.ts';
 import type { FiolesStrings } from './strings.ts';
 
@@ -32,10 +32,10 @@ export function mountFiolesPlay(host: HTMLElement, options: FiolesPlayOptions): 
   let selected = -1;
   let finished = false;
 
-  const counter = moveCounter();
+  const counter = frameBadge();
   const restart = frameButton(strings.restart, () => reset());
   const undo = frameButton(strings.undo, () => undoLast());
-  const boardHost = mountPuzzleFrame(host, { counter, buttons: [restart, undo] });
+  const boardHost = mountPuzzleFrame(host, { badge: counter, buttons: [restart, undo] });
 
   const render = (arrived?: { tube: number; count: number }) => {
     counter.textContent = strings.moves(countMoves(actions));

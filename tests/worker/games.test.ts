@@ -369,13 +369,23 @@ describe('Pandas', () => {
   const win = pandasWin(1);
   const replay = encodePandas(win);
 
-  it('enregistre une partie gagnée avec le nombre de coups recalculé par le serveur', async () => {
+  it('enregistre une partie gagnée avec le nombre d’erreurs recalculé par le serveur', async () => {
     const me = await newPlayer();
     const { status, body } = await submitPandas(me.token, { key: 'c:1', status: 'won', durationMs: 5000, replay });
     expect(status).toBe(200);
-    expect(body.run).toMatchObject({ key: 'c:1', status: 'won', value: win.length, player: me.player.id });
+    expect(body.run).toMatchObject({ key: 'c:1', status: 'won', value: 0, player: me.player.id });
     const games = await call<GameSummary[]>('/api/games', { token: me.token });
     expect(games.body.find((game) => game.id === 'pandas')).toMatchObject({ players: 1, runs: 1 });
+  });
+
+  it('enregistre une partie perdue à la troisième erreur, et refuse de la compter gagnée', async () => {
+    const { token } = await newPlayer();
+    // Cases 0, 2 et 3 : hors de la solution du niveau 1.
+    const lost = encodePandas([0, 2, 3]);
+    expect((await submitPandas(token, { key: 'c:1', status: 'won', durationMs: 1, replay: lost })).status).toBe(400);
+    const { status, body } = await submitPandas(token, { key: 'c:1', status: 'lost', durationMs: 1, replay: lost });
+    expect(status).toBe(200);
+    expect(body.run).toMatchObject({ status: 'lost', value: 3 });
   });
 
   it('refuse une victoire incomplète ou un replay impossible', async () => {

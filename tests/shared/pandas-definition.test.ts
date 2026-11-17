@@ -1,16 +1,52 @@
 import { describe, expect, it } from 'vitest';
 import {
+  attempt,
   decodeActions,
   encodeActions,
+  isLost,
+  LIVES,
   levelGrid,
   pandas,
   playActions,
+  solutionOf,
   startGrid,
 } from '../../src/shared/games/pandas/definition.ts';
 import { pandasLevel, pandasWin } from '../support/pandas.ts';
 
+// Niveau 1, 5 × 5 : solution 1, 8, 10, 17, 24 ; les cases 0, 2 et 3 sont fausses.
+const grid = pandasLevel(1);
+const solution = solutionOf(grid);
+const START = { pandas: [], misses: [] };
+
+describe('tentatives', () => {
+  it('trouve la solution unique d’une grille enregistrée', () => {
+    expect(solution).toEqual([1, 8, 10, 17, 24]);
+  });
+
+  it('pose un panda sur une case de la solution, et compte une erreur ailleurs', () => {
+    expect(attempt(grid, solution, START, 8)).toEqual({ pandas: [8], misses: [] });
+    expect(attempt(grid, solution, { pandas: [8], misses: [] }, 1)).toEqual({ pandas: [1, 8], misses: [] });
+    expect(attempt(grid, solution, START, 0)).toEqual({ pandas: [], misses: [0] });
+  });
+
+  it('refuse une case déjà tentée ou hors de la grille', () => {
+    expect(attempt(grid, solution, { pandas: [8], misses: [0] }, 8)).toBeNull();
+    expect(attempt(grid, solution, { pandas: [8], misses: [0] }, 0)).toBeNull();
+    expect(attempt(grid, solution, START, 25)).toBeNull();
+  });
+
+  it('perd la partie à la troisième erreur, et refuse toute tentative ensuite ou après la victoire', () => {
+    expect(LIVES).toBe(3);
+    const lost = { pandas: [8], misses: [0, 2, 3] };
+    expect(isLost({ pandas: [], misses: [0, 2] })).toBe(false);
+    expect(isLost(lost)).toBe(true);
+    expect(attempt(grid, solution, lost, 1)).toBeNull();
+    expect(attempt(grid, solution, { pandas: solution, misses: [] }, 0)).toBeNull();
+  });
+});
+
 describe('replays', () => {
-  it('encode chaque case touchée sur deux chiffres', () => {
+  it('encode chaque case tentée sur deux chiffres', () => {
     expect(encodeActions([7, 42, 0])).toBe('074200');
     expect(decodeActions('074200')).toEqual([7, 42, 0]);
     expect(decodeActions('')).toEqual([]);
@@ -22,10 +58,10 @@ describe('replays', () => {
     expect(decodeActions('07u')).toBeNull();
   });
 
-  it('pose puis retire un panda, et refuse une case hors de la grille', () => {
-    const grid = pandasLevel(1);
-    expect(playActions(grid, [3, 3, 8])).toEqual([[], [3], [], [8]]);
-    expect(playActions(grid, [3, 25])).toBeNull();
+  it('rejoue chaque tentative, et refuse une tentative impossible', () => {
+    expect(playActions(grid, [8, 0])).toEqual([START, { pandas: [8], misses: [] }, { pandas: [8], misses: [0] }]);
+    expect(playActions(grid, [8, 8])).toBeNull();
+    expect(playActions(grid, [25])).toBeNull();
   });
 });
 
@@ -45,23 +81,17 @@ describe('définition', () => {
     expect(pandas.isUnlocked('c:3', new Set(['c:1']))).toBe(false);
   });
 
-  it('reconnaît une victoire et n’a pas de meilleur score possible : seule la réussite compte', () => {
-    const win = pandasWin(30);
-    expect(pandas.replay('c:30', encodeActions(win))).toEqual({ finished: true, value: win.length });
+  it('reconnaît une victoire, garde le nombre d’erreurs et n’a pas de meilleur score possible', () => {
+    expect(pandas.replay('c:30', encodeActions(pandasWin(30)))).toEqual({ finished: true, value: 0 });
+    expect(pandas.replay('c:1', encodeActions([0, 2, ...pandasWin(1)]))).toEqual({ finished: true, value: 2 });
     expect(pandas.bestPossible('c:30')).toBeNull();
   });
 
-  it('compte chaque case touchée, essais et retraits compris', () => {
-    const [first, ...rest] = pandasWin(1);
-    if (first === undefined) throw new Error('solution vide');
-    const wrong = first === 1 ? 2 : 1;
-    expect(pandas.replay('c:1', encodeActions([wrong, wrong, first, ...rest]))).toEqual({ finished: true, value: 7 });
-  });
-
-  it('refuse une case touchée après la victoire et dit quand la grille n’est pas résolue', () => {
-    const win = pandasWin(1);
-    expect(pandas.replay('c:1', encodeActions([...win, 0]))).toBeNull();
-    expect(pandas.replay('c:1', encodeActions(win.slice(0, 3)))).toEqual({ finished: false, value: 3 });
+  it('reconnaît une partie perdue ou pas finie, et refuse un replay impossible', () => {
+    expect(pandas.replay('c:1', encodeActions([8, 0, 2, 3]))).toEqual({ finished: false, value: 3 });
+    expect(pandas.replay('c:1', encodeActions([8, 1]))).toEqual({ finished: false, value: 0 });
+    expect(pandas.replay('c:1', encodeActions([0, 2, 3, 1]))).toBeNull();
+    expect(pandas.replay('c:1', encodeActions([...pandasWin(1), 0]))).toBeNull();
     expect(pandas.replay('c:1', 'zz')).toBeNull();
     expect(pandas.replay('x:1', '')).toBeNull();
   });

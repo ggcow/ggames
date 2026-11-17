@@ -1,15 +1,15 @@
-// Lecteur de replay : rejoue une partie case par case, avec lecture automatique. Pas de compteur : Pandas n'a
-// pas de score.
+// Lecteur de replay : rejoue les tentatives d'une partie une à une, pandas posés et erreurs, avec lecture
+// automatique. Pas de compteur : Pandas n'a pas de score.
 
-import { decodeActions, playActions } from '../../../shared/games/pandas/definition.ts';
-import type { Grid, Pandas } from '../../../shared/games/pandas/rules.ts';
+import { decodeActions, type PandasState, playActions } from '../../../shared/games/pandas/definition.ts';
+import type { Grid } from '../../../shared/games/pandas/rules.ts';
 import { h, replaceChildren } from '../../platform/dom.ts';
 import { renderGrid } from './board.ts';
 
 const STEP_MS = 700;
 
 export function mountPandasReplay(host: HTMLElement, grid: Grid, replay: string): () => void {
-  const states: Pandas[] = playActions(grid, decodeActions(replay) ?? []) ?? [[]];
+  const states: PandasState[] = playActions(grid, decodeActions(replay) ?? []) ?? [{ pandas: [], misses: [] }];
   let index = 0;
   let timer: ReturnType<typeof setInterval> | null = null;
 
@@ -20,7 +20,11 @@ export function mountPandasReplay(host: HTMLElement, grid: Grid, replay: string)
   const render = () => {
     slider.value = String(index);
     playButton.textContent = timer ? '⏸' : '▶';
-    renderGrid(gridHost, grid, states[index] ?? [], { width: (host.clientWidth || window.innerWidth) - 16 });
+    const state = states[index];
+    renderGrid(gridHost, grid, state?.pandas ?? [], {
+      width: (host.clientWidth || window.innerWidth) - 16,
+      misses: state?.misses ?? [],
+    });
   };
 
   const stop = () => {

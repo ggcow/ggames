@@ -65,4 +65,22 @@ describe('fin de partie', () => {
     expect(host.querySelectorAll('.pd-cell.panda')).toHaveLength(0);
     expect(navigate).not.toHaveBeenCalled();
   });
+
+  it('propose de recommencer après trois erreurs, avec toutes ses vies', async () => {
+    const host = document.createElement('div');
+    mountPlay(host, context(vi.fn()), pandasClient, 'c:1');
+    await settle();
+    const cells = () => [...host.querySelectorAll<HTMLButtonElement>('.pd-cell')];
+    // Cases 0, 2 et 3 : hors de la solution du niveau 1.
+    for (const cell of [0, 2, 3]) {
+      cells()[cell]?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    }
+    await settle();
+    expect(document.querySelector('.modal h2')?.textContent).toBe(PLATFORM_STRINGS.fr.lost);
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>('.modal-buttons button')];
+    expect(buttons.map((button) => button.textContent)).toEqual(['⟲ Rejouer', '← Retour']);
+    buttons[0]?.click();
+    expect(host.querySelectorAll('.pd-cell.miss')).toHaveLength(0);
+    expect(host.querySelector('.pd-lives')?.textContent).toBe('❤️❤️❤️');
+  });
 });

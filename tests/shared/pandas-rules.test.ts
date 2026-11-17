@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  canStillWin,
   clash,
   conflicts,
   findSolutions,
@@ -9,7 +8,6 @@ import {
   liveState,
   parseGrid,
   parseLiveState,
-  togglePanda,
 } from '../../src/shared/games/pandas/rules.ts';
 
 // Grille 5 × 5 à solution unique : cases 1, 8, 10, 17, 24 (colonnes 1, 3, 0, 2, 4).
@@ -63,11 +61,6 @@ describe('règles', () => {
     expect(isSolved(g, [1, 8, 10, 17, 24])).toBe(true);
     expect(isSolved(g, [1, 8, 10, 17])).toBe(false);
   });
-
-  it('pose un panda puis le retire, en gardant les cases triées', () => {
-    expect(togglePanda([3, 9], 5)).toEqual([3, 5, 9]);
-    expect(togglePanda([3, 5, 9], 5)).toEqual([3, 9]);
-  });
 });
 
 describe('solutions', () => {
@@ -77,11 +70,10 @@ describe('solutions', () => {
     expect(search.nodes).toBeGreaterThan(0);
   });
 
-  it('garde les pandas déjà posés et sait quand ils empêchent de finir', () => {
+  it('garde les pandas déjà posés, et ne trouve rien s’ils sont mal placés', () => {
     expect(findSolutions(grid(), 2, [10]).solutions).toEqual([[1, 8, 10, 17, 24]]);
-    expect(canStillWin(grid(), [1, 8])).toBe(true);
-    expect(canStillWin(grid(), [0])).toBe(false);
-    expect(canStillWin(grid(), [1, 4])).toBe(false);
+    expect(findSolutions(grid(), 2, [0]).solutions).toEqual([]);
+    expect(findSolutions(grid(), 2, [1, 4]).solutions).toEqual([]);
   });
 });
 

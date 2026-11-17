@@ -106,11 +106,6 @@ export function conflicts(grid: Grid, pandas: Pandas): Set<number> {
 export const isSolved = (grid: Grid, pandas: Pandas): boolean =>
   pandas.length === grid.size && conflicts(grid, pandas).size === 0;
 
-/** Pose un panda sur une case libre, ou le retire s'il y est déjà. */
-export function togglePanda(pandas: Pandas, cell: number): Pandas {
-  return pandas.includes(cell) ? pandas.filter((other) => other !== cell) : [...pandas, cell].sort((a, b) => a - b);
-}
-
 /** Résultat d'une recherche de solutions : les solutions trouvées et les cases essayées pour les trouver. */
 export interface SolutionSearch {
   solutions: Pandas[];
@@ -160,9 +155,6 @@ export function findSolutions(grid: Grid, limit: number, fixed: Pandas = []): So
   place(0, -1);
   return search;
 }
-
-/** Vrai si les pandas posés peuvent encore mener à la solution : aucun n'est de trop ni mal placé. */
-export const canStillWin = (grid: Grid, pandas: Pandas): boolean => findSolutions(grid, 1, pandas).solutions.length > 0;
 
 /* ---------- État diffusé en direct ---------- */
 

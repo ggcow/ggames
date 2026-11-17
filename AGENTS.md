@@ -87,10 +87,11 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   un devant se vide), avec une campagne de 100 niveaux de difficulté croissante et des illustrations peintes.
 - Troisième jeu : **Pandas** (un panda par ligne, par colonne et par bosquet coloré, sans que deux pandas se
   touchent, même en diagonale), avec une campagne de 100 grilles de 5 à 10 cases de côté, chacune à solution
-  unique. Un clic ou un toucher met ou enlève une croix (repère qui n'entre pas dans le replay) ; un clic droit
-  ou un appui long pose ou retire un panda. Pas de score : avec les croix, tout le monde finirait au minimum de
-  coups. Seule la réussite compte (ni 💎, ni record, ni classement par score, ni compteur de coups, ni Annuler) ;
-  essais, temps et replay restent.
+  unique. Un toucher met ou enlève une croix (repère qui n'entre pas dans le replay), glisser le doigt en met
+  sur chaque case parcourue ; un double toucher, un double clic ou un clic droit tente un panda. Un panda bien
+  placé reste, une tentative ratée coûte une vie : trois vies, et la troisième erreur perd la partie (Rejouer
+  la relance). Pas de score : seule la réussite compte (ni 💎, ni record, ni classement par score, ni Annuler) ;
+  essais, temps et replay restent, et le nombre d'erreurs est gardé avec chaque partie.
 
 ## Contraintes à ne jamais casser
 

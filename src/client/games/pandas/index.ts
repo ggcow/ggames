@@ -44,6 +44,7 @@ export const pandasClient: ClientGame = {
       strings: PANDAS_STRINGS[ctx.lang],
       onProgress: ctx.progress,
       onWin: (replay) => ctx.finish({ status: 'won', replay }),
+      onLose: (replay) => ctx.finish({ status: 'lost', replay }),
     });
   },
 

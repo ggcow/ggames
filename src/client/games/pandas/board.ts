@@ -32,62 +32,104 @@ export interface GridOptions {
   minCell?: number;
   /** Cases marquées d'une croix par le joueur. */
   marks?: ReadonlySet<number>;
-  /** Pandas qui enfreignent une règle. */
-  clashes?: ReadonlySet<number>;
+  /** Cases tentées à tort : une croix rouge, définitive. */
+  misses?: readonly number[];
+  /** Case de la dernière erreur, qui tremble. */
+  missed?: number;
   /** Textes des cases pour les lecteurs d'écran ; sans eux, la grille n'est pas touchable. */
   strings?: PandasStrings;
-  input?: GridInput;
 }
 
-/** Durée d'un appui long sur un écran tactile, qui vaut un clic droit. */
-export const LONG_PRESS_MS = 450;
+/** Écart maximal entre deux touchers sur la même case pour faire un double toucher. */
+export const DOUBLE_TAP_MS = 350;
+
+/** Ce que la grille demande au jeu. */
+export interface GridActions {
+  isMarked(cell: number): boolean;
+  /** Met (`true`) ou enlève la croix d'une case ; sans effet sur une case déjà tentée. */
+  setMark(cell: number, marked: boolean): void;
+  /** Tente d'y poser un panda. */
+  attempt(cell: number): void;
+}
+
+/** Case désignée par un élément de la grille jouable, ou `null`. */
+const cellOf = (target: EventTarget | null): number | null => {
+  const element = target instanceof Element ? target.closest<HTMLElement>('[data-cell]') : null;
+  return element ? Number(element.dataset['cell']) : null;
+};
 
 /**
- * Commandes d'une grille jouable : `onPrimary` au clic ou au toucher, `onSecondary` au clic droit ou à l'appui
- * long. Créées une fois par partie : la grille est redessinée à chaque changement, mais un appui long en cours
- * doit survivre au redessin.
+ * Commandes d'une grille jouable, écoutées sur `host` qui la contient : la grille est redessinée à chaque
+ * changement, et un geste doit survivre au redessin. Un toucher ou un clic met ou enlève une croix ; glisser le
+ * doigt (ou la souris, bouton enfoncé) fait de même sur chaque case parcourue, dans le sens du premier toucher ;
+ * un double toucher, un double clic ou un clic droit tente un panda. Le premier toucher d'un double toucher a
+ * déjà agi : la tentative vaut quel que soit son effet.
  */
-export interface GridInput {
-  attach(element: HTMLElement, cell: number): void;
-  dispose(): void;
-}
+export function bindGridInput(host: HTMLElement, actions: GridActions): () => void {
+  let last: { cell: number; at: number } | null = null;
+  let drag: { start: number; current: number; marking: boolean | null } | null = null;
+  // Un glissement se termine par un clic sur sa dernière case : il ne doit pas compter.
+  let ignoreClick = false;
 
-export function createGridInput(actions: {
-  onPrimary(cell: number): void;
-  onSecondary(cell: number): void;
-}): GridInput {
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  // Après un appui long, le navigateur envoie encore un clic, et sur Android un menu contextuel : on les ignore.
-  let ignoreUntil = 0;
-  const cancel = () => {
-    if (timer) clearTimeout(timer);
-    timer = null;
+  const onClick = (event: MouseEvent) => {
+    const cell = cellOf(event.target);
+    if (cell === null) return;
+    if (ignoreClick) {
+      ignoreClick = false;
+      return;
+    }
+    const now = Date.now();
+    if (last?.cell === cell && now - last.at <= DOUBLE_TAP_MS) {
+      last = null;
+      actions.attempt(cell);
+      return;
+    }
+    last = { cell, at: now };
+    actions.setMark(cell, !actions.isMarked(cell));
   };
-  return {
-    attach(element, cell) {
-      element.addEventListener('click', () => {
-        if (Date.now() < ignoreUntil) return;
-        actions.onPrimary(cell);
-      });
-      element.addEventListener('contextmenu', (event) => {
-        event.preventDefault();
-        if (Date.now() < ignoreUntil) return;
-        actions.onSecondary(cell);
-      });
-      element.addEventListener('pointerdown', (event) => {
-        if (event.pointerType !== 'touch') return;
-        cancel();
-        timer = setTimeout(() => {
-          timer = null;
-          ignoreUntil = Date.now() + 800;
-          actions.onSecondary(cell);
-        }, LONG_PRESS_MS);
-      });
-      for (const type of ['pointerup', 'pointercancel', 'pointerleave'] as const) {
-        element.addEventListener(type, cancel);
-      }
-    },
-    dispose: cancel,
+  const onContextMenu = (event: MouseEvent) => {
+    const cell = cellOf(event.target);
+    if (cell === null) return;
+    event.preventDefault();
+    last = null;
+    actions.attempt(cell);
+  };
+  const onPointerDown = (event: PointerEvent) => {
+    const cell = cellOf(event.target);
+    if (cell === null || event.button !== 0) return;
+    // Un toucher capture le doigt sur sa première case : sans ce relâchement, glisser ne verrait qu'elle.
+    if (event.target instanceof Element && event.target.hasPointerCapture?.(event.pointerId)) {
+      event.target.releasePointerCapture(event.pointerId);
+    }
+    ignoreClick = false;
+    drag = { start: cell, current: cell, marking: null };
+  };
+  const onPointerMove = (event: PointerEvent) => {
+    if (!drag) return;
+    const cell = cellOf(document.elementFromPoint(event.clientX, event.clientY));
+    if (cell === null || cell === drag.current) return;
+    if (drag.marking === null) {
+      drag.marking = !actions.isMarked(drag.start);
+      actions.setMark(drag.start, drag.marking);
+      last = null;
+    }
+    drag.current = cell;
+    actions.setMark(cell, drag.marking);
+  };
+  const onPointerEnd = () => {
+    if (drag && drag.marking !== null) ignoreClick = true;
+    drag = null;
+  };
+
+  host.addEventListener('click', onClick);
+  host.addEventListener('contextmenu', onContextMenu);
+  host.addEventListener('pointerdown', onPointerDown);
+  host.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerEnd);
+  window.addEventListener('pointercancel', onPointerEnd);
+  return () => {
+    window.removeEventListener('pointerup', onPointerEnd);
+    window.removeEventListener('pointercancel', onPointerEnd);
   };
 }
 
@@ -111,13 +153,15 @@ function borders(grid: Grid, cell: number): string[] {
 
 function renderCell(grid: Grid, cell: number, pandas: Pandas, options: GridOptions): HTMLElement {
   const panda = pandas.includes(cell);
-  const mark = !panda && (options.marks?.has(cell) ?? false);
+  const miss = options.misses?.includes(cell) ?? false;
+  const mark = !panda && !miss && (options.marks?.has(cell) ?? false);
   const classes = ['pd-cell', ...borders(grid, cell)];
   if (panda) classes.push('panda');
-  if (options.clashes?.has(cell)) classes.push('clash');
-  const { strings, input } = options;
-  const content = panda ? '🐼' : mark ? '✕' : '';
-  if (!strings || !input) {
+  if (miss) classes.push('miss');
+  if (options.missed === cell) classes.push('shake');
+  const { strings } = options;
+  const content = panda ? '🐼' : miss || mark ? '✕' : '';
+  if (!strings) {
     return h(
       'div',
       { class: classes.join(' '), style: { background: REGION_COLORS[grid.regions[cell] ?? 0] ?? '' } },
@@ -125,19 +169,18 @@ function renderCell(grid: Grid, cell: number, pandas: Pandas, options: GridOptio
     );
   }
   const place = strings.cell(rowOf(cell, grid.size) + 1, colOf(cell, grid.size) + 1);
-  const label = panda ? `${place}, ${strings.panda}` : mark ? `${place}, ${strings.mark}` : place;
-  const button = h(
+  const state = panda ? strings.panda : miss ? strings.miss : mark ? strings.mark : null;
+  const label = state ? `${place}, ${state}` : place;
+  return h(
     'button',
     {
       class: classes.join(' '),
       type: 'button',
       style: { background: REGION_COLORS[grid.regions[cell] ?? 0] ?? '' },
-      attrs: { 'aria-label': label },
+      attrs: { 'aria-label': label, 'data-cell': String(cell) },
     },
     content,
   );
-  input.attach(button, cell);
-  return button;
 }
 
 export function renderGrid(host: HTMLElement, grid: Grid, pandas: Pandas, options: GridOptions): void {

@@ -3,7 +3,7 @@
 import { campaignCompareKeys, campaignIsUnlocked, parseCampaignKey } from '../campaign.ts';
 import type { GameDefinition, ReplayOutcome } from '../game.ts';
 import { LEVELS } from './levels.ts';
-import { type Grid, isSolved, type Pandas, parseGrid, togglePanda } from './rules.ts';
+import { findSolutions, type Grid, isSolved, type Pandas, parseGrid } from './rules.ts';
 
 export const PANDAS_ID = 'pandas';
 
@@ -19,12 +19,43 @@ export function startGrid(key: string): Grid | null {
   return level === null ? null : levelGrid(level);
 }
 
+/* ---------- Tentatives ---------- */
+
+/** Erreurs permises : à la troisième, la partie est perdue. */
+export const LIVES = 3;
+
+/**
+ * Où en est une partie : les pandas bien posés et les cases tentées à tort. Une tentative sur une case de la
+ * solution (unique) y pose un panda, une autre coûte une vie.
+ */
+export interface PandasState {
+  pandas: Pandas;
+  misses: readonly number[];
+}
+
+export const isLost = (state: PandasState): boolean => state.misses.length >= LIVES;
+
+/** Pandas de la solution d'une grille ; chaque grille enregistrée en a exactement une. */
+export const solutionOf = (grid: Grid): Pandas => findSolutions(grid, 1).solutions[0] ?? [];
+
+/**
+ * Tente de poser un panda sur `cell`. Renvoie l'état suivant, ou `null` si la tentative est impossible : case
+ * hors de la grille ou déjà tentée, partie déjà gagnée ou perdue.
+ */
+export function attempt(grid: Grid, solution: Pandas, state: PandasState, cell: number): PandasState | null {
+  const over = isSolved(grid, state.pandas) || isLost(state);
+  const tried = state.pandas.includes(cell) || state.misses.includes(cell);
+  if (over || tried || cell < 0 || cell >= grid.size * grid.size) return null;
+  return solution.includes(cell)
+    ? { pandas: [...state.pandas, cell].sort((a, b) => a - b), misses: state.misses }
+    : { pandas: state.pandas, misses: [...state.misses, cell] };
+}
+
 /* ---------- Replays ---------- */
 
 /**
- * Un replay est la suite des cases touchées : chacune pose un panda, ou le retire s'il y est déjà. Les croix de
- * repérage restent sur l'écran du joueur et n'entrent pas dans le replay.
- * Encodage : deux chiffres par case. Ex. "071233".
+ * Un replay est la suite des cases tentées. Les croix de repérage restent sur l'écran du joueur et n'entrent pas
+ * dans le replay. Encodage : deux chiffres par case. Ex. "071233".
  */
 export const encodeActions = (cells: readonly number[]): string =>
   cells.map((cell) => String(cell).padStart(2, '0')).join('');
@@ -34,14 +65,15 @@ export function decodeActions(replay: string): number[] | null {
   return Array.from({ length: replay.length / 2 }, (_, i) => Number(replay.slice(i * 2, i * 2 + 2)));
 }
 
-/**
- * Pose ou retire les pandas des cases touchées sur une grille vide. Renvoie les pandas après chaque case
- * (index 0 = départ), ou `null` si une case est hors de la grille.
- */
-export function playActions(grid: Grid, cells: readonly number[]): Pandas[] | null {
-  if (cells.some((cell) => cell >= grid.size * grid.size)) return null;
-  const states: Pandas[] = [[]];
-  for (const cell of cells) states.push(togglePanda(states[states.length - 1] ?? [], cell));
+/** États successifs d'une partie (index 0 = départ), ou `null` si une tentative est impossible. */
+export function playActions(grid: Grid, cells: readonly number[]): PandasState[] | null {
+  const solution = solutionOf(grid);
+  const states: PandasState[] = [{ pandas: [], misses: [] }];
+  for (const cell of cells) {
+    const next = attempt(grid, solution, states[states.length - 1] ?? { pandas: [], misses: [] }, cell);
+    if (!next) return null;
+    states.push(next);
+  }
   return states;
 }
 
@@ -56,14 +88,11 @@ export const pandas: GameDefinition = {
   replay(key, replay): ReplayOutcome | null {
     const grid = startGrid(key);
     const cells = decodeActions(replay);
-    if (!grid || !cells) return null;
-    const states = playActions(grid, cells);
-    if (!states) return null;
-    const firstSolved = states.findIndex((state) => isSolved(grid, state));
-    // Une partie s'arrête dès que la grille est résolue : aucune action après.
-    if (firstSolved !== -1 && firstSolved !== states.length - 1) return null;
-    return { finished: firstSolved !== -1, value: cells.length };
+    const states = grid && cells ? playActions(grid, cells) : null;
+    const last = states?.[states.length - 1];
+    if (!grid || !last) return null;
+    return { finished: isSolved(grid, last.pandas), value: last.misses.length };
   },
-  // Pas de score : avec les croix, tout joueur finit au minimum de cases touchées ; seule la réussite compte.
+  // Pas de score : seule la réussite compte. Le nombre d'erreurs est gardé avec la partie, sans être affiché.
   bestPossible: () => null,
 };

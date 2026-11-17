@@ -1891,10 +1891,12 @@ input[type="range"] {
   --pd-edge: #1b1340;
 }
 .pd-cell {
-  /* L'appui long fait la croix : pas de sélection de texte ni de menu du système. */
+  /* Toucher, double toucher et glisser : pas de sélection de texte ni de menu du système. */
   -webkit-touch-callout: none;
   user-select: none;
   -webkit-user-select: none;
+  /* Glisser le doigt sur la grille pose des croix au lieu de faire défiler la page. */
+  touch-action: none;
   width: var(--cs);
   height: var(--cs);
   display: flex;
@@ -1924,8 +1926,13 @@ input[type="range"] {
   border-right: 2.5px solid var(--pd-edge);
 }
 /* Panda qui enfreint une règle : cerclé de rouge, le joueur voit tout de suite lequel. */
-.pd-cell.clash {
+/* Tentative ratée : une croix rouge, définitive ; la dernière tremble. */
+.pd-cell.miss {
+  color: #e03131;
   box-shadow: inset 0 0 0 3px #e03131;
+}
+.pd-cell.shake {
+  animation: shake 0.3s;
 }
 .pd-mini .pd-grid {
   border-radius: 4px;
@@ -1955,6 +1962,9 @@ input[type="range"] {
       0 0 0 2px var(--pd-edge),
       0 0 18px 6px var(--green);
   }
+}
+.pd-lives {
+  letter-spacing: 2px;
 }
 .pd-hint {
   margin: 0;
@@ -2128,6 +2138,7 @@ input[type="range"] {
   .reaction-bubble,
   .bq-pot.revealed .bq-slot.front .bq-flower,
   .bq-pot.shake,
+  .pd-cell.shake,
   .board-host.solved .pd-grid {
     animation: none;
   }
