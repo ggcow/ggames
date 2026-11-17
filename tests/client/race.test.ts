@@ -107,16 +107,30 @@ describe('classement d’un niveau', () => {
   ];
   const ranks = (list: HTMLElement) => [...list.querySelectorAll('.rank')].map((rank) => rank.textContent);
 
-  it('partage le rang des ex æquo et marque sa propre ligne', () => {
+  it('réunit les ex æquo sur une ligne par rang et marque sa propre ligne', () => {
     const list = scoreList(records, view, (value) => `${value} coups`, null);
-    expect(ranks(list)).toEqual(['1', '1', '3', '3', '5']);
+    expect(ranks(list)).toEqual(['1', '3', '5']);
+    const first = list.querySelector('li');
+    expect(first?.querySelectorAll('.avatar')).toHaveLength(2);
+    expect(first?.querySelector('.grow')?.textContent).toBe('p1, p2');
+    expect(first?.querySelector('b')?.textContent).toBe('10 coups');
     expect(list.querySelectorAll('li.me')).toHaveLength(1);
-    expect(list.querySelector('li.me')?.textContent).toContain('p2');
+    expect(list.querySelector('li.me')).toBe(first);
   });
 
   it('garde au podium tous les ex æquo des trois premiers rangs', () => {
     const podium = scoreList(records, view, (value) => `${value} coups`, null, 3);
-    expect(ranks(podium)).toEqual(['1', '1', '3', '3']);
+    expect(ranks(podium)).toEqual(['1', '3']);
+    expect(podium.querySelectorAll('.avatar')).toHaveLength(4);
+  });
+
+  it('résume au-delà de trois ex æquo sur une même ligne', () => {
+    const crowd = ['p1', 'p2', 'p3', 'p4', 'p5'].map((player) => ({ player, value: 9, run: `r${player}` }));
+    const list = scoreList(crowd, view, (value) => `${value} coups`, null);
+    expect(list.querySelectorAll('li')).toHaveLength(1);
+    expect(list.querySelectorAll('.avatar:not(.more)')).toHaveLength(3);
+    expect(list.querySelector('.avatar.more')?.textContent).toBe('+2');
+    expect(list.querySelector('.grow')?.textContent).toBe('p1, p2, p3, p4, p5');
   });
 });
 

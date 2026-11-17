@@ -35,9 +35,10 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   gagnées sur les niveaux déjà réussis par le joueur.
 - Égalités : partout où un record ou un score parfait est partagé, tous ses détenteurs ex æquo apparaissent
   (avatars serrés, résumés par « +n » au-delà de la place disponible, `avatarGroup()`). Classements : à égalité,
-  même rang (1, 1, 3). Le badge du record d'un niveau montre tous ses détenteurs ex æquo ; le toucher ouvre le
-  podium du niveau (les trois premiers rangs). En fin de partie, une victoire qui atteint le record l'annonce :
-  record du niveau, ou record partagé avec les ex æquo nommés (`recordStanding()`).
+  même rang (1, 1, 3) ; le classement d'un niveau (fin de partie, podium) réunit les ex æquo d'un même score
+  sur une seule ligne (rangs 1, 3). Le badge du record d'un niveau montre tous ses détenteurs ex æquo ; le
+  toucher ouvre le podium du niveau (les trois premiers rangs). En fin de partie, une victoire qui atteint le
+  record l'annonce : record du niveau, ou record partagé avec les ex æquo nommés (`recordStanding()`).
 - Score parfait : quand le meilleur score possible d'un niveau est prouvé (`bestPossible()`), l'atteindre est
   marqué d'un 💎 (case du niveau, classements, record, fin de partie).
 - La case d'un niveau montre son numéro, sans score. Réussie avec le score parfait : un 💎 seul. Réussie sans

@@ -1971,6 +1971,14 @@ input[type="range"] {
 .scores li.me {
   box-shadow: inset 0 0 0 2px var(--yellow);
 }
+/* Ex æquo d'un même rang : avatars serrés l'un sur l'autre, sur une seule ligne. */
+.score-avatars {
+  display: flex;
+  flex: none;
+}
+.score-avatars .avatar + .avatar {
+  margin-left: -6px;
+}
 
 /* ---------- Notification ---------- */
 

@@ -86,9 +86,13 @@ export function recordNote(
   return h('p', { class: 'record-note' }, '🤝 ', ...withName(t.recordShared, names));
 }
 
+/** Avatars montrés au plus sur une ligne du classement qui réunit des ex æquo. */
+const ROW_HOLDERS = 3;
+
 /**
- * Classement d'une clé, rangs partagés à égalité, un 💎 sur chaque score égal au meilleur possible. `limit` ne
- * garde que les rangs jusqu'à lui (le podium), donc parfois plus de `limit` lignes.
+ * Classement d'une clé : une ligne par rang, qui réunit tous les ex æquo de ce score (rangs « 1, 3 » pour deux
+ * premiers à égalité), un 💎 sur chaque score égal au meilleur possible. `limit` ne garde que les rangs jusqu'à
+ * lui (le podium).
  */
 export function scoreList(
   records: readonly RecordEntry[],
@@ -98,21 +102,27 @@ export function scoreList(
   limit = Number.POSITIVE_INFINITY,
 ): HTMLElement {
   const ranks = competitionRanks(records, (a, b) => a.value === b.value);
-  const lines = records.flatMap((record, index) => {
+  const groups: { rank: number; value: number; players: RecordEntry['player'][] }[] = [];
+  records.forEach((record, index) => {
     const rank = ranks[index] ?? index + 1;
-    if (rank > limit) return [];
-    const name = view.playerName(record.player);
-    return [
-      h(
-        'li',
-        { class: record.player === view.me ? 'me' : '' },
-        noTranslate(h('span', { class: `rank rank-${rank}` }, String(rank))),
-        avatar(record.player, name, 'xs'),
-        noTranslate(h('span', { class: 'grow' }, name)),
-        h('b', null, record.value === bestPossible ? '💎 ' : null, format(record.value, view.lang)),
-      ),
-    ];
+    const last = groups[groups.length - 1];
+    if (last?.rank === rank) last.players.push(record.player);
+    else if (rank <= limit) groups.push({ rank, value: record.value, players: [record.player] });
   });
+  const lines = groups.map(({ rank, value, players }) =>
+    h(
+      'li',
+      { class: players.includes(view.me) ? 'me' : '' },
+      noTranslate(h('span', { class: `rank rank-${rank}` }, String(rank))),
+      h(
+        'span',
+        { class: 'score-avatars' },
+        ...avatarGroup(players, ROW_HOLDERS, (player) => avatar(player, view.playerName(player), 'xs')),
+      ),
+      noTranslate(h('span', { class: 'grow' }, players.map((player) => view.playerName(player)).join(', '))),
+      h('b', null, value === bestPossible ? '💎 ' : null, format(value, view.lang)),
+    ),
+  );
   return h('ol', { class: 'scores' }, ...lines);
 }
 

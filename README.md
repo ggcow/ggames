@@ -16,8 +16,8 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
 - En partie, ton plateau occupe le bas de l'écran ; au-dessus, les plateaux des deux autres joueurs en petit.
 - Sur la grille, chaque joueur apparaît sur son niveau (celui qu'il joue s'il est en ligne).
 - La progression de chacun (niveaux réussis, parties, temps de jeu), les classements et le replay des parties
-  gagnées sur les niveaux que tu as toi-même réussis. À égalité, même rang ; toucher le 🏆 d'un niveau en
-  partie montre son podium.
+  gagnées sur les niveaux que tu as toi-même réussis. À égalité, même rang ; dans le classement d'un niveau,
+  les ex æquo partagent une seule ligne. Toucher le 🏆 d'un niveau en partie montre son podium.
 - Chaque case de la grille montre le numéro du niveau. Si tu l'as réussi avec le score parfait, un 💎 ; sinon,
   les avatars de ceux qui l'ont, ex æquo compris, avec un petit 💎. En fin de partie, atteindre le record
   l'annonce, seul ou partagé avec les ex æquo. La fiche d'un joueur
