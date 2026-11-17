@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { avatarOf } from '../../src/client/platform/avatar.ts';
 import { canJoinRace, createGameView, RACE_SIZE, rivalsOn } from '../../src/client/platform/context.ts';
-import { recordBadge, scoreList } from '../../src/client/platform/screens/play.ts';
+import { recordBadge, recordNote, scoreList } from '../../src/client/platform/screens/play.ts';
 import { PLATFORM_STRINGS } from '../../src/client/platform/strings.ts';
 import type { GameState, Presence } from '../../src/shared/platform/protocol.ts';
 
@@ -83,8 +83,8 @@ describe('badge du record', () => {
     const records = ['p1', 'p2', 'p3', 'p4', 'p5'].map((player) => ({ player, value: 9, run: `r${player}` }));
     const view = createGameView(state({ 'c:1': records }), 'p1', 'fr');
     const badge = recordBadge(view, 'c:1', moves, PLATFORM_STRINGS.fr, null, vi.fn());
-    expect(badge?.querySelectorAll('.avatar')).toHaveLength(3);
-    expect(badge?.querySelector('small')?.textContent).toBe('+2');
+    expect(badge?.querySelectorAll('.avatar:not(.more)')).toHaveLength(3);
+    expect(badge?.querySelector('.avatar.more')?.textContent).toBe('+2');
   });
 });
 
@@ -137,5 +137,48 @@ describe('meilleur score possible', () => {
     expect(badge?.textContent?.startsWith('💎')).toBe(true);
     const list = scoreList(records, view, (value) => `${value} coups`, 9);
     expect([...list.querySelectorAll('b')].map((b) => b.textContent)).toEqual(['💎 9 coups', '11 coups']);
+  });
+});
+
+describe('record en fin de partie', () => {
+  const view = createGameView(
+    {
+      players: [
+        { id: 'p1', name: 'Léa', created: 1, avatar: null },
+        { id: 'p2', name: 'Tom', created: 2, avatar: null },
+        { id: 'p3', name: 'Zoé', created: 3, avatar: null },
+      ],
+      progress: [],
+      records: {},
+    },
+    'p1',
+    'fr',
+  );
+
+  it('annonce le record du niveau quand on bat tous les autres', () => {
+    const records = [
+      { player: 'p1', value: 8, run: 'r1' },
+      { player: 'p2', value: 10, run: 'r2' },
+    ];
+    expect(recordNote(view, records, 8, 'asc', PLATFORM_STRINGS.fr)?.textContent).toBe('🏆 Record du niveau !');
+  });
+
+  it('nomme tous les ex æquo d’un record partagé, sans traduire leurs pseudos', () => {
+    const records = [
+      { player: 'p2', value: 10, run: 'r2' },
+      { player: 'p3', value: 10, run: 'r3' },
+      { player: 'p1', value: 10, run: 'r1' },
+    ];
+    const note = recordNote(view, records, 10, 'asc', PLATFORM_STRINGS.fr);
+    expect(note?.textContent).toBe('🤝 Record partagé avec Tom, Zoé');
+    expect(note?.querySelector('[translate="no"]')?.textContent).toBe('Tom, Zoé');
+  });
+
+  it('ne dit rien sous le record, même avec un meilleur score déjà enregistré', () => {
+    const records = [
+      { player: 'p1', value: 8, run: 'r1' },
+      { player: 'p2', value: 9, run: 'r2' },
+    ];
+    expect(recordNote(view, records, 11, 'asc', PLATFORM_STRINGS.fr)).toBeNull();
   });
 });

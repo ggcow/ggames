@@ -33,12 +33,15 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - L'accueil liste les jeux. Pour chaque jeu : la grille des 100 niveaux, 5 pages de 20 (réussis, jouable, verrouillés),
   la progression de chaque joueur (niveaux réussis, essais, temps), les classements, et le replay des parties
   gagnées sur les niveaux déjà réussis par le joueur.
-- Classements : à égalité, même rang (1, 1, 3). Le badge du record d'un niveau montre tous ses détenteurs ex
-  æquo ; le toucher ouvre le podium du niveau (les trois premiers rangs).
+- Égalités : partout où un record ou un score parfait est partagé, tous ses détenteurs ex æquo apparaissent
+  (avatars serrés, résumés par « +n » au-delà de la place disponible, `avatarGroup()`). Classements : à égalité,
+  même rang (1, 1, 3). Le badge du record d'un niveau montre tous ses détenteurs ex æquo ; le toucher ouvre le
+  podium du niveau (les trois premiers rangs). En fin de partie, une victoire qui atteint le record l'annonce :
+  record du niveau, ou record partagé avec les ex æquo nommés (`recordStanding()`).
 - Score parfait : quand le meilleur score possible d'un niveau est prouvé (`bestPossible()`), l'atteindre est
   marqué d'un 💎 (case du niveau, classements, record, fin de partie).
-- La case d'un niveau montre le meilleur score du joueur en nombre, sans unité, et le 💎 s'il est parfait ; à
-  côté de ce score, l'avatar du détenteur du record, avec un petit 💎 si ce record est parfait (ex æquo compris). La
+- La case d'un niveau montre son numéro, sans score. Réussie avec le score parfait : un 💎 seul. Réussie sans
+  lui : les avatars de ceux qui l'ont (ex æquo compris), marqués d'un petit 💎 ; rien si personne ne l'a. La
   fiche d'un joueur donne par niveau le nombre d'essais, le temps de la première victoire et le nombre d'essais
   qu'il a fallu, le 💎 et la médaille du podium (or, argent, bronze ; ex æquo compris).
 - Un replay ne révèle jamais une solution meilleure que la sienne : on ne voit le replay d'un autre joueur que sur

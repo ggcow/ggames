@@ -21,7 +21,6 @@ export const bouquetsClient: ClientGame = {
     (level, lang) => BOUQUETS_STRINGS[lang].level(level),
     (value, lang) => BOUQUETS_STRINGS[lang].moves(value),
     bouquets.bestPossible,
-    String,
   ),
 
   renderLiveState(state) {

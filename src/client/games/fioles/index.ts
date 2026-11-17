@@ -20,7 +20,6 @@ export const fiolesClient: ClientGame = {
     (level, lang) => FIOLES_STRINGS[lang].level(level),
     (value, lang) => FIOLES_STRINGS[lang].moves(value),
     fioles.bestPossible,
-    String,
   ),
 
   renderLiveState(state) {

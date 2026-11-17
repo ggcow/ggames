@@ -18,45 +18,33 @@ export const campaignProgress = (view: GameView, player: PlayerId): LevelProgres
   total: MAX_LEVEL,
 });
 
-/** Case d'un niveau : réussi (avec le meilleur score en très court), jouable, ou verrouillé. */
-export function campaignTile(
-  level: number,
-  view: GameView,
-  formatValue: ((value: number, lang: Lang) => string) | null,
-  bestPossible: (key: string) => number | null,
-  formatBest: (value: number) => string,
-): LevelTile {
+/** Case d'un niveau : réussi, jouable ou verrouillé, et les joueurs qui y ont le meilleur score possible. */
+export function campaignTile(level: number, view: GameView, bestPossible: (key: string) => number | null): LevelTile {
   const key = campaignKey(level);
-  const best = view.state.records[key]?.find((r) => r.player === view.me)?.value;
-  const unlocked = campaignIsUnlocked(key, wonKeys(view.state, view.me));
-  const status = best !== undefined ? 'done' : unlocked ? 'open' : 'locked';
   const records = view.state.records[key] ?? [];
-  const record = records[0];
+  const won = records.some((record) => record.player === view.me);
+  const unlocked = campaignIsUnlocked(key, wonKeys(view.state, view.me));
   const possible = bestPossible(key);
+  const perfectHolders = records
+    .filter((record) => record.value === possible)
+    .map((record) => ({ player: record.player, name: view.playerName(record.player) }));
   return {
     key,
     label: String(level),
-    status,
-    best: best !== undefined && formatValue ? formatBest(best) : null,
-    perfect: best !== undefined && best === possible,
-    holders: record
-      ? records
-          .filter((entry) => entry.value === record.value)
-          .map((entry) => ({ player: entry.player, name: view.playerName(entry.player) }))
-      : [],
-    recordPerfect: record !== undefined && record.value === possible,
+    status: won ? 'done' : unlocked ? 'open' : 'locked',
+    perfect: perfectHolders.some((holder) => holder.player === view.me),
+    perfectHolders,
   };
 }
 
 /**
- * Les méthodes de `ClientGame` liées à la campagne, à partir du libellé d'un niveau, du format des scores, du
- * meilleur score possible de chaque clé (`GameDefinition.bestPossible`) et du format très court d'une case.
+ * Les méthodes de `ClientGame` liées à la campagne, à partir du libellé d'un niveau, du format des scores et du
+ * meilleur score possible de chaque clé (`GameDefinition.bestPossible`).
  */
 export function campaignMethods(
   levelLabel: (level: number, lang: Lang) => string,
   formatValue: ((value: number, lang: Lang) => string) | null,
   bestPossible: (key: string) => number | null,
-  formatBest: (value: number) => string,
 ): Pick<ClientGame, 'keyLabel' | 'formatValue' | 'levelProgress' | 'levelOf' | 'levelTile' | 'nextKey'> {
   return {
     keyLabel(key, lang) {
@@ -66,7 +54,7 @@ export function campaignMethods(
     formatValue,
     levelProgress: campaignProgress,
     levelOf: parseCampaignKey,
-    levelTile: (level, view) => campaignTile(level, view, formatValue, bestPossible, formatBest),
+    levelTile: (level, view) => campaignTile(level, view, bestPossible),
     nextKey(key) {
       const level = parseCampaignKey(key);
       return level === null || level >= MAX_LEVEL ? null : campaignKey(level + 1);

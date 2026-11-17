@@ -18,8 +18,9 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
 - La progression de chacun (niveaux réussis, parties, temps de jeu), les classements et le replay des parties
   gagnées sur les niveaux que tu as toi-même réussis. À égalité, même rang ; toucher le 🏆 d'un niveau en
   partie montre son podium.
-- Chaque case de la grille montre ton meilleur score en nombre et un 💎 s'il est parfait, plus l'avatar du
-  détenteur du record (avec un petit 💎 si ce record est parfait, égalités comprises). La fiche d'un joueur
+- Chaque case de la grille montre le numéro du niveau. Si tu l'as réussi avec le score parfait, un 💎 ; sinon,
+  les avatars de ceux qui l'ont, ex æquo compris, avec un petit 💎. En fin de partie, atteindre le record
+  l'annonce, seul ou partagé avec les ex æquo. La fiche d'un joueur
   donne par niveau le nombre d'essais, le temps de la première victoire et le nombre d'essais qu'il a fallu,
   le 💎 et la médaille du podium (or, argent, bronze).
 - Fioles : chaque niveau a un meilleur score possible, calculé une fois pour toutes. L'atteindre vaut un 💎.

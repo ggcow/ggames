@@ -41,31 +41,12 @@ describe('grille', () => {
         key: `c:${level}`,
         label: String(level),
         status: 'done',
-        best: String(level * 10),
         perfect: level === 2,
-        holders: [{ player: 'def456', name: 'Tom' }],
-        recordPerfect: level === 2,
+        perfectHolders: level === 2 ? [{ player: 'abc123', name: 'léa' }] : [],
       };
     }
-    if (level === 3)
-      return {
-        key: 'c:3',
-        label: '3',
-        status: 'open',
-        best: null,
-        perfect: false,
-        holders: [],
-        recordPerfect: false,
-      };
-    return {
-      key: `c:${level}`,
-      label: String(level),
-      status: 'locked',
-      best: null,
-      perfect: false,
-      holders: [],
-      recordPerfect: false,
-    };
+    if (level === 3) return { key: 'c:3', label: '3', status: 'open', perfect: false, perfectHolders: [] };
+    return { key: `c:${level}`, label: String(level), status: 'locked', perfect: false, perfectHolders: [] };
   };
   const positions: PlayerPosition[] = [
     { player: 'abc123', name: 'léa', level: 2, live: true, me: true },
@@ -88,50 +69,67 @@ describe('grille', () => {
     const cells = [...grid.querySelectorAll<HTMLButtonElement>('.level')];
     expect(cells).toHaveLength(20);
     expect(cells[0]?.classList.contains('done')).toBe(true);
-    expect(cells[0]?.textContent).toContain('10');
+    expect(cells[0]?.textContent).toBe('1');
     expect(cells[2]?.classList.contains('open')).toBe(true);
     expect(cells[3]?.disabled).toBe(true);
     expect(cells[3]?.textContent).toBe('🔒');
     expect(grid.querySelector('.pager-label')?.textContent).toContain('1 – 20');
   });
 
-  it('distingue un niveau réussi avec le meilleur score possible', () => {
+  it('montre seulement un 💎 sur un niveau réussi avec le meilleur score possible', () => {
     const cells = [...render().querySelectorAll<HTMLButtonElement>('.level')];
     expect(cells[0]?.classList.contains('perfect')).toBe(false);
+    expect(cells[0]?.querySelector('.level-perfect, .level-holders')).toBeNull();
     expect(cells[1]?.classList.contains('perfect')).toBe(true);
-    expect(cells[1]?.querySelector('.level-best')?.textContent).toBe('💎 20');
+    expect(cells[1]?.querySelector('.level-perfect')?.textContent).toBe('💎');
+    expect(cells[1]?.querySelector('.level-holders')).toBeNull();
+    expect(cells[1]?.getAttribute('aria-label')).toBe('2 réussi, Score parfait — léa (en jeu)');
   });
 
-  it('montre les détenteurs du record, ex æquo, avec leur petit diamant', () => {
-    const grid = renderLevelGrid({
+  const holdersGrid = (perfectHolders: LevelTile['perfectHolders']) =>
+    renderLevelGrid({
       progress: { unlocked: 2, total: 9999 },
       page: 0,
       tile: (level) => ({
         key: `c:${level}`,
         label: String(level),
         status: level === 1 ? 'done' : 'open',
-        best: level === 1 ? '12' : null,
         perfect: false,
-        holders:
-          level === 1
-            ? [
-                { player: 'aaa111', name: 'Léa' },
-                { player: 'bbb222', name: 'Tom' },
-                { player: 'ccc333', name: 'Zoé' },
-              ]
-            : [],
-        recordPerfect: level === 1,
+        perfectHolders,
       }),
       positions: [],
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay: vi.fn(),
     });
-    const cell = grid.querySelectorAll<HTMLElement>('.level')[0];
-    expect(cell?.querySelectorAll('.record-holder')).toHaveLength(1);
-    expect(cell?.querySelector('.record-holder.perfect')).not.toBeNull();
-    expect(cell?.querySelector('.level-score .level-record')).not.toBeNull();
-    expect(cell?.querySelector('.level-record')?.getAttribute('title')).toBe('Record : Léa, Tom, Zoé Score parfait');
+
+  it('montre à qui ne l’a pas l’avatar du détenteur du score parfait', () => {
+    const cells = holdersGrid([{ player: 'aaa111', name: 'Léa' }]).querySelectorAll<HTMLElement>('.level');
+    const holders = cells[0]?.querySelector('.level-holders');
+    expect(holders?.querySelectorAll('.avatar')).toHaveLength(1);
+    expect(holders?.getAttribute('title')).toBe('Score parfait : Léa');
+    expect(cells[0]?.querySelector('.level-perfect')).toBeNull();
+    expect(cells[0]?.getAttribute('aria-label')).toBe('1 réussi, Score parfait : Léa');
+    // Sur un niveau pas encore réussi, la case garde seulement son numéro et l'action proposée.
+    expect(cells[1]?.querySelector('.level-holders')).toBeNull();
+  });
+
+  it('montre tous les détenteurs ex æquo du score parfait, résumés au-delà de deux', () => {
+    const tied = holdersGrid([
+      { player: 'aaa111', name: 'Léa' },
+      { player: 'bbb222', name: 'Tom' },
+      { player: 'ccc333', name: 'Zoé' },
+    ]);
+    const holders = tied.querySelector('.level-holders');
+    expect(holders?.querySelectorAll('.avatar:not(.more)')).toHaveLength(2);
+    expect(holders?.querySelector('.avatar.more')?.textContent).toBe('+1');
+    expect(holders?.getAttribute('title')).toBe('Score parfait : Léa, Tom, Zoé');
+  });
+
+  it('ne montre rien sous le numéro tant que personne n’a le score parfait', () => {
+    const cell = holdersGrid([]).querySelector('.level.done');
+    expect(cell?.textContent).toBe('1');
+    expect(cell?.getAttribute('aria-label')).toBe('1 réussi');
   });
 
   it('lance un niveau jouable et ignore un niveau verrouillé', () => {
@@ -271,8 +269,8 @@ describe('avatars', () => {
   });
 });
 
-describe('grille sans score', () => {
-  it('marque un niveau réussi d’une coche quand le jeu n’a pas de score', () => {
+describe('traduction automatique', () => {
+  it('soustrait numéros et avatars à la traduction automatique du navigateur', () => {
     const grid = renderLevelGrid({
       progress: { unlocked: 2, total: 9999 },
       page: 0,
@@ -280,42 +278,23 @@ describe('grille sans score', () => {
         key: `c:${level}`,
         label: String(level),
         status: level === 1 ? 'done' : 'open',
-        best: null,
         perfect: false,
-        holders: [],
-        recordPerfect: false,
+        perfectHolders: [
+          { player: 'aaa111', name: 'Léa' },
+          { player: 'bbb222', name: 'Tom' },
+          { player: 'ccc333', name: 'Zoé' },
+        ],
       }),
       positions: [],
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay: vi.fn(),
     });
-    expect(grid.querySelector('.level.done .level-best')?.textContent).toBe('✓');
-  });
-
-  it('soustrait numéros et scores à la traduction automatique du navigateur', () => {
-    const grid = renderLevelGrid({
-      progress: { unlocked: 2, total: 9999 },
-      page: 0,
-      tile: (level) => ({
-        key: `c:${level}`,
-        label: String(level),
-        status: level === 1 ? 'done' : 'open',
-        best: '7',
-        perfect: false,
-        holders: [],
-        recordPerfect: false,
-      }),
-      positions: [],
-      t: PLATFORM_STRINGS.fr,
-      onPage: vi.fn(),
-      onPlay: vi.fn(),
-    });
-    const numbers = [...grid.querySelectorAll('.level-number, .level.done .level-best')];
-    expect(numbers.length).toBeGreaterThan(1);
+    const numbers = [...grid.querySelectorAll('.level-number, .level-holders .avatar')];
+    expect(numbers.length).toBeGreaterThan(3);
     for (const element of numbers) expect(element.getAttribute('translate')).toBe('no');
     // « Jouer » reste traduisible.
-    expect(grid.querySelector('.level.open .level-best')?.getAttribute('translate')).toBeNull();
+    expect(grid.querySelector('.level.open .level-hint')?.getAttribute('translate')).toBeNull();
   });
 });
 

@@ -34,3 +34,15 @@ export function avatar(id: string, name: string, size: 'xs' | 'sm' | 'md' | 'lg'
     h('span', { class: `avatar ${size}`, attrs: { title: name, role: 'img', 'aria-label': name } }, avatarOf(id)),
   );
 }
+
+/**
+ * Petites pastilles d'un groupe de joueurs (ex æquo, joueurs posés sur une case) : les `max` premiers, puis un
+ * compteur « +n » pour les autres, pour garder la même place quel que soit le nombre de joueurs.
+ */
+export function avatarGroup<T>(items: readonly T[], max: number, render: (item: T) => HTMLElement): HTMLElement[] {
+  const extra = items.length - max;
+  return [
+    ...items.slice(0, max).map(render),
+    ...(extra > 0 ? [noTranslate(h('span', { class: 'avatar xs more' }, `+${extra}`))] : []),
+  ];
+}

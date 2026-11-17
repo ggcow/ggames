@@ -1047,41 +1047,16 @@ input[type="range"] {
   font-weight: 900;
   line-height: 1;
 }
-.level-best {
+/* Action proposée par la case : « Jouer », « Rejoindre ». */
+.level-hint {
   font-size: 13px;
   font-weight: 900;
   line-height: 1;
   white-space: nowrap;
 }
-/* Ligne du score : mon meilleur score, puis l'avatar du détenteur du record. */
-.level-score {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  max-width: 100%;
-}
-.level-record {
-  display: flex;
-  align-items: center;
-}
-.level-record .avatar {
-  width: 16px;
-  height: 16px;
-  font-size: 13px;
-  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.3);
-}
-/* Petit diamant du détenteur quand le record est le meilleur score possible. */
-.record-holder {
-  position: relative;
-  display: flex;
-}
-.record-holder.perfect::after {
-  content: "💎";
-  position: absolute;
-  right: -3px;
-  bottom: -4px;
-  font-size: 8px;
+/* Score parfait du joueur sur ce niveau. */
+.level-perfect {
+  font-size: 14px;
   line-height: 1;
 }
 .level.done {
@@ -1168,6 +1143,32 @@ input[type="range"] {
   background: var(--surface-2);
   color: var(--text);
   font-size: 9px;
+}
+/* Détenteurs du score parfait quand le joueur ne l'a pas : avatars serrés, marqués d'un seul petit diamant. */
+.level-holders {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.level-holders .avatar {
+  width: 16px;
+  height: 16px;
+  font-size: 13px;
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.3);
+}
+.level-holders .avatar.more {
+  font-size: 8px;
+}
+.level-holders .avatar + .avatar {
+  margin-left: -5px;
+}
+.level-holders::after {
+  content: "💎";
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  font-size: 8px;
+  line-height: 1;
 }
 .level-live .avatar + .avatar {
   margin-left: -7px;
@@ -1323,9 +1324,6 @@ input[type="range"] {
 /* Détenteurs ex æquo du record : avatars serrés l'un sur l'autre. */
 .record-badge .avatar + .avatar {
   margin-left: -8px;
-}
-.record-badge small {
-  color: var(--muted);
 }
 .record-badge:active {
   transform: translateY(1px);
@@ -1939,6 +1937,11 @@ input[type="range"] {
 }
 .perfect-note {
   color: var(--cyan);
+  font-weight: 800;
+}
+/* Record du niveau atteint en fin de partie, à soi seul ou partagé avec des ex æquo. */
+.record-note {
+  color: var(--yellow);
   font-weight: 800;
 }
 .modal-buttons {

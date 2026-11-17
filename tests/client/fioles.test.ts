@@ -55,60 +55,69 @@ describe('niveaux', () => {
     expect(fiolesClient.levelTile(6, joined).status).toBe('locked');
   });
 
-  it('donne l’état de chaque case : réussie avec record, jouable, verrouillée', () => {
+  it('donne l’état de chaque case : réussie avec score parfait, jouable, verrouillée', () => {
     // 9 coups est le meilleur score possible au niveau 1.
     expect(fiolesClient.levelTile(1, v)).toEqual({
       key: 'c:1',
       label: '1',
       status: 'done',
-      best: '9',
       perfect: true,
-      holders: [{ player: ME, name: 'Moi' }],
-      recordPerfect: true,
+      perfectHolders: [{ player: ME, name: 'Moi' }],
     });
     expect(fiolesClient.levelTile(3, v)).toEqual({
       key: 'c:3',
       label: '3',
       status: 'open',
-      best: null,
       perfect: false,
-      holders: [],
-      recordPerfect: false,
+      perfectHolders: [],
     });
     expect(fiolesClient.levelTile(4, v)).toEqual({
       key: 'c:4',
       label: '4',
       status: 'locked',
-      best: null,
       perfect: false,
-      holders: [],
-      recordPerfect: false,
+      perfectHolders: [],
     });
     expect(fiolesClient.levelTile(8, v).status).toBe('locked');
   });
 
-  it('donne les détenteurs du record ex æquo et le diamant du record parfait', () => {
+  it('donne tous les détenteurs ex æquo du score parfait', () => {
     const tied = view({
       records: {
         'c:1': [
-          { player: ME, value: 9, run: 'r1' },
           { player: OTHER, value: 9, run: 'r2' },
+          { player: ME, value: 9, run: 'r1' },
         ],
       },
     });
-    expect(fiolesClient.levelTile(1, tied).holders).toEqual([
-      { player: ME, name: 'Moi' },
+    const tile = fiolesClient.levelTile(1, tied);
+    expect(tile.perfect).toBe(true);
+    expect(tile.perfectHolders).toEqual([
       { player: OTHER, name: 'Ami' },
+      { player: ME, name: 'Moi' },
     ]);
-    expect(fiolesClient.levelTile(1, tied).recordPerfect).toBe(true);
   });
 
-  it('ne marque pas parfait un record moins bon que le meilleur score possible', () => {
+  it('donne les autres détenteurs du score parfait à un joueur qui ne l’a pas', () => {
+    const behind = view({
+      records: {
+        'c:1': [
+          { player: OTHER, value: 9, run: 'r2' },
+          { player: ME, value: 12, run: 'r1' },
+        ],
+      },
+    });
+    const tile = fiolesClient.levelTile(1, behind);
+    expect(tile.status).toBe('done');
+    expect(tile.perfect).toBe(false);
+    expect(tile.perfectHolders).toEqual([{ player: OTHER, name: 'Ami' }]);
+  });
+
+  it('ne donne aucun détenteur tant que personne n’a le score parfait', () => {
     const worse = view({ records: { 'c:1': [{ player: OTHER, value: 12, run: 'r9' }] } });
     const tile = fiolesClient.levelTile(1, worse);
     expect(tile.perfect).toBe(false);
-    expect(tile.recordPerfect).toBe(false);
-    expect(tile.holders).toEqual([{ player: OTHER, name: 'Ami' }]);
+    expect(tile.perfectHolders).toEqual([]);
   });
 
   it('nomme les clés et propose le niveau suivant', () => {

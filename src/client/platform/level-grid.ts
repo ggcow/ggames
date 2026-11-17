@@ -3,15 +3,18 @@
 
 import type { PlayerId, PlayerInfo, Presence } from '../../shared/platform/protocol.ts';
 import type { LevelProgress, LevelTile } from '../games/client-game.ts';
-import { avatar } from './avatar.ts';
+import { avatar, avatarGroup } from './avatar.ts';
 import { canJoinRace } from './context.ts';
 import { h, noTranslate } from './dom.ts';
 import type { PlatformStrings } from './strings.ts';
 
 export const PAGE_SIZE = 20;
 
-/** Avatars affichés au plus sur une case ; au-delà, un compteur « +n ». */
+/** Avatars des joueurs posés sur une case, au plus ; au-delà, un compteur « +n ». */
 const MAX_MARKERS = 3;
+
+/** Avatars des détenteurs du score parfait sous le numéro d'une case, au plus : la case est étroite. */
+const MAX_PERFECT_HOLDERS = 2;
 
 /**
  * Nombre de pages à afficher : jusqu'à la page qui contient le premier niveau encore verrouillé,
@@ -131,20 +134,25 @@ function renderPager(options: LevelGridOptions, first: number, last: number): HT
   );
 }
 
-/** Avatar du détenteur du record, avec un petit 💎 si ce record est parfait. */
-function renderRecord(tile: LevelTile, t: PlatformStrings): HTMLElement | null {
-  const holder = tile.holders[0];
-  if (!holder) return null;
-  const names = tile.holders.map((entry) => entry.name).join(', ');
-  const label = `${t.recordNames(names)}${tile.recordPerfect ? ` ${t.perfectScore}` : ''}`;
+/** Ce que dit la case d'un niveau réussi sur le score parfait : le sien, sinon celui des autres. */
+function perfectText(tile: LevelTile, t: PlatformStrings): string | null {
+  if (tile.status !== 'done') return null;
+  if (tile.perfect) return t.perfectScore;
+  if (tile.perfectHolders.length === 0) return null;
+  return t.perfectBy(tile.perfectHolders.map((holder) => holder.name).join(', '));
+}
+
+/**
+ * Sous le numéro d'un niveau réussi : un 💎 si le joueur a le score parfait ; sinon les avatars de ceux qui l'ont,
+ * ex æquo compris, marqués d'un petit 💎 ; rien si personne ne l'a.
+ */
+function renderPerfect(tile: LevelTile, label: string | null): HTMLElement | null {
+  if (label === null) return null;
+  if (tile.perfect) return h('span', { class: 'level-perfect', attrs: { 'aria-hidden': 'true' } }, '💎');
   return h(
     'span',
-    { class: 'level-record', attrs: { title: label } },
-    h(
-      'span',
-      { class: `record-holder ${tile.recordPerfect ? 'perfect' : ''}` },
-      avatar(holder.player, holder.name, 'xs'),
-    ),
+    { class: 'level-holders', attrs: { title: label } },
+    ...avatarGroup(tile.perfectHolders, MAX_PERFECT_HOLDERS, (holder) => avatar(holder.player, holder.name, 'xs')),
   );
 }
 
@@ -152,37 +160,26 @@ function renderTile(options: LevelGridOptions, level: number): HTMLElement {
   const { t } = options;
   const tile = options.tile(level);
   const here = options.positions.filter((p) => p.level === level);
-  const extra = here.length - MAX_MARKERS;
   // Un niveau verrouillé qu'un ami joue en ce moment peut être rejoint, tant que la course n'est pas complète.
   const joinable = canJoinRace(here.filter((p) => p.live).length);
   const state = tile.status === 'locked' && joinable ? 'join' : tile.status;
   const players = here.map((p) => `${p.name}${p.live ? ` (${t.inGame})` : ''}`).join(', ');
+  const perfect = perfectText(tile, t);
+  const label = [`${tile.label} ${t[`level_${state}`]}`, perfect].filter(Boolean).join(', ');
   return h(
     'button',
     {
       class: `level ${state}${tile.status === 'done' && tile.perfect ? ' perfect' : ''}`,
       disabled: state === 'locked',
-      attrs: { 'aria-label': `${tile.label} ${t[`level_${state}`]}${players ? ` — ${players}` : ''}` },
+      attrs: { 'aria-label': `${label}${players ? ` — ${players}` : ''}` },
       on: { click: () => options.onPlay(tile.key) },
     },
     noTranslate(h('span', { class: 'level-number' }, state === 'locked' ? '🔒' : tile.label)),
-    state === 'join' ? h('span', { class: 'level-best' }, t.join) : null,
-    tile.status === 'done'
-      ? h(
-          'span',
-          { class: 'level-score' },
-          noTranslate(h('span', { class: 'level-best' }, tile.perfect ? '💎 ' : null, tile.best ?? '✓')),
-          renderRecord(tile, t),
-        )
-      : null,
-    tile.status === 'open' ? h('span', { class: 'level-best' }, t.play) : null,
+    state === 'join' ? h('span', { class: 'level-hint' }, t.join) : null,
+    state === 'open' ? h('span', { class: 'level-hint' }, t.play) : null,
+    renderPerfect(tile, perfect),
     here.length > 0
-      ? h(
-          'span',
-          { class: 'level-live' },
-          ...here.slice(0, MAX_MARKERS).map((position) => marker(position, t)),
-          extra > 0 ? h('span', { class: 'avatar xs more' }, `+${extra}`) : null,
-        )
+      ? h('span', { class: 'level-live' }, ...avatarGroup(here, MAX_MARKERS, (position) => marker(position, t)))
       : null,
   );
 }

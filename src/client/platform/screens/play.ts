@@ -1,3 +1,4 @@
+import type { ScoreOrder } from '../../../shared/games/game.ts';
 import type {
   GameState,
   RaceVoice,
@@ -5,10 +6,10 @@ import type {
   ReactionNotice,
   RecordEntry,
 } from '../../../shared/platform/protocol.ts';
-import { competitionRanks } from '../../../shared/platform/ranking.ts';
+import { competitionRanks, recordStanding } from '../../../shared/platform/ranking.ts';
 import { findReaction, REACTIONS } from '../../../shared/platform/reactions.ts';
 import type { ClientGame, GameView, Unmount } from '../../games/client-game.ts';
-import { avatar } from '../avatar.ts';
+import { avatar, avatarGroup } from '../avatar.ts';
 import {
   type AppContext,
   canJoinRace,
@@ -23,7 +24,7 @@ import { formatDuration, type Lang } from '../i18n.ts';
 import { reactionLabel } from '../reactions.ts';
 import { createVoiceRecorder, type VoiceRecorder } from '../recorder.ts';
 import type { PlatformStrings } from '../strings.ts';
-import { errorMessage, loading, screenHeader, showModal, toast } from '../ui.ts';
+import { errorMessage, loading, screenHeader, showModal, toast, withName } from '../ui.ts';
 import { createVoicePlayer, setPlayButton, type VoicePlayerError } from '../voice-player.ts';
 import { renderLiveBoards } from './online.ts';
 
@@ -52,7 +53,6 @@ export function recordBadge(
   const names = holders.map((record) => view.playerName(record.player));
   const value = format(best.value, view.lang);
   const text = t.record(names.join(', '), value);
-  const extra = holders.length - BADGE_HOLDERS;
   return h(
     'button',
     {
@@ -62,10 +62,28 @@ export function recordBadge(
       on: { click: openPodium },
     },
     best.value === bestPossible ? '💎' : '🏆',
-    ...holders.slice(0, BADGE_HOLDERS).map((record, index) => avatar(record.player, names[index] ?? '?', 'xs')),
-    extra > 0 ? noTranslate(h('small', null, `+${extra}`)) : null,
+    ...avatarGroup(holders, BADGE_HOLDERS, (record) => avatar(record.player, view.playerName(record.player), 'xs')),
     value,
   );
+}
+
+/**
+ * Ligne de fin de partie quand le score gagnant atteint le record du niveau : record à soi seul, ou partagé avec
+ * les ex æquo nommés. `records` : classement de la clé renvoyé après la partie.
+ */
+export function recordNote(
+  view: GameView,
+  records: readonly RecordEntry[],
+  value: number,
+  order: ScoreOrder,
+  t: PlatformStrings,
+): HTMLElement | null {
+  const others = records.filter((record) => record.player !== view.me);
+  const standing = recordStanding(value, others, order);
+  if (standing.kind === 'below') return null;
+  if (standing.kind === 'record') return h('p', { class: 'record-note' }, '🏆 ', t.levelRecord);
+  const names = standing.with.map((player) => view.playerName(player)).join(', ');
+  return h('p', { class: 'record-note' }, '🤝 ', ...withName(t.recordShared, names));
 }
 
 /**
@@ -447,6 +465,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         h('div', { class: 'modal-emoji' }, perfect ? '💎' : won ? '🎉' : '😵'),
         h('h2', null, won ? t.won : t.lost),
         perfect ? h('p', { class: 'perfect-note' }, t.perfect) : null,
+        won && format && view ? recordNote(view, records, value, game.definition.scoreOrder, t) : null,
         ...leaderboard(records, value),
       ],
       [
