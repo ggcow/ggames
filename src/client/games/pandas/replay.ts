@@ -1,27 +1,23 @@
-// Lecteur de replay : rejoue le chemin final d'une partie, sans ses coups annulés, avec lecture automatique.
+// Lecteur de replay : rejoue une partie case par case, avec lecture automatique. Pas de compteur : Pandas n'a
+// pas de score.
 
-import { keptMoves } from '../../../shared/games/moves.ts';
 import { decodeActions, playActions } from '../../../shared/games/pandas/definition.ts';
 import type { Grid, Pandas } from '../../../shared/games/pandas/rules.ts';
 import { h, replaceChildren } from '../../platform/dom.ts';
 import { renderGrid } from './board.ts';
-import type { PandasStrings } from './strings.ts';
 
 const STEP_MS = 700;
 
-export function mountPandasReplay(host: HTMLElement, grid: Grid, replay: string, strings: PandasStrings): () => void {
-  // Les coups annulés n'apparaissent pas : on regarde le chemin final.
-  const states: Pandas[] = playActions(grid, keptMoves(decodeActions(replay) ?? [])) ?? [[]];
+export function mountPandasReplay(host: HTMLElement, grid: Grid, replay: string): () => void {
+  const states: Pandas[] = playActions(grid, decodeActions(replay) ?? []) ?? [[]];
   let index = 0;
   let timer: ReturnType<typeof setInterval> | null = null;
 
   const gridHost = h('div', { class: 'board-host' });
-  const counter = h('span', { class: 'counter' });
   const slider = h('input', { type: 'range', attrs: { min: '0', max: String(states.length - 1), value: '0' } });
   const playButton = h('button', { class: 'btn primary' });
 
   const render = () => {
-    counter.textContent = `${strings.moves(index)} / ${states.length - 1}`;
     slider.value = String(index);
     playButton.textContent = timer ? '⏸' : '▶';
     renderGrid(gridHost, grid, states[index] ?? [], { width: (host.clientWidth || window.innerWidth) - 16 });
@@ -59,7 +55,6 @@ export function mountPandasReplay(host: HTMLElement, grid: Grid, replay: string,
 
   replaceChildren(
     host,
-    h('div', { class: 'counter-row' }, counter),
     h('div', { class: 'table' }, gridHost),
     slider,
     h(

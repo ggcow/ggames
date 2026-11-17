@@ -17,7 +17,7 @@ import {
 } from '../../../shared/games/bouquets/rules.ts';
 import { countMoves } from '../../../shared/games/moves.ts';
 import { h } from '../../platform/dom.ts';
-import { mountPuzzleFrame } from '../puzzle-frame.ts';
+import { frameButton, mountPuzzleFrame, moveCounter } from '../puzzle-frame.ts';
 import { preloadArt } from './art.ts';
 import { bouquetBurst, FRONT_PLACES, potsOf, renderBoard } from './board.ts';
 import type { BouquetsStrings } from './strings.ts';
@@ -100,17 +100,10 @@ export function mountBouquetsPlay(host: HTMLElement, options: BouquetsPlayOption
   let finished = false;
   const timers = new Set<ReturnType<typeof setTimeout>>();
 
-  const {
-    counter,
-    table: boardHost,
-    undo,
-    restart,
-  } = mountPuzzleFrame(host, {
-    undoLabel: strings.undo,
-    restartLabel: strings.restart,
-    onUndo: () => undoLast(),
-    onRestart: () => reset(),
-  });
+  const counter = moveCounter();
+  const restart = frameButton(strings.restart, () => reset());
+  const undo = frameButton(strings.undo, () => undoLast());
+  const boardHost = mountPuzzleFrame(host, { counter, buttons: [restart, undo] });
   boardHost.classList.add('bq-play');
   const hint = h('p', { class: 'bq-hint' }, strings.stuck);
   host.append(hint);

@@ -87,9 +87,10 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   un devant se vide), avec une campagne de 100 niveaux de difficulté croissante et des illustrations peintes.
 - Troisième jeu : **Pandas** (un panda par ligne, par colonne et par bosquet coloré, sans que deux pandas se
   touchent, même en diagonale), avec une campagne de 100 grilles de 5 à 10 cases de côté, chacune à solution
-  unique. Un toucher fait passer une case de vide à croix (repère gratuit), à panda, puis à vide. Pas de score :
-  avec les croix et Annuler, tout le monde finirait au minimum de coups. Seule la réussite compte (ni 💎, ni
-  record, ni classement par score) ; essais, temps et replay restent.
+  unique. Un clic ou un toucher pose ou retire un panda ; un clic droit ou un appui long met ou enlève une croix
+  (repère qui n'entre pas dans le replay). Pas de score : avec les croix, tout le monde finirait au minimum de
+  coups. Seule la réussite compte (ni 💎, ni record, ni classement par score, ni compteur de coups, ni Annuler) ;
+  essais, temps et replay restent.
 
 ## Contraintes à ne jamais casser
 
@@ -130,7 +131,7 @@ src/
     platform/              coquille : session, routeur, API, temps réel, salon, écrans communs, UI, i18n
     games/                 interface ClientGame + registre + un dossier par jeu
       campaign.ts          méthodes ClientGame d'une campagne (progression, cases, niveau suivant)
-      puzzle-frame.ts      cadre de partie commun : compteur de coups, Recommencer, Annuler
+      puzzle-frame.ts      cadre de partie commun : plateau, compteur de coups facultatif, boutons du jeu
 pages/                     projet Cloudflare Pages : relaie /api/* vers le Worker (service binding)
 pages-staging/             même relais pour l'environnement de test
 tests/                     Vitest : shared/ (node), client/ (happy-dom), worker/ (runtime Cloudflare réel)

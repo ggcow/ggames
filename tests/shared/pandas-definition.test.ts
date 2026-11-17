@@ -3,7 +3,6 @@ import {
   decodeActions,
   encodeActions,
   levelGrid,
-  type PandasAction,
   pandas,
   playActions,
   startGrid,
@@ -11,24 +10,22 @@ import {
 import { pandasLevel, pandasWin } from '../support/pandas.ts';
 
 describe('replays', () => {
-  it('encode chaque action sur deux chiffres, et une annulation sur une lettre', () => {
-    const actions: PandasAction[] = [{ type: 'toggle', cell: 7 }, { type: 'undo' }, { type: 'toggle', cell: 42 }];
-    expect(encodeActions(actions)).toBe('07u42');
-    expect(decodeActions('07u42')).toEqual(actions);
+  it('encode chaque case touchée sur deux chiffres', () => {
+    expect(encodeActions([7, 42, 0])).toBe('074200');
+    expect(decodeActions('074200')).toEqual([7, 42, 0]);
     expect(decodeActions('')).toEqual([]);
   });
 
   it('refuse un replay mal écrit', () => {
     expect(decodeActions('7')).toBeNull();
     expect(decodeActions('0a')).toBeNull();
-    expect(decodeActions('x1')).toBeNull();
+    expect(decodeActions('07u')).toBeNull();
   });
 
-  it('rejoue pose, retrait et annulation, et refuse une action impossible', () => {
+  it('pose puis retire un panda, et refuse une case hors de la grille', () => {
     const grid = pandasLevel(1);
-    expect(playActions(grid, decodeActions('0303u') ?? [])).toEqual([[], [3], [], [3]]);
-    expect(playActions(grid, [{ type: 'undo' }])).toBeNull();
-    expect(playActions(grid, [{ type: 'toggle', cell: 25 }])).toBeNull();
+    expect(playActions(grid, [3, 3, 8])).toEqual([[], [3], [], [8]]);
+    expect(playActions(grid, [3, 25])).toBeNull();
   });
 });
 
@@ -54,19 +51,16 @@ describe('définition', () => {
     expect(pandas.bestPossible('c:30')).toBeNull();
   });
 
-  it('compte chaque essai et chaque retrait, et retire un coup par annulation', () => {
+  it('compte chaque case touchée, essais et retraits compris', () => {
     const [first, ...rest] = pandasWin(1);
-    if (!first) throw new Error('solution vide');
-    const wrong: PandasAction = { type: 'toggle', cell: first.type === 'toggle' && first.cell === 1 ? 2 : 1 };
-    const withRetry = [wrong, wrong, first, ...rest];
-    expect(pandas.replay('c:1', encodeActions(withRetry))).toEqual({ finished: true, value: 7 });
-    const withUndo = [wrong, { type: 'undo' } as const, first, ...rest];
-    expect(pandas.replay('c:1', encodeActions(withUndo))).toEqual({ finished: true, value: 5 });
+    if (first === undefined) throw new Error('solution vide');
+    const wrong = first === 1 ? 2 : 1;
+    expect(pandas.replay('c:1', encodeActions([wrong, wrong, first, ...rest]))).toEqual({ finished: true, value: 7 });
   });
 
-  it('refuse une action après la victoire et dit quand la grille n’est pas résolue', () => {
+  it('refuse une case touchée après la victoire et dit quand la grille n’est pas résolue', () => {
     const win = pandasWin(1);
-    expect(pandas.replay('c:1', `${encodeActions(win)}u`)).toBeNull();
+    expect(pandas.replay('c:1', encodeActions([...win, 0]))).toBeNull();
     expect(pandas.replay('c:1', encodeActions(win.slice(0, 3)))).toEqual({ finished: false, value: 3 });
     expect(pandas.replay('c:1', 'zz')).toBeNull();
     expect(pandas.replay('x:1', '')).toBeNull();

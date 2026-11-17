@@ -1891,6 +1891,10 @@ input[type="range"] {
   --pd-edge: #1b1340;
 }
 .pd-cell {
+  /* L'appui long fait la croix : pas de sélection de texte ni de menu du système. */
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
   width: var(--cs);
   height: var(--cs);
   display: flex;

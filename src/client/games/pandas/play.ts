@@ -1,8 +1,8 @@
-// Partie de Pandas : chaque toucher fait passer une case de vide à croix, de croix à panda, de panda à vide.
-// Seuls la pose et le retrait d'un panda sont des coups, mémorisés pour le replay envoyé au serveur.
+// Partie de Pandas : un clic ou un toucher pose ou retire un panda, un clic droit ou un appui long met ou enlève
+// une croix pour écarter une case. Pas de score : ni compteur de coups ni Annuler, toucher un panda le retire.
+// Les cases touchées sont mémorisées pour le replay envoyé au serveur ; les croix restent sur l'écran.
 
-import { countMoves } from '../../../shared/games/moves.ts';
-import { encodeActions, type PandasAction } from '../../../shared/games/pandas/definition.ts';
+import { encodeActions } from '../../../shared/games/pandas/definition.ts';
 import {
   conflicts,
   type Grid,
@@ -12,8 +12,8 @@ import {
   togglePanda,
 } from '../../../shared/games/pandas/rules.ts';
 import { h } from '../../platform/dom.ts';
-import { mountPuzzleFrame } from '../puzzle-frame.ts';
-import { renderGrid } from './board.ts';
+import { frameButton, mountPuzzleFrame } from '../puzzle-frame.ts';
+import { createGridInput, renderGrid } from './board.ts';
 import type { PandasStrings } from './strings.ts';
 
 export interface PandasPlayOptions {
@@ -27,68 +27,53 @@ export function mountPandasPlay(host: HTMLElement, options: PandasPlayOptions): 
   const { grid, strings } = options;
   let pandas: Pandas = [];
   let marks = new Set<number>();
-  let actions: PandasAction[] = [];
-  let history: Pandas[] = [];
+  let cells: number[] = [];
   let finished = false;
 
-  const frame = mountPuzzleFrame(host, {
-    undoLabel: strings.undo,
-    restartLabel: strings.restart,
-    onUndo: () => undoLast(),
-    onRestart: () => reset(),
-  });
+  const restart = frameButton(strings.restart, () => reset());
+  const table = mountPuzzleFrame(host, { buttons: [restart] });
   host.append(h('p', { class: 'pd-hint' }, strings.hint));
 
   const render = () => {
-    frame.counter.textContent = strings.moves(countMoves(actions));
-    frame.undo.disabled = history.length === 0 || finished;
-    frame.restart.disabled = finished;
-    renderGrid(frame.table, grid, pandas, {
+    restart.disabled = finished;
+    renderGrid(table, grid, pandas, {
       width: (host.clientWidth || window.innerWidth) - 16,
       marks,
       clashes: conflicts(grid, pandas),
       strings,
-      onTap: tap,
+      input,
     });
-    frame.table.classList.toggle('solved', finished);
+    table.classList.toggle('solved', finished);
   };
 
   const report = () =>
-    options.onProgress({ state: liveState(grid, pandas), value: countMoves(actions), replay: encodeActions(actions) });
+    options.onProgress({ state: liveState(grid, pandas), value: cells.length, replay: encodeActions(cells) });
 
-  /** Pose ou retire le panda d'une case : un coup. */
-  const toggle = (cell: number) => {
-    history.push(pandas);
+  /** Pose ou retire le panda d'une case. */
+  const tap = (cell: number) => {
+    if (finished) return;
     pandas = togglePanda(pandas, cell);
     marks.delete(cell);
-    actions.push({ type: 'toggle', cell });
+    cells.push(cell);
     finished = isSolved(grid, pandas);
     render();
     report();
-    if (finished) options.onWin(encodeActions(actions));
+    if (finished) options.onWin(encodeActions(cells));
   };
 
-  const tap = (cell: number) => {
-    if (finished) return;
-    if (pandas.includes(cell) || marks.has(cell)) return toggle(cell);
-    marks.add(cell);
+  /** Met ou enlève la croix d'une case sans panda. */
+  const mark = (cell: number) => {
+    if (finished || pandas.includes(cell)) return;
+    if (!marks.delete(cell)) marks.add(cell);
     render();
   };
 
-  const undoLast = () => {
-    const previous = history.pop();
-    if (!previous || finished) return;
-    pandas = previous;
-    actions.push({ type: 'undo' });
-    render();
-    report();
-  };
+  const input = createGridInput({ onTap: tap, onMark: mark });
 
   const reset = () => {
     pandas = [];
     marks = new Set();
-    actions = [];
-    history = [];
+    cells = [];
     finished = false;
     render();
     report();
@@ -98,5 +83,8 @@ export function mountPandasPlay(host: HTMLElement, options: PandasPlayOptions): 
   window.addEventListener('resize', onResize);
   render();
   report();
-  return () => window.removeEventListener('resize', onResize);
+  return () => {
+    input.dispose();
+    window.removeEventListener('resize', onResize);
+  };
 }

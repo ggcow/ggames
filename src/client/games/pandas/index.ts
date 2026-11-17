@@ -50,6 +50,6 @@ export const pandasClient: ClientGame = {
   mountReplay(host, ctx) {
     const grid = startGrid(ctx.key);
     if (!grid) return () => undefined;
-    return mountPandasReplay(host, grid, ctx.replay, PANDAS_STRINGS[ctx.lang]);
+    return mountPandasReplay(host, grid, ctx.replay);
   },
 };

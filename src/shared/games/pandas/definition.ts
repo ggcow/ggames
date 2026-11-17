@@ -2,7 +2,6 @@
 
 import { campaignCompareKeys, campaignIsUnlocked, parseCampaignKey } from '../campaign.ts';
 import type { GameDefinition, ReplayOutcome } from '../game.ts';
-import { countMoves } from '../moves.ts';
 import { LEVELS } from './levels.ts';
 import { type Grid, isSolved, type Pandas, parseGrid, togglePanda } from './rules.ts';
 
@@ -23,51 +22,26 @@ export function startGrid(key: string): Grid | null {
 /* ---------- Replays ---------- */
 
 /**
- * Une action : poser ou retirer le panda d'une case, ou annuler la dernière. Les croix de repérage ne sont pas des
- * coups : elles restent sur l'écran du joueur et n'entrent pas dans le replay.
+ * Un replay est la suite des cases touchées : chacune pose un panda, ou le retire s'il y est déjà. Les croix de
+ * repérage restent sur l'écran du joueur et n'entrent pas dans le replay.
+ * Encodage : deux chiffres par case. Ex. "071233".
  */
-export type PandasAction = { type: 'toggle'; cell: number } | { type: 'undo' };
+export const encodeActions = (cells: readonly number[]): string =>
+  cells.map((cell) => String(cell).padStart(2, '0')).join('');
 
-/** Encodage : `u` pour annuler, deux chiffres (numéro de case) pour poser ou retirer. Ex. "0712u33". */
-export const encodeActions = (actions: readonly PandasAction[]): string =>
-  actions.map((action) => (action.type === 'undo' ? 'u' : String(action.cell).padStart(2, '0'))).join('');
-
-export function decodeActions(replay: string): PandasAction[] | null {
-  const actions: PandasAction[] = [];
-  for (let i = 0; i < replay.length; ) {
-    if (replay[i] === 'u') {
-      actions.push({ type: 'undo' });
-      i += 1;
-      continue;
-    }
-    const pair = replay.slice(i, i + 2);
-    if (!/^\d{2}$/.test(pair)) return null;
-    actions.push({ type: 'toggle', cell: Number(pair) });
-    i += 2;
-  }
-  return actions;
+export function decodeActions(replay: string): number[] | null {
+  if (!/^(\d{2})*$/.test(replay)) return null;
+  return Array.from({ length: replay.length / 2 }, (_, i) => Number(replay.slice(i * 2, i * 2 + 2)));
 }
 
 /**
- * Applique les actions à une grille sans panda. Renvoie les pandas après chaque action (index 0 = départ), ou
- * `null` si une action est impossible (case hors de la grille, annulation sans coup à annuler).
+ * Pose ou retire les pandas des cases touchées sur une grille vide. Renvoie les pandas après chaque case
+ * (index 0 = départ), ou `null` si une case est hors de la grille.
  */
-export function playActions(grid: Grid, actions: readonly PandasAction[]): Pandas[] | null {
+export function playActions(grid: Grid, cells: readonly number[]): Pandas[] | null {
+  if (cells.some((cell) => cell >= grid.size * grid.size)) return null;
   const states: Pandas[] = [[]];
-  const history: Pandas[] = [];
-  let pandas: Pandas = [];
-  for (const action of actions) {
-    if (action.type === 'undo') {
-      const previous = history.pop();
-      if (!previous) return null;
-      pandas = previous;
-    } else {
-      if (action.cell >= grid.size * grid.size) return null;
-      history.push(pandas);
-      pandas = togglePanda(pandas, action.cell);
-    }
-    states.push(pandas);
-  }
+  for (const cell of cells) states.push(togglePanda(states[states.length - 1] ?? [], cell));
   return states;
 }
 
@@ -81,15 +55,15 @@ export const pandas: GameDefinition = {
   isUnlocked: campaignIsUnlocked,
   replay(key, replay): ReplayOutcome | null {
     const grid = startGrid(key);
-    const actions = decodeActions(replay);
-    if (!grid || !actions) return null;
-    const states = playActions(grid, actions);
+    const cells = decodeActions(replay);
+    if (!grid || !cells) return null;
+    const states = playActions(grid, cells);
     if (!states) return null;
     const firstSolved = states.findIndex((state) => isSolved(grid, state));
     // Une partie s'arrête dès que la grille est résolue : aucune action après.
     if (firstSolved !== -1 && firstSolved !== states.length - 1) return null;
-    return { finished: firstSolved !== -1, value: countMoves(actions) };
+    return { finished: firstSolved !== -1, value: cells.length };
   },
-  // Pas de score : avec les croix et Annuler, tout joueur finit au minimum de coups ; seule la réussite compte.
+  // Pas de score : avec les croix, tout joueur finit au minimum de cases touchées ; seule la réussite compte.
   bestPossible: () => null,
 };

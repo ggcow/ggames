@@ -36,7 +36,56 @@ export interface GridOptions {
   clashes?: ReadonlySet<number>;
   /** Textes des cases pour les lecteurs d'écran ; sans eux, la grille n'est pas touchable. */
   strings?: PandasStrings;
-  onTap?: (cell: number) => void;
+  input?: GridInput;
+}
+
+/** Durée d'un appui long sur un écran tactile, qui fait la croix comme un clic droit. */
+export const LONG_PRESS_MS = 450;
+
+/**
+ * Commandes d'une grille jouable : un clic ou un toucher pour le panda, un clic droit ou un appui long pour la
+ * croix. Créées une fois par partie : la grille est redessinée à chaque changement, mais un appui long en cours
+ * doit survivre au redessin.
+ */
+export interface GridInput {
+  attach(element: HTMLElement, cell: number): void;
+  dispose(): void;
+}
+
+export function createGridInput(actions: { onTap(cell: number): void; onMark(cell: number): void }): GridInput {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  // Après un appui long, le navigateur envoie encore un clic, et sur Android un menu contextuel : on les ignore.
+  let ignoreUntil = 0;
+  const cancel = () => {
+    if (timer) clearTimeout(timer);
+    timer = null;
+  };
+  return {
+    attach(element, cell) {
+      element.addEventListener('click', () => {
+        if (Date.now() < ignoreUntil) return;
+        actions.onTap(cell);
+      });
+      element.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        if (Date.now() < ignoreUntil) return;
+        actions.onMark(cell);
+      });
+      element.addEventListener('pointerdown', (event) => {
+        if (event.pointerType !== 'touch') return;
+        cancel();
+        timer = setTimeout(() => {
+          timer = null;
+          ignoreUntil = Date.now() + 800;
+          actions.onMark(cell);
+        }, LONG_PRESS_MS);
+      });
+      for (const type of ['pointerup', 'pointercancel', 'pointerleave'] as const) {
+        element.addEventListener(type, cancel);
+      }
+    },
+    dispose: cancel,
+  };
 }
 
 /** Côté d'une case selon la taille de la grille et la place disponible. */
@@ -63,9 +112,9 @@ function renderCell(grid: Grid, cell: number, pandas: Pandas, options: GridOptio
   const classes = ['pd-cell', ...borders(grid, cell)];
   if (panda) classes.push('panda');
   if (options.clashes?.has(cell)) classes.push('clash');
-  const { strings, onTap } = options;
+  const { strings, input } = options;
   const content = panda ? '🐼' : mark ? '✕' : '';
-  if (!strings || !onTap) {
+  if (!strings || !input) {
     return h(
       'div',
       { class: classes.join(' '), style: { background: REGION_COLORS[grid.regions[cell] ?? 0] ?? '' } },
@@ -74,17 +123,18 @@ function renderCell(grid: Grid, cell: number, pandas: Pandas, options: GridOptio
   }
   const place = strings.cell(rowOf(cell, grid.size) + 1, colOf(cell, grid.size) + 1);
   const label = panda ? `${place}, ${strings.panda}` : mark ? `${place}, ${strings.mark}` : place;
-  return h(
+  const button = h(
     'button',
     {
       class: classes.join(' '),
       type: 'button',
       style: { background: REGION_COLORS[grid.regions[cell] ?? 0] ?? '' },
       attrs: { 'aria-label': label },
-      on: { click: () => onTap(cell) },
     },
     content,
   );
+  input.attach(button, cell);
+  return button;
 }
 
 export function renderGrid(host: HTMLElement, grid: Grid, pandas: Pandas, options: GridOptions): void {

@@ -54,17 +54,13 @@ describe('fin de partie', () => {
     mountPlay(host, context(navigate), pandasClient, 'c:1');
     await settle();
     const cells = () => [...host.querySelectorAll<HTMLButtonElement>('.pd-cell')];
-    for (const cell of pandasSolution(pandasLevel(1))) {
-      cells()[cell]?.click();
-      cells()[cell]?.click();
-    }
+    for (const cell of pandasSolution(pandasLevel(1))) cells()[cell]?.click();
     await settle();
     const buttons = [...document.querySelectorAll<HTMLButtonElement>('.modal-buttons button')];
     expect(buttons.map((button) => button.textContent)).toEqual(['Suivant', '⟲ Rejouer', '← Retour']);
     buttons[1]?.click();
     expect(document.querySelector('.modal')).toBeNull();
     expect(host.querySelectorAll('.pd-cell.panda')).toHaveLength(0);
-    expect(host.querySelector('.counter')?.textContent).toBe('0 coups');
     expect(navigate).not.toHaveBeenCalled();
   });
 });
