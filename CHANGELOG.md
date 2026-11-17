@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.27](https://github.com/ggcow/ggames/compare/v0.5.26...v0.5.27) (2026-11-17)
+
+### Corrections
+
+* **pandas:** aperçus larges tant qu'on n'est pas quatre ([3781bb9](https://github.com/ggcow/ggames/commit/3781bb94a9ad5ffa8be71f7c7b9ab335aae19df5))
+
 ## [0.5.26](https://github.com/ggcow/ggames/compare/v0.5.25...v0.5.26) (2026-11-17)
 
 ### Corrections
