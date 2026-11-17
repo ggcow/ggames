@@ -1559,7 +1559,9 @@ input[type="range"] {
   gap: 4px;
   font-size: 11px;
 }
+/* L'indication suit le nom au lieu d'aller au bord de la carte. */
 .live-boards.compact .live-board-head small {
+  margin-left: 0;
   font-size: 9px;
   letter-spacing: -1px;
 }
@@ -1984,10 +1986,6 @@ input[type="range"] {
 }
 .pd-cell.shake {
   animation: shake 0.3s;
-}
-/* Aperçu calé à gauche, sous le nom et les vies. */
-.pd-mini {
-  justify-content: flex-start;
 }
 .pd-mini .pd-grid {
   border-radius: 4px;
