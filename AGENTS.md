@@ -56,8 +56,8 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   progression. Le serveur accepte une partie sur un niveau débloqué par le joueur ou par n'importe quel autre
   joueur, et refuse le reste.
 - Écran de partie pensé pour un téléphone : son plateau en grand en bas, au-dessus les aperçus des autres
-  joueurs en petit, côte à côte (deux au plus, trois aux Pandas, dont les aperçus sont plus étroits) ; à côté du
-  nom, le score ou les vies ; record et compteur de coups en badges compacts.
+  joueurs en petit, côte à côte sur deux colonnes (trois aux Pandas quand trois autres joueurs sont là, en
+  cartes resserrées) ; à côté du nom, le score ou les vies ; record et compteur de coups en badges compacts.
 - Pendant une course, chaque joueur envoie des réactions rapides (emojis ou phrases courtes traduites) aux
   joueurs du même niveau. Elles ne sont pas conservées et ne concernent que la course en cours.
 - Un salon global est intégré à l'accueil et à la page d'un jeu : on échange des messages texte directement

@@ -87,6 +87,17 @@ describe('aperçus en direct', () => {
     expect(cards[0]?.querySelector('.live-board-head small')?.textContent).toBe('4 coups');
   });
 
+  it('garde aux Pandas deux grandes colonnes tant qu’il n’y a pas plus de deux autres joueurs', () => {
+    const state = liveState(pandasLevel(1), [], 0);
+    for (const count of [1, 2]) {
+      const others = ['Tom', 'Zoé'].slice(0, count).map((name) => racer(name, 'pandas', state, 0));
+      const boards = renderLiveBoards(others, context(vi.fn()), 'pandas');
+      expect(boards?.classList.contains('compact')).toBe(false);
+      expect(boards?.style.getPropertyValue('--previews')).toBe('2');
+      expect(boards?.querySelectorAll('.live-board')).toHaveLength(count);
+    }
+  });
+
   it('place trois aperçus resserrés aux Pandas, les vies à côté du nom', () => {
     const state = liveState(pandasLevel(1), [], 1);
     const others = ['Tom', 'Zoé', 'Max', 'Ana'].map((name) => racer(name, 'pandas', state, 1));

@@ -56,24 +56,28 @@ export function renderOnline(others: readonly Presence[], ctx: AppContext): HTML
   );
 }
 
+/** Colonnes d'aperçus au moins : un aperçu seul n'occupe que la moitié de la largeur. */
+const MIN_COLUMNS = 2;
+
 /** Aperçus côte à côte à partir desquels les cartes se resserrent pour tenir sur un téléphone. */
 const COMPACT_COLUMNS = 3;
 
 /**
- * Aperçus en direct des autres joueurs sur la même clé, côte à côte : une colonne par place de la course, pour que
- * leur taille ne change pas quand un joueur arrive ou repart. À trois colonnes et plus, les cartes se resserrent.
+ * Aperçus en direct des autres joueurs sur la même clé, côte à côte : autant de colonnes que d'aperçus, deux au
+ * moins. Les cartes ne se resserrent que lorsqu'il en faut trois ou plus.
  */
 export function renderLiveBoards(others: readonly Presence[], ctx: AppContext, gameId: string): HTMLElement | null {
   const game = findClientGame(gameId);
   if (!game || others.length === 0) return null;
-  const columns = game.raceSize - 1;
+  const shown = others.slice(0, game.raceSize - 1);
+  const columns = Math.max(MIN_COLUMNS, shown.length);
   return h(
     'div',
     {
       class: columns >= COMPACT_COLUMNS ? 'live-boards compact' : 'live-boards',
       style: { '--previews': String(columns) },
     },
-    ...others.slice(0, columns).map((presence) => {
+    ...shown.map((presence) => {
       const status = presence.state ? game.liveStatus(presence.state, presence.value) : null;
       const tag = presence.state ? game.liveTag(presence.state, presence.value, ctx.lang) : null;
       return h(
