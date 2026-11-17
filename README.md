@@ -19,7 +19,7 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
   gagnées sur les niveaux que tu as toi-même réussis. À égalité, même rang ; dans le classement d'un niveau,
   les ex æquo partagent une seule ligne. Toucher le 🏆 d'un niveau en partie montre son podium.
 - Chaque case de la grille montre le numéro du niveau. Si tu l'as réussi avec le score parfait, un 💎 ; sinon,
-  les avatars de ceux qui l'ont, ex æquo compris, avec un petit 💎. En fin de partie, atteindre le record
+  les avatars des détenteurs du record, ex æquo compris, avec un petit 💎 si ce record est parfait. En fin de partie, atteindre le record
   l'annonce, seul ou partagé avec les ex æquo. La fiche d'un joueur
   donne par niveau le nombre d'essais, le temps de la première victoire et le nombre d'essais qu'il a fallu,
   le 💎 et la médaille du podium (or, argent, bronze).

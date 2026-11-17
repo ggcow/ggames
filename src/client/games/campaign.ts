@@ -18,22 +18,23 @@ export const campaignProgress = (view: GameView, player: PlayerId): LevelProgres
   total: MAX_LEVEL,
 });
 
-/** Case d'un niveau : réussi, jouable ou verrouillé, et les joueurs qui y ont le meilleur score possible. */
+/** Case d'un niveau : réussi, jouable ou verrouillé, son record et ses détenteurs ex æquo. */
 export function campaignTile(level: number, view: GameView, bestPossible: (key: string) => number | null): LevelTile {
   const key = campaignKey(level);
   const records = view.state.records[key] ?? [];
-  const won = records.some((record) => record.player === view.me);
+  const mine = records.find((record) => record.player === view.me);
   const unlocked = campaignIsUnlocked(key, wonKeys(view.state, view.me));
   const possible = bestPossible(key);
-  const perfectHolders = records
-    .filter((record) => record.value === possible)
-    .map((record) => ({ player: record.player, name: view.playerName(record.player) }));
+  const record = records[0];
   return {
     key,
     label: String(level),
-    status: won ? 'done' : unlocked ? 'open' : 'locked',
-    perfect: perfectHolders.some((holder) => holder.player === view.me),
-    perfectHolders,
+    status: mine ? 'done' : unlocked ? 'open' : 'locked',
+    perfect: mine !== undefined && mine.value === possible,
+    holders: records
+      .filter((entry) => entry.value === record?.value)
+      .map((entry) => ({ player: entry.player, name: view.playerName(entry.player) })),
+    recordPerfect: record !== undefined && record.value === possible,
   };
 }
 

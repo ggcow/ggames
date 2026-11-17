@@ -1144,7 +1144,8 @@ input[type="range"] {
   color: var(--text);
   font-size: 9px;
 }
-/* Détenteurs du score parfait quand le joueur ne l'a pas : avatars serrés, marqués d'un seul petit diamant. */
+/* Détenteurs du record quand le joueur n'a pas le score parfait : avatars serrés, un seul petit diamant si ce
+   record est parfait. */
 .level-holders {
   position: relative;
   display: flex;
@@ -1162,7 +1163,7 @@ input[type="range"] {
 .level-holders .avatar + .avatar {
   margin-left: -5px;
 }
-.level-holders::after {
+.level-holders.perfect::after {
   content: "💎";
   position: absolute;
   right: -6px;

@@ -42,11 +42,13 @@ describe('grille', () => {
         label: String(level),
         status: 'done',
         perfect: level === 2,
-        perfectHolders: level === 2 ? [{ player: 'abc123', name: 'léa' }] : [],
+        holders: level === 2 ? [{ player: 'abc123', name: 'léa' }] : [],
+        recordPerfect: level === 2,
       };
     }
-    if (level === 3) return { key: 'c:3', label: '3', status: 'open', perfect: false, perfectHolders: [] };
-    return { key: `c:${level}`, label: String(level), status: 'locked', perfect: false, perfectHolders: [] };
+    const empty = { perfect: false, holders: [], recordPerfect: false };
+    if (level === 3) return { key: 'c:3', label: '3', status: 'open', ...empty };
+    return { key: `c:${level}`, label: String(level), status: 'locked', ...empty };
   };
   const positions: PlayerPosition[] = [
     { player: 'abc123', name: 'léa', level: 2, live: true, me: true },
@@ -86,7 +88,7 @@ describe('grille', () => {
     expect(cells[1]?.getAttribute('aria-label')).toBe('2 réussi, Score parfait — léa (en jeu)');
   });
 
-  const holdersGrid = (perfectHolders: LevelTile['perfectHolders']) =>
+  const holdersGrid = (holders: LevelTile['holders'], recordPerfect = false) =>
     renderLevelGrid({
       progress: { unlocked: 2, total: 9999 },
       page: 0,
@@ -95,7 +97,8 @@ describe('grille', () => {
         label: String(level),
         status: level === 1 ? 'done' : 'open',
         perfect: false,
-        perfectHolders,
+        holders,
+        recordPerfect,
       }),
       positions: [],
       t: PLATFORM_STRINGS.fr,
@@ -103,18 +106,25 @@ describe('grille', () => {
       onPlay: vi.fn(),
     });
 
-  it('montre à qui ne l’a pas l’avatar du détenteur du score parfait', () => {
+  it('montre à qui n’a pas le 💎 l’avatar du détenteur du record, sans diamant si ce record n’est pas parfait', () => {
     const cells = holdersGrid([{ player: 'aaa111', name: 'Léa' }]).querySelectorAll<HTMLElement>('.level');
     const holders = cells[0]?.querySelector('.level-holders');
     expect(holders?.querySelectorAll('.avatar')).toHaveLength(1);
-    expect(holders?.getAttribute('title')).toBe('Score parfait : Léa');
+    expect(holders?.classList.contains('perfect')).toBe(false);
+    expect(holders?.getAttribute('title')).toBe('Record : Léa');
     expect(cells[0]?.querySelector('.level-perfect')).toBeNull();
-    expect(cells[0]?.getAttribute('aria-label')).toBe('1 réussi, Score parfait : Léa');
+    expect(cells[0]?.getAttribute('aria-label')).toBe('1 réussi, Record : Léa');
     // Sur un niveau pas encore réussi, la case garde seulement son numéro et l'action proposée.
     expect(cells[1]?.querySelector('.level-holders')).toBeNull();
   });
 
-  it('montre tous les détenteurs ex æquo du score parfait, résumés au-delà de deux', () => {
+  it('marque d’un petit 💎 le détenteur d’un record parfait', () => {
+    const holders = holdersGrid([{ player: 'aaa111', name: 'Léa' }], true).querySelector('.level-holders');
+    expect(holders?.classList.contains('perfect')).toBe(true);
+    expect(holders?.getAttribute('title')).toBe('Record : Léa, Score parfait');
+  });
+
+  it('montre tous les détenteurs ex æquo du record, résumés au-delà de deux', () => {
     const tied = holdersGrid([
       { player: 'aaa111', name: 'Léa' },
       { player: 'bbb222', name: 'Tom' },
@@ -123,10 +133,10 @@ describe('grille', () => {
     const holders = tied.querySelector('.level-holders');
     expect(holders?.querySelectorAll('.avatar:not(.more)')).toHaveLength(2);
     expect(holders?.querySelector('.avatar.more')?.textContent).toBe('+1');
-    expect(holders?.getAttribute('title')).toBe('Score parfait : Léa, Tom, Zoé');
+    expect(holders?.getAttribute('title')).toBe('Record : Léa, Tom, Zoé');
   });
 
-  it('ne montre rien sous le numéro tant que personne n’a le score parfait', () => {
+  it('ne montre rien sous le numéro sans détenteur de record', () => {
     const cell = holdersGrid([]).querySelector('.level.done');
     expect(cell?.textContent).toBe('1');
     expect(cell?.getAttribute('aria-label')).toBe('1 réussi');
@@ -279,7 +289,8 @@ describe('traduction automatique', () => {
         label: String(level),
         status: level === 1 ? 'done' : 'open',
         perfect: false,
-        perfectHolders: [
+        recordPerfect: false,
+        holders: [
           { player: 'aaa111', name: 'Léa' },
           { player: 'bbb222', name: 'Tom' },
           { player: 'ccc333', name: 'Zoé' },

@@ -61,8 +61,9 @@ describe('jeu', () => {
       label: '1',
       status: 'done',
       perfect: false,
-      // Le meilleur score possible de Bouquets n'est pas connu : aucun score parfait à montrer.
-      perfectHolders: [],
+      holders: [{ player: ME, name: 'Moi' }],
+      // Le meilleur score possible de Bouquets n'est pas connu : aucun record n'est parfait.
+      recordPerfect: false,
     });
     expect(bouquetsClient.levelTile(3, v).status).toBe('locked');
     expect(bouquetsClient.keyLabel('c:5', 'fr')).toBe('Niveau 5');

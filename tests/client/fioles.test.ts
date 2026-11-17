@@ -62,26 +62,29 @@ describe('niveaux', () => {
       label: '1',
       status: 'done',
       perfect: true,
-      perfectHolders: [{ player: ME, name: 'Moi' }],
+      holders: [{ player: ME, name: 'Moi' }],
+      recordPerfect: true,
     });
     expect(fiolesClient.levelTile(3, v)).toEqual({
       key: 'c:3',
       label: '3',
       status: 'open',
       perfect: false,
-      perfectHolders: [],
+      holders: [],
+      recordPerfect: false,
     });
     expect(fiolesClient.levelTile(4, v)).toEqual({
       key: 'c:4',
       label: '4',
       status: 'locked',
       perfect: false,
-      perfectHolders: [],
+      holders: [],
+      recordPerfect: false,
     });
     expect(fiolesClient.levelTile(8, v).status).toBe('locked');
   });
 
-  it('donne tous les détenteurs ex æquo du score parfait', () => {
+  it('donne tous les détenteurs ex æquo du record parfait', () => {
     const tied = view({
       records: {
         'c:1': [
@@ -92,13 +95,14 @@ describe('niveaux', () => {
     });
     const tile = fiolesClient.levelTile(1, tied);
     expect(tile.perfect).toBe(true);
-    expect(tile.perfectHolders).toEqual([
+    expect(tile.recordPerfect).toBe(true);
+    expect(tile.holders).toEqual([
       { player: OTHER, name: 'Ami' },
       { player: ME, name: 'Moi' },
     ]);
   });
 
-  it('donne les autres détenteurs du score parfait à un joueur qui ne l’a pas', () => {
+  it('donne le détenteur du record à un joueur qui n’a pas le score parfait', () => {
     const behind = view({
       records: {
         'c:1': [
@@ -110,14 +114,26 @@ describe('niveaux', () => {
     const tile = fiolesClient.levelTile(1, behind);
     expect(tile.status).toBe('done');
     expect(tile.perfect).toBe(false);
-    expect(tile.perfectHolders).toEqual([{ player: OTHER, name: 'Ami' }]);
+    expect(tile.recordPerfect).toBe(true);
+    expect(tile.holders).toEqual([{ player: OTHER, name: 'Ami' }]);
   });
 
-  it('ne donne aucun détenteur tant que personne n’a le score parfait', () => {
-    const worse = view({ records: { 'c:1': [{ player: OTHER, value: 12, run: 'r9' }] } });
+  it('donne les détenteurs ex æquo d’un record qui n’est pas parfait', () => {
+    const worse = view({
+      records: {
+        'c:1': [
+          { player: OTHER, value: 12, run: 'r9' },
+          { player: ME, value: 12, run: 'r1' },
+        ],
+      },
+    });
     const tile = fiolesClient.levelTile(1, worse);
     expect(tile.perfect).toBe(false);
-    expect(tile.perfectHolders).toEqual([]);
+    expect(tile.recordPerfect).toBe(false);
+    expect(tile.holders).toEqual([
+      { player: OTHER, name: 'Ami' },
+      { player: ME, name: 'Moi' },
+    ]);
   });
 
   it('nomme les clés et propose le niveau suivant', () => {
