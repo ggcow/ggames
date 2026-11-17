@@ -54,7 +54,9 @@ describe('fin de partie', () => {
     mountPlay(host, context(navigate), pandasClient, 'c:1');
     await settle();
     const cells = () => [...host.querySelectorAll<HTMLButtonElement>('.pd-cell')];
-    for (const cell of pandasSolution(pandasLevel(1))) cells()[cell]?.click();
+    for (const cell of pandasSolution(pandasLevel(1))) {
+      cells()[cell]?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    }
     await settle();
     const buttons = [...document.querySelectorAll<HTMLButtonElement>('.modal-buttons button')];
     expect(buttons.map((button) => button.textContent)).toEqual(['Suivant', '⟲ Rejouer', '← Retour']);

@@ -72,82 +72,83 @@ describe('partie', () => {
     element?.dispatchEvent(event);
     return event;
   };
+  const touch = (element: HTMLElement | undefined, type: 'pointerdown' | 'pointerup', pointerType = 'touch') =>
+    element?.dispatchEvent(new PointerEvent(type, { pointerType, bubbles: true }));
 
   it('signale la grille vide dès le montage', () => {
     const { onProgress } = mount();
     expect(onProgress).toHaveBeenCalledWith({ state: liveState(grid, []), value: 0, replay: '' });
   });
 
-  it('pose et retire un panda au clic, sans compteur de coups ni bouton Annuler', () => {
+  it('pose et retire un panda au clic droit, sans menu du navigateur, compteur de coups ni bouton Annuler', () => {
     const { host, onProgress } = mount();
-    cells(host)[3]?.click();
+    const event = rightClick(cells(host)[3]);
+    expect(event.defaultPrevented).toBe(true);
     expect(cells(host)[3]?.textContent).toBe('🐼');
     expect(cells(host)[3]?.getAttribute('aria-label')).toBe('Ligne 1, colonne 4, panda');
     expect(onProgress).toHaveBeenLastCalledWith(expect.objectContaining({ replay: '03' }));
-    cells(host)[3]?.click();
+    rightClick(cells(host)[3]);
     expect(cells(host)[3]?.textContent).toBe('');
     expect(onProgress).toHaveBeenLastCalledWith(expect.objectContaining({ replay: '0303' }));
     expect(host.querySelector('.counter')).toBeNull();
     expect([...host.querySelectorAll('.controls button')].map((button) => button.textContent)).toEqual([fr.restart]);
   });
 
-  it('met et enlève une croix au clic droit, sans menu du navigateur ni coup joué', () => {
+  it('met et enlève une croix au clic, sans coup joué', () => {
     const { host, onProgress } = mount();
     const calls = onProgress.mock.calls.length;
-    const event = rightClick(cells(host)[6]);
-    expect(event.defaultPrevented).toBe(true);
+    cells(host)[6]?.click();
     expect(cells(host)[6]?.textContent).toBe('✕');
     expect(cells(host)[6]?.getAttribute('aria-label')).toBe('Ligne 2, colonne 2, écartée');
-    rightClick(cells(host)[6]);
+    cells(host)[6]?.click();
     expect(cells(host)[6]?.textContent).toBe('');
     expect(onProgress).toHaveBeenCalledTimes(calls);
   });
 
-  it('remplace la croix par un panda au clic, et ne met pas de croix sur un panda', () => {
+  it('remplace la croix par un panda au clic droit, et ne met pas de croix sur un panda', () => {
     const { host } = mount();
-    rightClick(cells(host)[6]);
     cells(host)[6]?.click();
-    expect(cells(host)[6]?.textContent).toBe('🐼');
     rightClick(cells(host)[6]);
     expect(cells(host)[6]?.textContent).toBe('🐼');
     cells(host)[6]?.click();
+    expect(cells(host)[6]?.textContent).toBe('🐼');
+    rightClick(cells(host)[6]);
     expect(cells(host)[6]?.textContent).toBe('');
   });
 
-  it('met une croix sur un appui long au doigt, sans poser de panda au relâcher', () => {
+  it('pose un panda sur un appui long au doigt, sans croix au relâcher', () => {
     vi.useFakeTimers();
     const { host } = mount();
-    cells(host)[6]?.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }));
+    touch(cells(host)[6], 'pointerdown');
     vi.advanceTimersByTime(LONG_PRESS_MS);
-    expect(cells(host)[6]?.textContent).toBe('✕');
+    expect(cells(host)[6]?.textContent).toBe('🐼');
     // Le navigateur envoie encore un clic et, sur Android, un menu contextuel : ni l'un ni l'autre ne compte.
     cells(host)[6]?.click();
     rightClick(cells(host)[6]);
-    expect(cells(host)[6]?.textContent).toBe('✕');
+    expect(cells(host)[6]?.textContent).toBe('🐼');
   });
 
-  it('ignore un toucher bref et un appui de souris pour la croix', () => {
+  it('ne compte pas pour un appui long un toucher bref ni un appui de souris', () => {
     vi.useFakeTimers();
     const { host } = mount();
-    cells(host)[6]?.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }));
-    cells(host)[6]?.dispatchEvent(new PointerEvent('pointerup', { pointerType: 'touch', bubbles: true }));
-    cells(host)[7]?.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'mouse', bubbles: true }));
+    touch(cells(host)[6], 'pointerdown');
+    touch(cells(host)[6], 'pointerup');
+    touch(cells(host)[7], 'pointerdown', 'mouse');
     vi.advanceTimersByTime(LONG_PRESS_MS * 2);
-    expect(host.querySelectorAll('.pd-cell')).toHaveLength(25);
-    expect([...host.querySelectorAll('.pd-cell')].filter((cell) => cell.textContent === '✕')).toHaveLength(0);
+    expect(host.querySelectorAll('.pd-cell.panda')).toHaveLength(0);
   });
 
   it('cercle de rouge deux pandas qui enfreignent une règle', () => {
     const { host } = mount();
-    cells(host)[0]?.click();
-    cells(host)[4]?.click();
+    rightClick(cells(host)[0]);
+    rightClick(cells(host)[4]);
     expect(cells(host)[0]?.classList.contains('clash')).toBe(true);
     expect(cells(host)[4]?.classList.contains('clash')).toBe(true);
   });
 
   it('gagne en posant la solution et produit un replay valide', () => {
     const { host, onWin } = mount();
-    for (const cell of solution) cells(host)[cell]?.click();
+    for (const cell of solution) rightClick(cells(host)[cell]);
     expect(onWin).toHaveBeenCalledOnce();
     const replay = onWin.mock.calls[0]?.[0] as string;
     expect(pandas.replay('c:1', replay)).toEqual({ finished: true, value: 5 });
@@ -160,8 +161,8 @@ describe('partie', () => {
 
   it('recommence à zéro, croix comprises', () => {
     const { host, onProgress } = mount();
-    cells(host)[2]?.click();
-    rightClick(cells(host)[6]);
+    rightClick(cells(host)[2]);
+    cells(host)[6]?.click();
     host.querySelector<HTMLButtonElement>('.controls button')?.click();
     expect(cells(host)[2]?.textContent).toBe('');
     expect(cells(host)[6]?.textContent).toBe('');

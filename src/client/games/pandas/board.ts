@@ -39,12 +39,12 @@ export interface GridOptions {
   input?: GridInput;
 }
 
-/** Durée d'un appui long sur un écran tactile, qui fait la croix comme un clic droit. */
+/** Durée d'un appui long sur un écran tactile, qui vaut un clic droit. */
 export const LONG_PRESS_MS = 450;
 
 /**
- * Commandes d'une grille jouable : un clic ou un toucher pour le panda, un clic droit ou un appui long pour la
- * croix. Créées une fois par partie : la grille est redessinée à chaque changement, mais un appui long en cours
+ * Commandes d'une grille jouable : `onPrimary` au clic ou au toucher, `onSecondary` au clic droit ou à l'appui
+ * long. Créées une fois par partie : la grille est redessinée à chaque changement, mais un appui long en cours
  * doit survivre au redessin.
  */
 export interface GridInput {
@@ -52,7 +52,10 @@ export interface GridInput {
   dispose(): void;
 }
 
-export function createGridInput(actions: { onTap(cell: number): void; onMark(cell: number): void }): GridInput {
+export function createGridInput(actions: {
+  onPrimary(cell: number): void;
+  onSecondary(cell: number): void;
+}): GridInput {
   let timer: ReturnType<typeof setTimeout> | null = null;
   // Après un appui long, le navigateur envoie encore un clic, et sur Android un menu contextuel : on les ignore.
   let ignoreUntil = 0;
@@ -64,12 +67,12 @@ export function createGridInput(actions: { onTap(cell: number): void; onMark(cel
     attach(element, cell) {
       element.addEventListener('click', () => {
         if (Date.now() < ignoreUntil) return;
-        actions.onTap(cell);
+        actions.onPrimary(cell);
       });
       element.addEventListener('contextmenu', (event) => {
         event.preventDefault();
         if (Date.now() < ignoreUntil) return;
-        actions.onMark(cell);
+        actions.onSecondary(cell);
       });
       element.addEventListener('pointerdown', (event) => {
         if (event.pointerType !== 'touch') return;
@@ -77,7 +80,7 @@ export function createGridInput(actions: { onTap(cell: number): void; onMark(cel
         timer = setTimeout(() => {
           timer = null;
           ignoreUntil = Date.now() + 800;
-          actions.onMark(cell);
+          actions.onSecondary(cell);
         }, LONG_PRESS_MS);
       });
       for (const type of ['pointerup', 'pointercancel', 'pointerleave'] as const) {

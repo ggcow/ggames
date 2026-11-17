@@ -1,5 +1,5 @@
-// Partie de Pandas : un clic ou un toucher pose ou retire un panda, un clic droit ou un appui long met ou enlève
-// une croix pour écarter une case. Pas de score : ni compteur de coups ni Annuler, toucher un panda le retire.
+// Partie de Pandas : un clic ou un toucher met ou enlève une croix pour écarter une case, un clic droit ou un
+// appui long pose ou retire un panda. Pas de score : ni compteur de coups ni Annuler, retirer un panda suffit.
 // Les cases touchées sont mémorisées pour le replay envoyé au serveur ; les croix restent sur l'écran.
 
 import { encodeActions } from '../../../shared/games/pandas/definition.ts';
@@ -50,7 +50,7 @@ export function mountPandasPlay(host: HTMLElement, options: PandasPlayOptions): 
     options.onProgress({ state: liveState(grid, pandas), value: cells.length, replay: encodeActions(cells) });
 
   /** Pose ou retire le panda d'une case. */
-  const tap = (cell: number) => {
+  const placeOrRemove = (cell: number) => {
     if (finished) return;
     pandas = togglePanda(pandas, cell);
     marks.delete(cell);
@@ -68,7 +68,7 @@ export function mountPandasPlay(host: HTMLElement, options: PandasPlayOptions): 
     render();
   };
 
-  const input = createGridInput({ onTap: tap, onMark: mark });
+  const input = createGridInput({ onPrimary: mark, onSecondary: placeOrRemove });
 
   const reset = () => {
     pandas = [];
