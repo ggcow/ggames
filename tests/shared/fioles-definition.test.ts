@@ -126,7 +126,9 @@ describe('meilleur score possible', () => {
     expect(fioles.bestPossible('n’importe quoi')).toBeNull();
   });
 
-  it.each([1, 2, 3])('est atteint par une vraie partie au niveau %i', (level) => {
+  // Le solveur de test explore toutes les positions : près de 2 s au niveau 3 sur un poste, bien plus sur un
+  // serveur de CI chargé par les autres tests.
+  it.each([1, 2, 3])('est atteint par une vraie partie au niveau %i', { timeout: 60_000 }, (level) => {
     const win = solve(fiolesLevel(level));
     if (!win) throw new Error('solution attendue');
     expect(fioles.replay(`c:${level}`, encodeActions(win))).toEqual({ finished: true, value: OPTIMAL[level - 1] });
