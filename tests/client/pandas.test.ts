@@ -146,7 +146,7 @@ describe('partie', () => {
     expect(host.querySelector('.board-host')?.classList.contains('solved')).toBe(true);
   });
 
-  it('pose des croix en glissant le doigt, et en enlève si le premier toucher en enlevait', () => {
+  it('pose des croix en glissant le doigt, sans en enlever aucune, même en partant d’une croix', () => {
     const { host } = mount();
     const table = host.querySelector<HTMLElement>('.board-host');
     const slide = (path: number[]) => {
@@ -164,7 +164,11 @@ describe('partie', () => {
     slide([5, 6, 7]);
     expect(marked()).toEqual([5, 6, 7]);
     slide([6, 11, 12]);
-    expect(marked()).toEqual([5, 7]);
+    expect(marked()).toEqual([5, 6, 7, 11, 12]);
+    // Un toucher levé sur sa première case enlève toujours la croix.
+    vi.spyOn(Date, 'now').mockReturnValue(Date.now() + DOUBLE_TAP_MS + 1);
+    cells(host)[6]?.click();
+    expect(marked()).toEqual([5, 7, 11, 12]);
   });
 
   it('recommence à zéro, croix, pandas et vies compris', () => {

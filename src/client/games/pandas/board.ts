@@ -61,13 +61,13 @@ const cellOf = (target: EventTarget | null): number | null => {
 /**
  * Commandes d'une grille jouable, écoutées sur `host` qui la contient : la grille est redessinée à chaque
  * changement, et un geste doit survivre au redessin. Un toucher ou un clic met ou enlève une croix ; glisser le
- * doigt (ou la souris, bouton enfoncé) fait de même sur chaque case parcourue, dans le sens du premier toucher ;
- * un double toucher, un double clic ou un clic droit tente un panda. Le premier toucher d'un double toucher a
+ * doigt (ou la souris, bouton enfoncé) met une croix sur chaque case parcourue, première case comprise, sans en
+ * enlever aucune : seul un toucher levé sur la case où il a commencé enlève une croix ; un double toucher, un double clic ou un clic droit tente un panda. Le premier toucher d'un double toucher a
  * déjà agi : la tentative vaut quel que soit son effet.
  */
 export function bindGridInput(host: HTMLElement, actions: GridActions): () => void {
   let last: { cell: number; at: number } | null = null;
-  let drag: { start: number; current: number; marking: boolean | null } | null = null;
+  let drag: { start: number; current: number; moved: boolean } | null = null;
   // Un glissement se termine par un clic sur sa dernière case : il ne doit pas compter.
   let ignoreClick = false;
 
@@ -102,22 +102,22 @@ export function bindGridInput(host: HTMLElement, actions: GridActions): () => vo
       event.target.releasePointerCapture(event.pointerId);
     }
     ignoreClick = false;
-    drag = { start: cell, current: cell, marking: null };
+    drag = { start: cell, current: cell, moved: false };
   };
   const onPointerMove = (event: PointerEvent) => {
     if (!drag) return;
     const cell = cellOf(document.elementFromPoint(event.clientX, event.clientY));
     if (cell === null || cell === drag.current) return;
-    if (drag.marking === null) {
-      drag.marking = !actions.isMarked(drag.start);
-      actions.setMark(drag.start, drag.marking);
+    if (!drag.moved) {
+      drag.moved = true;
+      actions.setMark(drag.start, true);
       last = null;
     }
     drag.current = cell;
-    actions.setMark(cell, drag.marking);
+    actions.setMark(cell, true);
   };
   const onPointerEnd = () => {
-    if (drag && drag.marking !== null) ignoreClick = true;
+    if (drag?.moved) ignoreClick = true;
     drag = null;
   };
 
