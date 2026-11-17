@@ -983,9 +983,11 @@ input[type="range"] {
 
 .online-list {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   overflow-x: auto;
-  padding: 2px 2px 8px;
+  /* Assez de marge pour l'aura d'une pastille à rejoindre, que le défilement couperait. */
+  margin: -6px -6px 0;
+  padding: 8px 8px 10px;
   scrollbar-width: none;
 }
 .online-chip {
@@ -1000,6 +1002,35 @@ input[type="range"] {
 }
 .online-chip:disabled {
   opacity: 0.75;
+}
+/* Joueur en partie : une aura verte pulse autour de sa pastille, qui se touche pour le rejoindre. */
+.online-chip.joinable {
+  box-shadow:
+    0 4px 0 var(--surface-edge),
+    0 0 0 2px var(--green);
+  animation: online-aura 1.6s ease-out infinite;
+}
+@keyframes online-aura {
+  0% {
+    box-shadow:
+      0 4px 0 var(--surface-edge),
+      0 0 0 2px var(--green),
+      0 0 0 2px rgba(81, 207, 102, 0.7);
+  }
+  100% {
+    box-shadow:
+      0 4px 0 var(--surface-edge),
+      0 0 0 2px var(--green),
+      0 0 0 8px rgba(81, 207, 102, 0);
+  }
+}
+.online-join {
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: var(--green);
+  color: #0b3d1a;
+  font-size: 12px;
+  font-weight: 900;
 }
 .online-avatar {
   position: relative;
@@ -2288,6 +2319,7 @@ input[type="range"] {
   .brand-icons,
   .level.open,
   .level.join,
+  .online-chip.joinable,
   .ball.fill,
   .tube.sealed::before,
   .modal,

@@ -78,7 +78,8 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Score d'un jeu au tour par tour : le nombre de coups joués ; Annuler en retire un, Recommencer repart de zéro.
   En fin de partie, Rejouer relance le même niveau, même gagné, pour améliorer son score.
-- Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct. L'aperçu affiche
+- Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct. Dans la liste En ligne, un
+  joueur en partie porte « Rejoindre » et une aura qui pulse : le toucher rejoint son niveau. L'aperçu affiche
   « Impasse » dès que le joueur ne peut plus gagner, même s'il lui reste des coups qui tournent en rond.
 - Interface en français et en chinois.
 - Les niveaux de chaque jeu sont générés une fois pour toutes et enregistrés dans le projet, jamais à la volée.

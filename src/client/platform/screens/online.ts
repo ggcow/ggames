@@ -21,7 +21,10 @@ const liveStatusLabel = (status: LiveStatus, t: PlatformStrings): string => {
   }
 };
 
-/** Joueurs connectés avec ce qu'ils font ; toucher un joueur en partie rejoint son niveau. */
+/**
+ * Joueurs connectés avec ce qu'ils font. Un joueur en partie se rejoint d'un toucher : sa pastille s'entoure d'une
+ * aura qui pulse et porte « Rejoindre », pour qu'on la distingue d'un joueur dans les menus.
+ */
 export function renderOnline(others: readonly Presence[], ctx: AppContext): HTMLElement {
   if (others.length === 0) return h('p', { class: 'muted empty-line' }, ctx.t.nobodyOnline);
   return h(
@@ -34,7 +37,7 @@ export function renderOnline(others: readonly Presence[], ctx: AppContext): HTML
       const join = game && key ? () => ctx.navigate({ name: 'play', game: game.definition.id, key }) : undefined;
       return h(
         'button',
-        { class: 'online-chip', disabled: !join, on: join ? { click: join } : {} },
+        { class: join ? 'online-chip joinable' : 'online-chip', disabled: !join, on: join ? { click: join } : {} },
         h(
           'span',
           { class: 'online-avatar' },
@@ -47,6 +50,7 @@ export function renderOnline(others: readonly Presence[], ctx: AppContext): HTML
           noTranslate(h('strong', null, presence.name)),
           h('small', null, ...activity),
         ),
+        join ? h('span', { class: 'online-join' }, ctx.t.join) : null,
       );
     }),
   );
