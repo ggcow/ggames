@@ -53,6 +53,7 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
 | 🧪 Fioles   | Verser les couleurs jusqu'à ce que chaque fiole soit d'une seule couleur         | 100 niveaux                     |
 | 💐 Bouquets | Glisser les fleurs de pot en pot : trois pareilles devant un pot font un bouquet | 100 niveaux                     |
 | 🐼 Pandas   | Un panda par ligne, par colonne et par bosquet, sans que deux pandas se touchent | 100 niveaux, 3 vies, sans score |
+| 🚗 Parking  | Faire glisser les véhicules pour libérer la sortie de la voiture rouge           | 100 niveaux                     |
 
 ## Fonctionnement technique
 

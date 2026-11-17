@@ -916,6 +916,11 @@ input[type="range"] {
   --theme-b: #2b8a3e;
   --theme-edge: #1b5e20;
 }
+.theme-parking {
+  --theme-a: #ff8787;
+  --theme-b: #495057;
+  --theme-edge: #212529;
+}
 .game-icon {
   width: 64px;
   height: 64px;
@@ -1974,6 +1979,151 @@ input[type="range"] {
   letter-spacing: 2px;
 }
 .pd-hint {
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ---------- Plateau (parking) ---------- */
+
+/*
+ * Parking de --n cases de côté --cs, entouré d'un mur percé d'une sortie au bout de la rangée --exit. Chaque
+ * véhicule est placé par sa case de tête (--r, --c) et s'étend sur --len cases, à --gap du bord des cases.
+ */
+.pk-lot {
+  --pk-ground: #495057;
+  --pk-wall: #212529;
+  --pk-wall-width: 5px;
+  --gap: 3px;
+  position: relative;
+  width: calc(var(--n) * var(--cs));
+  height: calc(var(--n) * var(--cs));
+  margin: 0 auto;
+  border-radius: 10px;
+  background-color: var(--pk-ground);
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: var(--cs) var(--cs);
+  box-shadow: 0 0 0 var(--pk-wall-width) var(--pk-wall);
+  /* Glisser un véhicule ne doit ni faire défiler la page ni sélectionner du texte. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* La sortie : une brèche dans le mur de droite, signalée par une flèche. */
+.pk-exit {
+  position: absolute;
+  top: calc(var(--exit) * var(--cs));
+  right: calc(-1 * var(--pk-wall-width));
+  width: var(--pk-wall-width);
+  height: var(--cs);
+  background: var(--pk-ground);
+}
+.pk-exit::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(var(--pk-wall-width) + 4px);
+  border: calc(var(--cs) * 0.16) solid transparent;
+  border-left: calc(var(--cs) * 0.22) solid var(--yellow);
+  transform: translateY(-50%);
+}
+.pk-car {
+  position: absolute;
+  left: calc(var(--c) * var(--cs) + var(--gap));
+  top: calc(var(--r) * var(--cs) + var(--gap));
+  width: calc(var(--cs) - 2 * var(--gap));
+  height: calc(var(--cs) - 2 * var(--gap));
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--cs) * 0.22);
+  background: var(--paint);
+  box-shadow:
+    inset 0 -4px 0 rgba(0, 0, 0, 0.22),
+    0 2px 4px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+.pk-h {
+  width: calc(var(--len) * var(--cs) - 2 * var(--gap));
+}
+.pk-v {
+  height: calc(var(--len) * var(--cs) - 2 * var(--gap));
+}
+/* Pare-brise et lunette arrière, aux deux bouts du véhicule. */
+.pk-car::before,
+.pk-car::after {
+  content: "";
+  position: absolute;
+  border-radius: 3px;
+  background: rgba(16, 24, 48, 0.5);
+}
+.pk-h::before,
+.pk-h::after {
+  top: 16%;
+  bottom: 16%;
+  width: calc(var(--cs) * 0.16);
+}
+.pk-h::before {
+  right: calc(var(--cs) * 0.18);
+}
+.pk-h::after {
+  left: calc(var(--cs) * 0.14);
+}
+.pk-v::before,
+.pk-v::after {
+  left: 16%;
+  right: 16%;
+  height: calc(var(--cs) * 0.16);
+}
+.pk-v::before {
+  bottom: calc(var(--cs) * 0.18);
+}
+.pk-v::after {
+  top: calc(var(--cs) * 0.14);
+}
+.pk-red {
+  box-shadow:
+    inset 0 -4px 0 rgba(0, 0, 0, 0.22),
+    0 0 0 2px rgba(255, 255, 255, 0.7),
+    0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.pk-car:focus-visible {
+  outline: 3px solid var(--yellow);
+  outline-offset: 1px;
+}
+.pk-held {
+  z-index: 1;
+  cursor: grabbing;
+  filter: brightness(1.08);
+}
+.pk-leaving {
+  animation: pk-leave 0.7s ease-in forwards;
+}
+@keyframes pk-leave {
+  to {
+    transform: translateX(calc(3 * var(--cs)));
+    opacity: 0;
+  }
+}
+.pk-mini .pk-lot {
+  --pk-wall-width: 2px;
+  --gap: 1px;
+  border-radius: 4px;
+}
+.pk-mini .pk-car {
+  box-shadow: none;
+}
+.pk-mini .pk-car::before,
+.pk-mini .pk-car::after,
+.pk-mini .pk-exit::after {
+  display: none;
+}
+.pk-hint {
   margin: 0;
   text-align: center;
   color: var(--muted);

@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { BOUQUETS_STRINGS } from '../../src/client/games/bouquets/strings.ts';
 import { FIOLES_STRINGS } from '../../src/client/games/fioles/strings.ts';
 import { PANDAS_STRINGS } from '../../src/client/games/pandas/strings.ts';
+import { PARKING_STRINGS } from '../../src/client/games/parking/strings.ts';
 import { PLATFORM_STRINGS } from '../../src/client/platform/strings.ts';
 
-const DICTIONARIES = { PLATFORM_STRINGS, FIOLES_STRINGS, BOUQUETS_STRINGS, PANDAS_STRINGS };
+const DICTIONARIES = { PLATFORM_STRINGS, FIOLES_STRINGS, BOUQUETS_STRINGS, PANDAS_STRINGS, PARKING_STRINGS };
 
 /** Chaque texte d'un dictionnaire, les phrases à trous remplies avec des valeurs d'exemple. */
 function texts(dictionary: Record<string, Record<string, unknown>>): string[] {

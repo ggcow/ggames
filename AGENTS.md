@@ -94,6 +94,10 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   essais, temps et replay restent, et le nombre d'erreurs est gardé avec chaque partie. L'aperçu d'un autre
   joueur ne révèle rien de la solution : la grille part grise, chaque bosquet où il a trouvé le panda prend sa
   couleur, et ses vies s'affichent dessous ; l'état diffusé ne contient pas la case des pandas.
+- Quatrième jeu : **Parking** (faire glisser voitures et camions le long de leur axe pour libérer la sortie de
+  la voiture rouge, sur un parking de 6 × 6 cases), avec une campagne de 100 niveaux dont la solution la plus
+  courte s'allonge de 2 à 30 coups. Un glissement compte pour un coup, quelle que soit sa longueur ; on glisse
+  au doigt, ou aux flèches du clavier. Jamais d'impasse : chaque coup se défait.
 
 ## Contraintes à ne jamais casser
 
@@ -125,6 +129,8 @@ src/
                            et le meilleur score possible de chacun (optimal.ts)
       bouquets/            idem ; le générateur mesure la difficulté avec des parties simulées
       pandas/              règles, solveur, replays, grilles enregistrées et leur générateur (solution unique)
+      parking/             règles, recherche de la solution la plus courte, replays, niveaux enregistrés,
+                           leur générateur (position à la distance voulue de la sortie) et leur meilleur score
   worker/                  serveur Cloudflare
     index.ts               routeur HTTP -> Durable Object
     http.ts                réponses JSON, lecture du corps, jeton
@@ -238,7 +244,7 @@ Aucune modification de la plateforme ne doit être nécessaire. Si elle l'est, c
   ```
 
   Types : `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `build`, `ci`, `chore`, `style`.
-  Portées : `platform`, `worker`, `client`, `shared`, `fioles`, `bouquets`, `pandas`, `ci`, `deps`, `release`.
+  Portées : `platform`, `worker`, `client`, `shared`, `fioles`, `bouquets`, `pandas`, `parking`, `ci`, `deps`, `release`.
 - Un commit = un changement cohérent qui passe `npm run check`. Pas de commit « wip » ni « fix typo » isolé
   d'un changement qu'il corrige.
 - Hook `pre-commit` : Biome sur les fichiers indexés + vérification des types.

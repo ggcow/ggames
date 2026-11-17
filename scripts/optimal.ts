@@ -6,6 +6,8 @@ import { writeFileSync } from 'node:fs';
 import { minimalMoves } from '../src/shared/games/fioles/generate.ts';
 import { LEVELS as FIOLES_LEVELS } from '../src/shared/games/fioles/levels.ts';
 import { parseBoard } from '../src/shared/games/fioles/rules.ts';
+import { LEVELS as PARKING_LEVELS } from '../src/shared/games/parking/levels.ts';
+import { parseBoard as parseParking, shortestSolution } from '../src/shared/games/parking/rules.ts';
 
 /** Positions explorées au plus pour un niveau : au-delà, la recherche s'arrête en erreur. */
 const LIMIT = 5_000_000;
@@ -17,6 +19,14 @@ const SOLVERS: Record<string, { levels: readonly string[]; best: (level: string)
     best: (level) => {
       const board = parseBoard(level);
       return board ? minimalMoves(board, LIMIT) : null;
+    },
+  },
+  parking: {
+    levels: PARKING_LEVELS,
+    best: (level) => {
+      const board = parseParking(level);
+      const result = board ? shortestSolution(board, LIMIT) : null;
+      return result?.kind === 'solved' ? result.slides.length : null;
     },
   },
 };

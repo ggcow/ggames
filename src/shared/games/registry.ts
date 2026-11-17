@@ -4,9 +4,10 @@ import { bouquets } from './bouquets/definition.ts';
 import { fioles } from './fioles/definition.ts';
 import type { GameDefinition } from './game.ts';
 import { pandas } from './pandas/definition.ts';
+import { parking } from './parking/definition.ts';
 
 export const GAMES: ReadonlyMap<string, GameDefinition> = new Map(
-  [fioles, bouquets, pandas].map((game) => [game.id, game]),
+  [fioles, bouquets, pandas, parking].map((game) => [game.id, game]),
 );
 
 export function findGame(id: unknown): GameDefinition | null {
