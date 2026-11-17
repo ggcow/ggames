@@ -61,8 +61,8 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - Un salon global est intégré à l'accueil et à la page d'un jeu : on échange des messages texte directement
   dans la page, sous le contenu sur un téléphone. Sur un écran large, l'accueil et la page d'un jeu
   remplissent la fenêtre : les panneaux gardent leurs proportions de téléphone, agrandis par paliers (`zoom`),
-  le salon à droite sur toute la hauteur (`chatScreen()`). Les panneaux d'une même `panelColumn()` restent
-  empilés. L'accueil reste sur une colonne (En ligne sous les jeux) ; la page d'un jeu met sa colonne
+  le salon à droite sur toute la hauteur (`chatScreen()`). La page elle-même ne défile pas : le contenu défile
+  dans sa colonne, le salon reste en place. Les panneaux d'une même `panelColumn()` restent empilés. L'accueil reste sur une colonne (En ligne sous les jeux) ; la page d'un jeu met sa colonne
   latérale (`sideColumn()` : En ligne puis Joueurs) à gauche de la grille dès que la fenêtre le permet.
   L'écran de partie n'est pas concerné. L'historique est court (50 derniers messages, 7 jours) et les messages sont limités en
   longueur et en débit.

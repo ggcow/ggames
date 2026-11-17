@@ -76,11 +76,16 @@ body {
    défilement). Chaque panneau garde ses proportions de téléphone, en colonnes (`.panel-column`) dont les
    panneaux restent empilés : une colonne à côté du salon, plus une colonne latérale plus étroite à gauche
    pour un écran `side` dès que la fenêtre la contient. En-tête et présentation hors colonne gardent leur
-   propre ligne. L'ensemble est agrandi (zoom) par paliers pour remplir la fenêtre. Le salon, à droite, occupe
-   la hauteur de la fenêtre et reste visible pendant le défilement. */
+   propre ligne. L'ensemble est agrandi (zoom) par paliers pour remplir la fenêtre. La page ne défile pas : elle
+   tient dans la hauteur de la fenêtre, le contenu défile dans sa colonne et le salon, à droite, reste en place. */
 @media (min-width: 1040px) {
+  body:has(#app > .with-chat) {
+    overflow: hidden;
+  }
   #app:has(> .with-chat) {
     max-width: none;
+    height: 100vh;
+    padding-bottom: 14px;
   }
   .with-chat {
     --panel: 488px;
@@ -91,12 +96,22 @@ body {
     justify-content: center;
     align-items: flex-start;
     gap: 28px;
+    /* Hauteur de la fenêtre moins les marges de #app, divisée par le zoom qui l'agrandira. */
+    height: calc((100vh - 28px) / var(--zoom));
   }
+  /* La barre de défilement prend place dans l'écart avec le salon (marge négative) : les colonnes gardent leur
+     largeur et les paliers de zoom restent justes. */
   .with-chat > .screen-content {
     display: grid;
     grid-template-columns: var(--panel);
     align-items: start;
     gap: 18px 28px;
+    max-height: 100%;
+    overflow: hidden auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    padding-right: 16px;
+    margin-right: -16px;
   }
   .with-chat > .screen-content > :not(.section, .panel-column) {
     width: var(--panel);
@@ -106,15 +121,19 @@ body {
     flex-direction: column;
     gap: 18px;
   }
+  /* Le salon occupe toute la hauteur : sa liste de messages prend la place que laissent titre et saisie. */
   .chat-section {
     flex: none;
     width: var(--panel);
-    position: sticky;
-    top: 14px;
+    height: 100%;
   }
-  /* Les longueurs d'un élément agrandi le sont aussi : la hauteur de la fenêtre se divise par le zoom. */
+  .chat-section .chat-panel {
+    flex: 1;
+    min-height: 0;
+  }
   .chat-section .chat-list {
-    height: calc((100vh - 160px) / var(--zoom));
+    flex: 1;
+    min-height: 0;
     max-height: none;
   }
 }

@@ -35,7 +35,7 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
   disparaissent après quelques secondes et ne sont pas conservées.
 - Un salon global est intégré à l'accueil et à la page d'un jeu : sous le contenu sur un téléphone. Sur un
   écran large, l'accueil et la page d'un jeu remplissent la fenêtre : les panneaux gardent leurs proportions
-  et s'agrandissent, le salon à droite sur toute la hauteur. Les 50 derniers messages sont conservés 7 jours.
+  et s'agrandissent, le salon à droite sur toute la hauteur ; seul le contenu défile, pas la page. Les 50 derniers messages sont conservés 7 jours.
 - Le salon accepte des notes vocales normales, conservées avec l'historique. Pendant une course, on peut
   envoyer des messages vocaux : ils disparaissent pour chaque joueur après écoute, restent pour ceux qui
   ne les ont pas écoutés, et expirent au bout de 30 secondes. Une note disparaît pour tous, auteur compris,
