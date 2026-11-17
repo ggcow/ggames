@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.22](https://github.com/ggcow/ggames/compare/v0.5.21...v0.5.22) (2026-11-17)
+
+### Fonctionnalités
+
+* **pandas:** aperçu en direct sans la solution ([400fd15](https://github.com/ggcow/ggames/commit/400fd15d7d72d8fa33e2472f725862ad62a33129))
+* **parking:** ajouter le jeu Parking et sa campagne de 100 niveaux ([3535ef6](https://github.com/ggcow/ggames/commit/3535ef6e98bc9d3754abe5c07e8b3a2b1022db5c))
+* **platform:** signaler clairement les joueurs à rejoindre ([45b7a3e](https://github.com/ggcow/ggames/commit/45b7a3ee68dff1d093e9d07b477f6978de7dd0e9))
+
+### Corrections
+
+* **client:** ne plus poser sur le niveau 1 les joueurs qui n'ont jamais joué ([bc19e62](https://github.com/ggcow/ggames/commit/bc19e62326e40779dbdb4df59138492d67fd01d2))
+* **pandas:** glisser le doigt n'enlève plus de croix ([102e856](https://github.com/ggcow/ggames/commit/102e856d07481e5df920908b7328ebc36d75faa8))
+
 ## [0.5.21](https://github.com/ggcow/ggames/compare/v0.5.20...v0.5.21) (2026-11-17)
 
 ### Fonctionnalités
