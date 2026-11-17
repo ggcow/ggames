@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.19](https://github.com/ggcow/ggames/compare/v0.5.18...v0.5.19) (2026-11-17)
+
+### Fonctionnalités
+
+* **platform:** classer les ex æquo sans sauter de rang ([b98820a](https://github.com/ggcow/ggames/commit/b98820a28856d18265aa384647cdf0a0be075f5f))
+
+### Corrections
+
+* **client:** montrer le détenteur du record sur la case sans score parfait ([c576436](https://github.com/ggcow/ggames/commit/c576436c16d8896d5188c43a40d27f1d27b74e75))
+
 ## [0.5.18](https://github.com/ggcow/ggames/compare/v0.5.17...v0.5.18) (2026-11-17)
 
 ### Fonctionnalités
