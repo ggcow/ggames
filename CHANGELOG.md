@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.20](https://github.com/ggcow/ggames/compare/v0.5.19...v0.5.20) (2026-11-17)
+
+### Fonctionnalités
+
+* **pandas:** ajouter le jeu Pandas ([efb8616](https://github.com/ggcow/ggames/commit/efb86168bc33df0349a37b9e1ef6cc024a55d2fb))
+* **pandas:** écarter au clic, poser au clic droit ([4ae0817](https://github.com/ggcow/ggames/commit/4ae0817783aae5b50e281e7bc4a893b40c1c9784))
+* **pandas:** ne garder que la réussite, sans score ni diamant ([295ec3c](https://github.com/ggcow/ggames/commit/295ec3c3be129a6a69950a6ac440801aec5b2231))
+* **pandas:** poser au clic, écarter au clic droit, sans compteur ni Annuler ([b0f0fa8](https://github.com/ggcow/ggames/commit/b0f0fa8d93766b5f5a8945e71127f89583701e57))
+* **platform:** proposer de rejouer un niveau en fin de partie ([5e58f13](https://github.com/ggcow/ggames/commit/5e58f131bf16b43f7f84039f159aae9607422d36))
+
+### Corrections
+
+* **client:** écrire les textes avec l'apostrophe droite ([d898816](https://github.com/ggcow/ggames/commit/d898816465248a7145769f631ee41477230598b4))
+* **client:** ne plus faire défiler toute la page sur un écran large ([ae8d2fa](https://github.com/ggcow/ggames/commit/ae8d2fa7566bfa7c0b7c36a74b47140fb4f1e560))
+
 ## [0.5.19](https://github.com/ggcow/ggames/compare/v0.5.18...v0.5.19) (2026-11-17)
 
 ### Fonctionnalités
