@@ -3,10 +3,10 @@ import { defineStrings } from '../../platform/i18n.ts';
 export const PANDAS_STRINGS = defineStrings({
   fr: {
     name: 'Pandas',
-    tagline: 'Un panda par ligne, par colonne et par bosquet, sans qu’ils se touchent.',
+    tagline: "Un panda par ligne, par colonne et par bosquet, sans qu'ils se touchent.",
     level: (n: number) => `Niveau ${n}`,
     moves: (n: number) => (n === 1 ? '1 coup' : `${n} coups`),
-    hint: 'Touche une case : une croix pour l’écarter, puis un panda, puis rien.',
+    hint: "Touche une case : une croix pour l'écarter, puis un panda, puis rien.",
     undo: '↶ Annuler',
     restart: '⟲ Recommencer',
     cell: (row: number, col: number) => `Ligne ${row}, colonne ${col}`,
