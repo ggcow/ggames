@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.21](https://github.com/ggcow/ggames/compare/v0.5.20...v0.5.21) (2026-11-17)
+
+### Fonctionnalités
+
+* **pandas:** trois vies, double toucher pour tenter un panda, croix au glisser ([235d793](https://github.com/ggcow/ggames/commit/235d7937e86b5020296a83b45f4ae3e28d1e9493))
+
 ## [0.5.20](https://github.com/ggcow/ggames/compare/v0.5.19...v0.5.20) (2026-11-17)
 
 ### Fonctionnalités
