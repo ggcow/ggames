@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.26](https://github.com/ggcow/ggames/compare/v0.5.25...v0.5.26) (2026-11-17)
+
+### Corrections
+
+* **pandas:** aperçu sur toute la largeur de sa carte ([29373d2](https://github.com/ggcow/ggames/commit/29373d2d3e90a97c98cbf43abcd9a07a23f5461c))
+
 ## [0.5.25](https://github.com/ggcow/ggames/compare/v0.5.24...v0.5.25) (2026-11-17)
 
 ### Corrections
