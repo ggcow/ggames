@@ -104,7 +104,7 @@ export interface KeyProgress {
   /** Durée de la partie qui a apporté la première victoire ; null tant que la clé n'est pas gagnée. */
   firstWinDurationMs: number | null;
   best: RunSummary | null;
-  /** Rang de son meilleur score sur la clé, ex æquo compris (1, 1, 3) ; null sans victoire. */
+  /** Rang de son meilleur score sur la clé, ex æquo compris (1, 1, 2) ; null sans victoire. */
   rank: number | null;
   /**
    * Le demandeur peut regarder le replay de `best` : c'est sa propre fiche, ou il a fait aussi bien sur ce niveau.

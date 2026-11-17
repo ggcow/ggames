@@ -320,7 +320,7 @@ describe('parties', () => {
       rank: 1,
     });
     expect((await detailOf(b.token, b.player.id))?.rank).toBe(1);
-    expect((await detailOf(c.token, c.player.id))?.rank).toBe(3);
+    expect((await detailOf(c.token, c.player.id))?.rank).toBe(2);
   });
 });
 

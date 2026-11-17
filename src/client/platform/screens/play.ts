@@ -6,7 +6,7 @@ import type {
   ReactionNotice,
   RecordEntry,
 } from '../../../shared/platform/protocol.ts';
-import { competitionRanks, recordStanding } from '../../../shared/platform/ranking.ts';
+import { denseRanks, recordStanding } from '../../../shared/platform/ranking.ts';
 import { findReaction, REACTIONS } from '../../../shared/platform/reactions.ts';
 import type { ClientGame, GameView, Unmount } from '../../games/client-game.ts';
 import { avatar, avatarGroup } from '../avatar.ts';
@@ -90,8 +90,8 @@ export function recordNote(
 const ROW_HOLDERS = 3;
 
 /**
- * Classement d'une clé : une ligne par rang, qui réunit tous les ex æquo de ce score (rangs « 1, 3 » pour deux
- * premiers à égalité), un 💎 sur chaque score égal au meilleur possible. `limit` ne garde que les rangs jusqu'à
+ * Classement d'une clé : une ligne par rang, qui réunit tous les ex æquo de ce score (rangs « 1, 2 » pour deux
+ * premiers à égalité, puis un troisième), un 💎 sur chaque score égal au meilleur possible. `limit` ne garde que les rangs jusqu'à
  * lui (le podium).
  */
 export function scoreList(
@@ -101,7 +101,7 @@ export function scoreList(
   bestPossible: number | null,
   limit = Number.POSITIVE_INFINITY,
 ): HTMLElement {
-  const ranks = competitionRanks(records, (a, b) => a.value === b.value);
+  const ranks = denseRanks(records, (a, b) => a.value === b.value);
   const groups: { rank: number; value: number; players: RecordEntry['player'][] }[] = [];
   records.forEach((record, index) => {
     const rank = ranks[index] ?? index + 1;

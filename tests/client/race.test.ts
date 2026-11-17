@@ -109,7 +109,7 @@ describe('classement d’un niveau', () => {
 
   it('réunit les ex æquo sur une ligne par rang et marque sa propre ligne', () => {
     const list = scoreList(records, view, (value) => `${value} coups`, null);
-    expect(ranks(list)).toEqual(['1', '3', '5']);
+    expect(ranks(list)).toEqual(['1', '2', '3']);
     const first = list.querySelector('li');
     expect(first?.querySelectorAll('.avatar')).toHaveLength(2);
     expect(first?.querySelector('.grow')?.textContent).toBe('p1, p2');
@@ -118,10 +118,17 @@ describe('classement d’un niveau', () => {
     expect(list.querySelector('li.me')).toBe(first);
   });
 
-  it('garde au podium tous les ex æquo des trois premiers rangs', () => {
+  it('garde au podium les trois premiers rangs avec tous leurs ex æquo', () => {
     const podium = scoreList(records, view, (value) => `${value} coups`, null, 3);
-    expect(ranks(podium)).toEqual(['1', '3']);
-    expect(podium.querySelectorAll('.avatar')).toHaveLength(4);
+    expect(ranks(podium)).toEqual(['1', '2', '3']);
+    expect(podium.querySelectorAll('.avatar')).toHaveLength(5);
+  });
+
+  it('montre au podium les deuxième et troisième places derrière trois premiers ex æquo', () => {
+    const scores = [9, 9, 9, 11, 12, 14].map((value, index) => ({ player: `p${index + 1}`, value, run: `r${index}` }));
+    const podium = scoreList(scores, view, (value) => `${value} coups`, null, 3);
+    expect(ranks(podium)).toEqual(['1', '2', '3']);
+    expect([...podium.querySelectorAll('b')].map((b) => b.textContent)).toEqual(['9 coups', '11 coups', '12 coups']);
   });
 
   it('résume au-delà de trois ex æquo sur une même ligne', () => {

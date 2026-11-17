@@ -33,7 +33,7 @@ import {
   type SubmitRunResponse,
   type VoiceNote,
 } from '../../shared/platform/protocol.ts';
-import { competitionRanks } from '../../shared/platform/ranking.ts';
+import { denseRanks } from '../../shared/platform/ranking.ts';
 import { createId, createToken, hashPassword, sha256, verifyPassword } from './crypto.ts';
 import { fail, ok, type Result } from './result.ts';
 import { migrate } from './schema.ts';
@@ -381,12 +381,12 @@ export class World extends DurableObject<Env> {
     });
   }
 
-  /** Rang du meilleur score du joueur sur chaque clé, ex æquo compris (1, 1, 3). */
+  /** Rang du meilleur score du joueur sur chaque clé, ex æquo compris (1, 1, 2). */
   private keyRanks(game: GameDefinition, player: PlayerId): Map<string, number> {
     const ranks = new Map<string, number>();
     for (const [key, entries] of Object.entries(this.store.records(game.id, game.scoreOrder))) {
       const index = entries.findIndex((entry) => entry.player === player);
-      const rank = index === -1 ? undefined : competitionRanks(entries, (a, b) => a.value === b.value)[index];
+      const rank = index === -1 ? undefined : denseRanks(entries, (a, b) => a.value === b.value)[index];
       if (rank !== undefined) ranks.set(key, rank);
     }
     return ranks;
