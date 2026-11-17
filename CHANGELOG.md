@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.24](https://github.com/ggcow/ggames/compare/v0.5.23...v0.5.24) (2026-11-17)
+
+### Corrections
+
+* **pandas:** vies juste après le nom et aperçu centré ([9208f00](https://github.com/ggcow/ggames/commit/9208f004cc8738c6f53fad0a49ff93ace82c68e3))
+
 ## [0.5.23](https://github.com/ggcow/ggames/compare/v0.5.22...v0.5.23) (2026-11-17)
 
 ### Fonctionnalités
