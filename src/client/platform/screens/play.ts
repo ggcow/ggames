@@ -482,6 +482,8 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         ...(next
           ? [{ label: t.next, primary: true, action: () => ctx.navigate({ name: 'play', game: gameId, key: next }) }]
           : []),
+        // Rejouer le même niveau, gagné ou non : pour améliorer son score sans repasser par la grille.
+        { label: t.playAgain, primary: next === null, action: start },
         { label: t.back, action: () => ctx.navigate({ name: 'game', game: gameId }) },
       ],
     );
