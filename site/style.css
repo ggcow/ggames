@@ -1713,6 +1713,25 @@ input[type="range"] {
   display: flex;
   justify-content: center;
 }
+/*
+ * Cartes resserrées : aperçu collé à gauche, sous le nom, et l'état à sa droite s'il reste la place (sinon
+ * dessous), pour ne pas laisser de vide sur un écran large.
+ */
+.live-boards.compact .live-board {
+  flex-flow: row wrap;
+  align-items: flex-start;
+  column-gap: 6px;
+}
+.live-boards.compact .live-board-head {
+  flex-basis: 100%;
+}
+.live-boards.compact .mini {
+  order: 1;
+  justify-content: flex-start;
+}
+.live-boards.compact .live-status {
+  order: 2;
+}
 .mini .board {
   gap: 4px;
   padding: 2px 0;
