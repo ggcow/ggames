@@ -30,9 +30,10 @@ import { createRandom } from '../../src/shared/games/random.ts';
 describe('campagne', () => {
   it('ajoute couteaux, obstacles, vitesse, changements de vitesse puis de sens', () => {
     const specs = Array.from({ length: MAX_LEVEL }, (_, i) => campaignSpec(i + 1));
-    expect(specs[0]).toEqual({ knives: 6, obstacles: 0, speed: 15, paces: 1, reverse: false });
-    expect(specs[MAX_LEVEL - 1]).toMatchObject({ knives: 14, obstacles: 7, speed: 40, paces: 4, reverse: true });
-    expect([10, 11, 30, 31, 60, 61].map((level) => campaignSpec(level).paces)).toEqual([1, 2, 2, 3, 3, 4]);
+    expect(specs[0]).toEqual({ knives: 8, obstacles: 1, speed: 25, paces: 2, reverse: false });
+    expect(specs[MAX_LEVEL - 1]).toEqual({ knives: 14, obstacles: 7, speed: 50, paces: 4, reverse: true });
+    expect([20, 21, 50, 51].map((level) => campaignSpec(level).paces)).toEqual([2, 3, 3, 4]);
+    expect([20, 21].map((level) => campaignSpec(level).reverse)).toEqual([false, true]);
     specs.slice(1).forEach((spec, i) => {
       const previous = specs[i];
       if (!previous) throw new Error('niveau précédent attendu');

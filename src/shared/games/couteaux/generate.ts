@@ -14,6 +14,7 @@ import {
   levelToString,
   MAX_SPEED,
   type Rotation,
+  room,
   rotationOf,
   type Spin,
   THROW_TICKS,
@@ -37,9 +38,11 @@ const plants = (level: Level, rotation: Rotation, planted: readonly number[], ti
   !hits(level, planted, impactAt(rotation, tick + FLIGHT_TICKS));
 
 /**
- * Une partie gagnée sans rebond : chaque couteau est lancé au milieu de la première fenêtre de MIN_WINDOW pas où
- * il se plante, MAX_WAIT pas au plus après le moment où il peut partir. Renvoie les pas des lancers, ou `null`
- * si un couteau ne trouve pas de fenêtre.
+ * Une partie gagnée sans rebond. Chaque couteau est lancé au milieu d'une fenêtre de MIN_WINDOW pas où il se
+ * plante, MAX_WAIT pas au plus après le moment où il peut partir : parmi ces fenêtres, celle qui laisse le plus de
+ * place aux couteaux suivants (`room`), la plus proche en cas d'égalité. Comme un bon joueur, elle serre les
+ * couteaux au lieu d'émietter la place libre. Renvoie les pas des lancers, ou `null` si un couteau ne trouve pas
+ * de fenêtre.
  */
 export function perfectThrows(level: Level): number[] | null {
   const rotation = rotationOf(level);
@@ -48,15 +51,19 @@ export function perfectThrows(level: Level): number[] | null {
   let ready = 0;
   while (planted.length < level.knives) {
     let run = 0;
-    let found: number | null = null;
-    for (let tick = ready; tick <= ready + MAX_WAIT && found === null; tick++) {
+    let best: { tick: number; angle: number; room: number } | null = null;
+    for (let tick = ready; tick <= ready + MAX_WAIT; tick++) {
       run = plants(level, rotation, planted, tick) ? run + 1 : 0;
-      if (run === MIN_WINDOW) found = tick - Math.floor(MIN_WINDOW / 2);
+      if (run < MIN_WINDOW) continue;
+      const center = tick - Math.floor(MIN_WINDOW / 2);
+      const angle = impactAt(rotation, center + FLIGHT_TICKS);
+      const left = room(level, [...planted, angle]);
+      if (!best || left > best.room) best = { tick: center, angle, room: left };
     }
-    if (found === null) return null;
-    ticks.push(found);
-    planted.push(impactAt(rotation, found + FLIGHT_TICKS));
-    ready = found + THROW_TICKS;
+    if (!best) return null;
+    ticks.push(best.tick);
+    planted.push(best.angle);
+    ready = best.tick + THROW_TICKS;
   }
   return ticks;
 }
@@ -129,7 +136,7 @@ export const randomLevel = (spec: LevelSpec, random: () => number): Level => ({
 });
 
 /** Tirages au plus pour un niveau, avant d'abandonner la génération. */
-export const MAX_DRAWS = 500;
+export const MAX_DRAWS = 3000;
 
 /**
  * Niveau tiré selon `spec` qui se gagne sans rebond (`perfectThrows`). `avoid` écarte des niveaux déjà retenus.
@@ -152,17 +159,17 @@ export function generateLevelFor(
 /* ---------- Campagne ---------- */
 
 /**
- * Difficulté du niveau `level` : plus de couteaux à planter (6 à 14) et d'obstacles (0 à 7), une planète plus
- * rapide, puis qui change de vitesse (dès le niveau 11) et de sens (dès le niveau 31).
+ * Difficulté du niveau `level` : plus de couteaux à planter (8 à 14) et d'obstacles (1 à 7), une planète plus
+ * rapide qui change de vitesse dès le premier niveau, de plus en plus souvent, et de sens dès le niveau 21.
  */
 export function campaignSpec(level: number): LevelSpec {
   const progress = (level - 1) / (MAX_LEVEL - 1);
   return {
-    knives: 6 + Math.floor((level - 1) / 12),
-    obstacles: Math.floor((level - 1) / 14),
-    speed: 15 + Math.floor(progress * 25),
-    paces: level <= 10 ? 1 : level <= 30 ? 2 : level <= 60 ? 3 : 4,
-    reverse: level > 30,
+    knives: 8 + Math.floor(progress * 6),
+    obstacles: 1 + Math.floor(progress * 6),
+    speed: 25 + Math.floor(progress * 25),
+    paces: level <= 20 ? 2 : level <= 50 ? 3 : 4,
+    reverse: level > 20,
   };
 }
 
