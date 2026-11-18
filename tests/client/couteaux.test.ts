@@ -188,13 +188,16 @@ describe('partie', () => {
     expect(flying()).toBe(1);
     expect(ready()).toBe(true);
     clock.at(first + THROW_TICKS - 1);
-    expect(flying()).toBe(0);
     tap();
     expect(onProgress).toHaveBeenLastCalledWith(expect.objectContaining({ value: 1 }));
     clock.at(first + THROW_TICKS);
     expect(ready()).toBe(false);
     tap();
     expect(onProgress).toHaveBeenLastCalledWith(expect.objectContaining({ value: 2 }));
+    clock.at(first + THROW_TICKS + 1);
+    expect(flying()).toBe(2);
+    clock.at(first + FLIGHT_TICKS);
+    expect(flying()).toBe(1);
   });
 
   it('gagne une fois le dernier couteau arrivé, sans autre lancer possible', () => {

@@ -106,7 +106,7 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   couteau qui touche un couteau déjà planté rebondit), avec une campagne de 100 niveaux : plus de couteaux,
   d'obstacles déjà plantés, une planète plus rapide qui change de vitesse puis de sens. Un toucher (ou Espace,
   Entrée, flèche haut) lance ; le couteau part de loin et vole un cinquième de seconde, pendant lequel la planète
-  continue de tourner, et le suivant peut partir un quart de seconde après le précédent. Trois vies : chaque
+  continue de tourner, et le suivant peut partir 0,15 seconde après le précédent. Trois vies : chaque
   rebond en coûte une, le troisième perd la partie. Le score est le nombre de
   rebonds d'une victoire ; sans rebond, c'est le 💎. Le temps avance par pas fixes (60 par seconde) et le replay
   est le pas de chaque lancer : le serveur en déduit où chaque couteau s'est planté. L'aperçu d'un autre joueur

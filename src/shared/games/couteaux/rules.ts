@@ -21,10 +21,10 @@ export const TURN = 3600;
 export const FLIGHT_TICKS = 12;
 
 /**
- * Pas au moins entre deux lancers : un quart de seconde, un peu plus que le vol. Le couteau suivant part une fois
- * le précédent planté, et on ne peut pas lancer en rafale.
+ * Pas au moins entre deux lancers : 0,15 seconde, assez pour enchaîner sans permettre la rafale. Un couteau peut
+ * partir avant que le précédent arrive : il compte déjà comme planté.
  */
-export const THROW_TICKS = 15;
+export const THROW_TICKS = 9;
 
 /** Écart minimal entre deux couteaux plantés : plus près, le nouveau touche l'ancien et rebondit. */
 export const GAP = 100;
