@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.29](https://github.com/ggcow/ggames/compare/v0.5.28...v0.5.29) (2026-11-18)
+
+### Fonctionnalités
+
+* **couteaux:** ajouter le jeu Couteaux et sa campagne de 100 niveaux ([508b970](https://github.com/ggcow/ggames/commit/508b970acd21007f5983762ab634cdc6768a22aa))
+* **couteaux:** campagne bien plus difficile dès le premier niveau ([6980075](https://github.com/ggcow/ggames/commit/6980075d142b052bc87fb2eb98ee467fcc03c2b8))
+* **couteaux:** campagne de 20 niveaux, sur une seule page ([3b0fca1](https://github.com/ggcow/ggames/commit/3b0fca1b3326960a54eb08ae6e7d0ec48b4fe89d))
+* **couteaux:** vol plus long et lancers rapprochés ([a67e902](https://github.com/ggcow/ggames/commit/a67e90275986eec03a1c7269e7750488df584258))
+
+### Corrections
+
+* **couteaux:** couteau lancé de plus loin, plus vite, un à la fois ([ef46b82](https://github.com/ggcow/ggames/commit/ef46b824728ece0f1fffd89e58fbf1a75c6a5e0e))
+* **couteaux:** lancers moins espacés ([d2df9b4](https://github.com/ggcow/ggames/commit/d2df9b45a75fd73b7544b907898cb9bde321ff3b))
+* **platform:** colonne latérale à gauche dès l'écran large ([1355114](https://github.com/ggcow/ggames/commit/135511456e2c16ac27f75e077c99fdbb988755d0))
+* **platform:** ne plus rogner le bas de la grille des niveaux ([4909a28](https://github.com/ggcow/ggames/commit/4909a28e7fca304ed6907b313c935412afb9b36e))
+
+### Refactorisation
+
+* **client:** pastille des vies commune aux jeux ([4965104](https://github.com/ggcow/ggames/commit/4965104c6d85e0fcfb364f59cd6a0ce2d70636f8))
+
 ## [0.5.28](https://github.com/ggcow/ggames/compare/v0.5.27...v0.5.28) (2026-11-18)
 
 ### Fonctionnalités
