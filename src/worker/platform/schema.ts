@@ -138,6 +138,11 @@ const MIGRATIONS: readonly string[] = [
   ALTER TABLE players ADD COLUMN avatar TEXT;
   CREATE UNIQUE INDEX players_avatar ON players (avatar);
   `,
+  // Les 100 niveaux de Parking sont regénérés, plus difficiles : les parties jouées sur les plateaux
+  // précédents ne se rejouent plus.
+  `
+  DELETE FROM runs WHERE game = 'parking';
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

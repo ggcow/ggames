@@ -76,7 +76,8 @@ describe('replays', () => {
   it('refuse un glissement impossible ou une annulation sans historique', () => {
     const start = parkingLevel(1);
     expect(playActions(start, [{ type: 'undo' }])).toBeNull();
-    expect(playActions(start, [{ type: 'slide', vehicle: 0, delta: -1 }])).toBeNull();
+    // Hors de la sortie, la voiture rouge n'a jamais quatre cases libres derrière elle.
+    expect(playActions(start, [{ type: 'slide', vehicle: 0, delta: -4 }])).toBeNull();
     expect(playActions(start, [{ type: 'slide', vehicle: 14, delta: 1 }])).toBeNull();
   });
 

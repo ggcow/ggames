@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_LEVEL } from '../../src/shared/games/campaign.ts';
 import {
-  campaignSpec,
+  campaignMoves,
+  EASIEST_MOVES,
   exploreComponent,
   generateBoard,
   generateLevel,
   generateLevels,
   HARDEST_MOVES,
+  mutate,
   randomBoard,
 } from '../../src/shared/games/parking/generate.ts';
 import { LEVELS } from '../../src/shared/games/parking/levels.ts';
@@ -30,18 +32,19 @@ const board = (text: string): Board => {
 };
 
 describe('campagne', () => {
-  it('allonge la solution de 2 à HARDEST_MOVES coups, dans un parking de plus en plus rempli', () => {
-    const specs = Array.from({ length: MAX_LEVEL }, (_, i) => campaignSpec(i + 1));
-    expect(specs[0]).toMatchObject({ vehicles: 5, moves: 2 });
-    expect(specs[MAX_LEVEL - 1]).toMatchObject({ vehicles: 14, moves: HARDEST_MOVES });
-    specs.slice(1).forEach((spec, i) => {
-      expect(spec.moves).toBeGreaterThanOrEqual(specs[i]?.moves ?? 0);
-      expect(spec.vehicles).toBeGreaterThanOrEqual(specs[i]?.vehicles ?? 0);
+  it('allonge la solution de EASIEST_MOVES à HARDEST_MOVES coups', () => {
+    const moves = Array.from({ length: MAX_LEVEL }, (_, i) => campaignMoves(i + 1));
+    expect(moves[0]).toBe(EASIEST_MOVES);
+    expect(moves[MAX_LEVEL - 1]).toBe(HARDEST_MOVES);
+    moves.slice(1).forEach((count, i) => {
+      expect(count - (moves[i] ?? 0)).toBeGreaterThanOrEqual(0);
+      expect(count - (moves[i] ?? 0)).toBeLessThanOrEqual(1);
     });
   });
 
   it('enregistre pour chaque niveau la difficulté de la campagne', () => {
-    expect(OPTIMAL).toEqual(OPTIMAL.map((_, index) => campaignSpec(index + 1).moves));
+    expect(OPTIMAL).toHaveLength(MAX_LEVEL);
+    expect(OPTIMAL).toEqual(OPTIMAL.map((_, index) => campaignMoves(index + 1)));
   });
 
   it('reproduit les niveaux enregistrés', () => {
@@ -54,7 +57,7 @@ describe('tirage', () => {
   it('place les véhicules sans chevauchement, aucun horizontal sur la rangée de la sortie', () => {
     const random = createRandom(7);
     for (let i = 0; i < 50; i++) {
-      const drawn = randomBoard({ vehicles: 12, trucks: 0.3, moves: 0 }, random);
+      const drawn = randomBoard(12, random);
       const cells = drawn.flatMap(cellsOf);
       expect(new Set(cells).size).toBe(cells.length);
       expect(drawn.length).toBeLessThanOrEqual(13);
@@ -64,22 +67,39 @@ describe('tirage', () => {
     }
   });
 
+  it('retouche, ajoute ou retire un véhicule sans chevauchement, la voiture rouge en place', () => {
+    const random = createRandom(11);
+    let current = randomBoard(8, random);
+    for (let i = 0; i < 300; i++) {
+      const variant = mutate(current, random);
+      if (!variant) continue;
+      const cells = variant.flatMap(cellsOf);
+      expect(new Set(cells).size).toBe(cells.length);
+      expect(cells.every((cell) => cell >= 0 && cell < 36)).toBe(true);
+      expect(variant[RED]).toEqual(current[RED]);
+      expect(variant.slice(1).some((v) => v.horizontal && v.row === EXIT_ROW)).toBe(false);
+      expect(Math.abs(variant.length - current.length)).toBeLessThanOrEqual(1);
+      expect(parseBoard(boardToString(variant))).toEqual(variant);
+      current = variant;
+    }
+  });
+});
+
+describe('recherche', () => {
   it('choisit un parking dont la solution la plus courte a juste le nombre de coups voulu', () => {
-    const spec = { vehicles: 8, trucks: 0.3, moves: 6 };
-    const chosen = generateBoard(spec, 3);
-    expect(generateBoard(spec, 3)).toEqual(chosen);
+    const chosen = generateBoard(12, 3);
+    expect(generateBoard(12, 3)).toEqual(chosen);
     const result = shortestSolution(chosen, 100_000);
-    expect(result.kind === 'solved' && result.slides.length).toBe(6);
+    expect(result.kind === 'solved' && result.slides.length).toBe(12);
   });
 
   it('écarte les parkings déjà retenus', () => {
-    const spec = { vehicles: 8, trucks: 0.3, moves: 6 };
-    const first = boardToString(generateBoard(spec, 3));
-    expect(boardToString(generateBoard(spec, 3, new Set([first])))).not.toBe(first);
+    const first = boardToString(generateBoard(8, 3));
+    expect(boardToString(generateBoard(8, 3, new Set([first])))).not.toBe(first);
   });
 
-  it('échoue quand aucun tirage n’atteint la difficulté voulue', () => {
-    expect(() => generateBoard({ vehicles: 3, trucks: 0, moves: 40 }, 1, new Set(), 5)).toThrow(/40 coups/);
+  it('échoue quand aucune escalade n’atteint la difficulté voulue', () => {
+    expect(() => generateBoard(60, 1, new Set(), 2, 5)).toThrow(/60 coups après 2 escalades/);
   });
 });
 

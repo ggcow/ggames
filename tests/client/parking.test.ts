@@ -10,7 +10,7 @@ import {
 import { parkingClient } from '../../src/client/games/parking/index.ts';
 import { mountParkingPlay } from '../../src/client/games/parking/play.ts';
 import { mountParkingReplay } from '../../src/client/games/parking/replay.ts';
-import { parkingStatus } from '../../src/client/games/parking/status.ts';
+import { CLOSE_MOVES, parkingStatus } from '../../src/client/games/parking/status.ts';
 import { PARKING_STRINGS } from '../../src/client/games/parking/strings.ts';
 import { createGameView } from '../../src/client/platform/context.ts';
 import { MAX_LEVEL } from '../../src/shared/games/campaign.ts';
@@ -305,15 +305,15 @@ describe('replay', () => {
 
 describe('situation en direct', () => {
   it('distingue le départ, la sortie toute proche et le chemin qui reste', () => {
+    const play = (board: Board, actions: readonly ParkingAction[]) =>
+      actions.reduce<Board>((at, action) => (action.type === 'slide' ? (slide(at, action) ?? at) : at), board);
     expect(parkingStatus(start, 0)).toBe('start');
-    // Niveau 1 : deux coups suffisent.
-    expect(parkingStatus(start, 1)).toBe('close');
+    expect(parkingStatus(play(start, win.slice(0, 1)), 1)).toBe('far');
+    const near = win.length - CLOSE_MOVES;
+    expect(parkingStatus(play(start, win.slice(0, near)), near)).toBe('close');
     const hard = parkingLevel(MAX_LEVEL);
     expect(parkingStatus(hard, 1)).toBe('far');
-    const solved = parkingSolution(hard).reduce<Board>(
-      (board, action) => (action.type === 'slide' ? (slide(board, action) ?? board) : board),
-      hard,
-    );
+    const solved = play(hard, parkingSolution(hard));
     expect(parkingStatus(solved, 30)).toBe('close');
   });
 });

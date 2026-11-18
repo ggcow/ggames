@@ -182,13 +182,36 @@ describe('schéma', () => {
         `INSERT INTO players (id, name, name_key, login, login_key, password_hash, created)
          VALUES ('mno345', 'Zoé', 'zoé', 'zoe', 'zoe', 'x', 1), ('pqr678', 'Max', 'max', 'max', 'max', 'x', 2)`,
       );
-      sql.exec('UPDATE schema_version SET version = ?', SCHEMA_VERSION - 1);
+      sql.exec('UPDATE schema_version SET version = 10');
       migrate(sql);
       const avatar = sql.exec<{ avatar: string | null }>("SELECT avatar FROM players WHERE id = 'mno345'").one();
       expect(avatar.avatar).toBeNull();
       sql.exec("UPDATE players SET avatar = '🐶' WHERE id = 'mno345'");
       expect(() => sql.exec("UPDATE players SET avatar = '🐶' WHERE id = 'pqr678'")).toThrow();
       sql.exec("DELETE FROM players WHERE id IN ('mno345', 'pqr678')");
+    });
+  });
+
+  it('supprime les parties Parking, jouées sur des plateaux regénérés', async () => {
+    await runInDurableObject(world(), (_instance, state) => {
+      const { sql } = state.storage;
+      sql.exec(
+        "INSERT INTO players (id, name, name_key, login, login_key, password_hash, created) VALUES ('stu901', 'Ana', 'ana', 'ana', 'ana', 'x', 1)",
+      );
+      const insert = (id: string, game: string) =>
+        sql.exec(
+          "INSERT INTO runs (id, game, key, player, status, value, duration_ms, replay, ended) VALUES (?, ?, 'c:1', 'stu901', 'won', 5, 1, '', 1)",
+          id,
+          game,
+        );
+      insert('run301', 'parking');
+      insert('run302', 'fioles');
+      insert('run303', 'pandas');
+      sql.exec('UPDATE schema_version SET version = 11');
+      migrate(sql);
+      const left = sql.exec<{ id: string }>('SELECT id FROM runs ORDER BY id').toArray();
+      expect(left.map((row) => row.id)).toEqual(['run302', 'run303']);
+      expect(sql.exec<{ version: number }>('SELECT version FROM schema_version').one().version).toBe(SCHEMA_VERSION);
     });
   });
 });

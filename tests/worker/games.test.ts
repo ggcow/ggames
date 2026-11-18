@@ -444,7 +444,7 @@ describe('Parking', () => {
     expect((await submitParking(token, { key: 'c:1', status: 'abandoned', durationMs: 1, replay: 'u' })).status).toBe(
       400,
     );
-    expect((await submitParking(token, { key: 'c:1', status: 'abandoned', durationMs: 1, replay: 'a-1' })).status).toBe(
+    expect((await submitParking(token, { key: 'c:1', status: 'abandoned', durationMs: 1, replay: 'a-4' })).status).toBe(
       400,
     );
   });

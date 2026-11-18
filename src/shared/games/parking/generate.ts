@@ -1,9 +1,21 @@
-// Génération des niveaux de Parking : tirage des véhicules, recherche de la position la plus éloignée de la
-// sortie et difficulté de la campagne. Utilisé uniquement par `npm run levels` (qui écrit levels.ts) et par les
+// Génération des niveaux de Parking : recherche d'un parking aux solutions longues, choix d'une position à la
+// bonne distance de la sortie et difficulté de la campagne. Utilisé uniquement par `npm run levels` (qui écrit levels.ts) et par les
 // tests : les joueurs et le serveur lisent les niveaux enregistrés, jamais générés à la volée.
 
+import { MAX_LEVEL } from '../campaign.ts';
 import { createRandom } from '../random.ts';
-import { type Board, boardToString, CAR, EXIT_ROW, occupancy, RED, SIZE, TRUCK, type Vehicle } from './rules.ts';
+import {
+  type Board,
+  boardToString,
+  CAR,
+  EXIT_ROW,
+  MAX_VEHICLES,
+  occupancy,
+  RED,
+  SIZE,
+  TRUCK,
+  type Vehicle,
+} from './rules.ts';
 
 /* ---------- Distances à la sortie ---------- */
 
@@ -102,92 +114,161 @@ export function exploreComponent(start: Board, limit: number): Component | null 
   };
 }
 
-/* ---------- Tirage des véhicules ---------- */
+/* ---------- Véhicules ---------- */
 
-/** Paramètres d'un parking généré. */
-export interface LevelSpec {
-  /** Véhicules en plus de la voiture rouge. */
-  vehicles: number;
-  /** Part des camions parmi ces véhicules. */
-  trucks: number;
-  /** Nombre de coups minimal de la solution. */
-  moves: number;
-}
+/** Part des camions parmi les véhicules tirés. */
+const TRUCK_SHARE = 0.3;
 
 /** Essais de placement d'un véhicule avant d'y renoncer : le parking est peut-être déjà plein. */
 const PLACE_ATTEMPTS = 60;
 
+/** Véhicule tiré au hasard, voie et case de tête comprises. */
+function randomVehicle(random: () => number): Vehicle {
+  const horizontal = random() < 0.5;
+  const length = random() < TRUCK_SHARE ? TRUCK : CAR;
+  const lane = Math.floor(random() * SIZE);
+  const head = Math.floor(random() * (SIZE - length + 1));
+  return horizontal ? { horizontal, length, row: lane, col: head } : { horizontal, length, row: head, col: lane };
+}
+
 /**
- * Véhicules tirés au hasard sans chevauchement. Aucun véhicule horizontal sur la rangée de la sortie : placé
- * devant la voiture rouge, il la bloquerait pour toujours ; derrière elle, il ne servirait à rien.
+ * `vehicle` tient dans le parking sans chevaucher `board`. Aucun véhicule horizontal sur la rangée de la sortie :
+ * placé devant la voiture rouge, il la bloquerait pour toujours ; derrière elle, il ne servirait à rien.
  */
-export function randomBoard(spec: LevelSpec, random: () => number): Board {
-  const board: Vehicle[] = [{ horizontal: true, length: CAR, row: EXIT_ROW, col: Math.floor(random() * 3) }];
-  for (let attempt = 0; attempt < PLACE_ATTEMPTS && board.length <= spec.vehicles; attempt++) {
-    const horizontal = random() < 0.5;
-    const length = random() < spec.trucks ? TRUCK : CAR;
-    const lane = Math.floor(random() * SIZE);
-    const head = Math.floor(random() * (SIZE - length + 1));
-    if (horizontal && lane === EXIT_ROW) continue;
-    const vehicle: Vehicle = horizontal
-      ? { horizontal, length, row: lane, col: head }
-      : { horizontal, length, row: head, col: lane };
-    const cells = occupancy(board);
-    const fits = [...occupancy([vehicle])].every((index, cell) => index === -1 || cells[cell] === -1);
-    if (fits) board.push(vehicle);
+function fits(board: Board, vehicle: Vehicle): boolean {
+  const end = (vehicle.horizontal ? vehicle.col : vehicle.row) + vehicle.length;
+  const lane = vehicle.horizontal ? vehicle.row : vehicle.col;
+  if (Math.min(vehicle.row, vehicle.col) < 0 || end > SIZE || lane >= SIZE) return false;
+  if (vehicle.horizontal && vehicle.row === EXIT_ROW) return false;
+  const cells = occupancy(board);
+  return [...occupancy([vehicle])].every((index, cell) => index === -1 || cells[cell] === -1);
+}
+
+/** Ajoute à `board` un véhicule tiré au hasard, s'il en trouve un qui tient. */
+function addVehicle(board: Vehicle[], random: () => number): void {
+  for (let attempt = 0; attempt < PLACE_ATTEMPTS; attempt++) {
+    const vehicle = randomVehicle(random);
+    if (fits(board, vehicle)) {
+      board.push(vehicle);
+      return;
+    }
   }
+}
+
+/** La voiture rouge sur la rangée de la sortie, et au plus `vehicles` autres véhicules tirés sans chevauchement. */
+export function randomBoard(vehicles: number, random: () => number): Board {
+  const board: Vehicle[] = [{ horizontal: true, length: CAR, row: EXIT_ROW, col: Math.floor(random() * 3) }];
+  for (let attempt = 0; attempt < PLACE_ATTEMPTS && board.length <= vehicles; attempt++) addVehicle(board, random);
   return board;
 }
 
-/** Positions explorées au plus pour un tirage : un parking de quinze véhicules en a rarement plus. */
-const COMPONENT_LIMIT = 200_000;
-
-/** Tirages au plus pour un niveau, avant d'abandonner la génération. */
-export const MAX_DRAWS = 20_000;
+/** `vehicle` décalé d'une case le long de sa voie ou en travers, changé de longueur ou tourné d'un quart de tour. */
+function nudge(vehicle: Vehicle, random: () => number): Vehicle {
+  const step = random() < 0.5 ? -1 : 1;
+  switch (Math.floor(random() * 4)) {
+    case 0:
+      return vehicle.horizontal ? { ...vehicle, col: vehicle.col + step } : { ...vehicle, row: vehicle.row + step };
+    case 1:
+      return vehicle.horizontal ? { ...vehicle, row: vehicle.row + step } : { ...vehicle, col: vehicle.col + step };
+    case 2:
+      return { ...vehicle, length: vehicle.length === CAR ? TRUCK : CAR };
+    default:
+      return { ...vehicle, horizontal: !vehicle.horizontal, row: vehicle.col, col: vehicle.row };
+  }
+}
 
 /**
- * Parking dont la solution la plus courte fait exactement `spec.moves` coups. On tire des véhicules jusqu'à obtenir une composante assez profonde, puis on y choisit une
- * position à la bonne distance. `avoid` écarte des parkings déjà retenus. Même résultat pour une même graine ;
- * échoue après `draws` tirages sans succès.
+ * Variante de `board` : un véhicule retouché (la moitié du temps), sinon un véhicule ajouté, après en avoir
+ * retiré un deux fois sur trois ou quand le parking compte déjà MAX_VEHICLES véhicules. La voiture rouge reste.
+ * `null` si la retouche tirée ne tient pas dans le parking.
+ */
+export function mutate(board: Board, random: () => number): Board | null {
+  const others = board.length - 1;
+  const pick = () => 1 + Math.floor(random() * others);
+  if (others > 0 && random() < 0.5) {
+    const index = pick();
+    const rest = board.filter((_, i) => i !== index);
+    const moved = nudge(board[index] as Vehicle, random);
+    return fits(rest, moved) ? board.map((vehicle, i) => (i === index ? moved : vehicle)) : null;
+  }
+  const variant = [...board];
+  if (others > 0 && (random() < 2 / 3 || board.length >= MAX_VEHICLES)) variant.splice(pick(), 1);
+  addVehicle(variant, random);
+  return variant;
+}
+
+/* ---------- Recherche d'un parking difficile ---------- */
+
+/** Véhicules du parking de départ d'une escalade, en plus de la voiture rouge. */
+const START_VEHICLES = 11;
+
+/** Variantes essayées par escalade : au-delà, elle reste le plus souvent bloquée sur un parking. */
+export const CLIMB_STEPS = 1500;
+
+/** Escalades au plus pour un niveau, avant d'abandonner la génération. */
+export const MAX_CLIMBS = 500;
+
+/**
+ * Positions explorées au plus par composante. Les composantes profondes restent en dessous ; explorer les plus
+ * grandes ralentirait la recherche sans l'aider.
+ */
+const COMPONENT_LIMIT = 30_000;
+
+/**
+ * Parking dont la solution la plus courte fait exactement `moves` coups. Un tirage au hasard n'en donne presque
+ * jamais au-delà de trente : on part d'un parking tiré au hasard, on essaie des variantes et on garde celles dont
+ * la composante est au moins aussi profonde (escalade), jusqu'à pouvoir y choisir une position à la bonne
+ * distance de la sortie. Une escalade qui stagne repart d'un autre tirage. `avoid` écarte des parkings déjà
+ * retenus. Même résultat pour une même graine ; échoue après `climbs` escalades de `steps` variantes.
  */
 export function generateBoard(
-  spec: LevelSpec,
+  moves: number,
   seed: number,
   avoid: ReadonlySet<string> = new Set(),
-  draws = MAX_DRAWS,
+  climbs = MAX_CLIMBS,
+  steps = CLIMB_STEPS,
 ): Board {
   const random = createRandom(seed);
-  for (let draw = 0; draw < draws; draw++) {
-    const component = exploreComponent(randomBoard(spec, random), COMPONENT_LIMIT);
-    if (!component || component.depth < spec.moves) continue;
-    const candidates = component.at(spec.moves).filter((candidate) => !avoid.has(boardToString(candidate)));
-    const chosen = candidates[Math.floor(random() * candidates.length)];
+  const choose = (component: Component | null): Board | undefined => {
+    if (!component || component.depth < moves) return undefined;
+    const candidates = component.at(moves).filter((candidate) => !avoid.has(boardToString(candidate)));
+    return candidates[Math.floor(random() * candidates.length)];
+  };
+  for (let climb = 0; climb < climbs; climb++) {
+    let board = randomBoard(START_VEHICLES, random);
+    let component = exploreComponent(board, COMPONENT_LIMIT);
+    let chosen = choose(component);
+    for (let step = 0; !chosen && step < steps; step++) {
+      const variant = mutate(board, random);
+      const explored = variant && exploreComponent(variant, COMPONENT_LIMIT);
+      if (!variant || !explored || explored.depth < (component?.depth ?? 0)) continue;
+      board = variant;
+      component = explored;
+      chosen = choose(component);
+    }
     if (chosen) return chosen;
   }
-  throw new Error(`aucun parking de ${spec.moves} coups après ${draws} tirages`);
+  throw new Error(`aucun parking de ${moves} coups après ${climbs} escalades`);
 }
 
 /* ---------- Campagne ---------- */
 
-/** Coups de la solution la plus courte au dernier niveau : au-delà, un tirage au hasard y parvient trop rarement. */
-export const HARDEST_MOVES = 30;
+/** Coups de la solution la plus courte au premier niveau. */
+export const EASIEST_MOVES = 6;
 
 /**
- * Difficulté du niveau `level` : la solution la plus courte s'allonge régulièrement, de 2 coups au niveau 1 à
- * HARDEST_MOVES au niveau 100, dans un parking de plus en plus rempli (5 véhicules au départ, 14 au plus) : seuls
- * les parkings serrés ont des solutions longues.
+ * Coups de la solution la plus courte au dernier niveau. Les parkings de 6 × 6 les plus difficiles en demandent
+ * 51 ; l'escalade dépasse rarement 45 en quelques minutes.
  */
-export function campaignSpec(level: number): LevelSpec {
-  return {
-    vehicles: Math.min(4 + Math.ceil(level / 7), 14),
-    trucks: 0.3,
-    moves: 2 + Math.floor(((level - 1) * (HARDEST_MOVES - 2)) / 99),
-  };
-}
+export const HARDEST_MOVES = 45;
+
+/** Coups de la solution la plus courte du niveau `level` : de EASIEST_MOVES au niveau 1 à HARDEST_MOVES au dernier. */
+export const campaignMoves = (level: number): number =>
+  EASIEST_MOVES + Math.floor(((level - 1) * (HARDEST_MOVES - EASIEST_MOVES)) / (MAX_LEVEL - 1));
 
 /** Parking enregistré du niveau `level`, à partir de sa propre graine. */
 export const generateLevel = (level: number, avoid?: ReadonlySet<string>): Board =>
-  generateBoard(campaignSpec(level), level, avoid);
+  generateBoard(campaignMoves(level), level, avoid);
 
 /**
  * Niveaux 1 à `count` de la campagne, encodés comme dans levels.ts, tous différents. `progress` est appelé après
