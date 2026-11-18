@@ -75,7 +75,7 @@ body {
 /* Fenêtre large (accueil et page d'un jeu) : #app s'élargit pour l'écran (100vw compterait la barre de
    défilement). Chaque panneau garde ses proportions de téléphone, en colonnes (`.panel-column`) dont les
    panneaux restent empilés : une colonne à côté du salon, plus une colonne latérale plus étroite à gauche
-   pour un écran `side` dès que la fenêtre la contient. En-tête et présentation hors colonne gardent leur
+   pour un écran `side`. En-tête et présentation hors colonne gardent leur
    propre ligne. L'ensemble est agrandi (zoom) par paliers pour remplir la fenêtre. La page ne défile pas : elle
    tient dans la hauteur de la fenêtre, le contenu défile dans sa colonne et le salon, à droite, reste en place. */
 @media (min-width: 1040px) {
@@ -90,6 +90,7 @@ body {
   .with-chat {
     --panel: 488px;
     --side: 360px;
+    --chat: var(--panel);
     --zoom: 1;
     zoom: var(--zoom);
     flex-direction: row;
@@ -126,7 +127,7 @@ body {
   /* Le salon occupe toute la hauteur : sa liste de messages prend la place que laissent titre et saisie. */
   .chat-section {
     flex: none;
-    width: var(--panel);
+    width: var(--chat);
     height: 100%;
   }
   .chat-section .chat-panel {
@@ -179,20 +180,28 @@ body {
     --zoom: 1.8;
   }
 }
-@media (min-width: 1157px) {
+/* Écran `side` : la colonne latérale reste à gauche de la grille dès que l'écran est large, sans faire défiler la
+   page. Tant qu'elle ne tiendrait pas à côté d'un salon de la largeur d'un panneau, le salon prend sa largeur. */
+@media (min-width: 1040px) {
   .with-chat[data-layout="side"] {
-    --zoom: 1.1;
-  }
-}
-@media (min-width: 1240px) {
-  .with-chat[data-layout="side"] {
-    --zoom: 0.85;
+    --zoom: 0.78;
+    --chat: var(--side);
   }
   .with-chat[data-layout="side"] > .screen-content {
     grid-template-columns: var(--side) var(--panel);
   }
   .with-chat[data-layout="side"] .side-column {
     order: -1;
+  }
+}
+@media (min-width: 1107px) {
+  .with-chat[data-layout="side"] {
+    --zoom: 0.85;
+  }
+}
+@media (min-width: 1240px) {
+  .with-chat[data-layout="side"] {
+    --chat: var(--panel);
   }
 }
 @media (min-width: 1305px) {
