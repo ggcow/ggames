@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.28](https://github.com/ggcow/ggames/compare/v0.5.27...v0.5.28) (2026-11-18)
+
+### Fonctionnalités
+
+* **parking:** durcir la campagne, de 6 à 45 coups ([3848b23](https://github.com/ggcow/ggames/commit/3848b23de8a22d150ba20aa2b2f31d28d7e63208))
+
 ## [0.5.27](https://github.com/ggcow/ggames/compare/v0.5.26...v0.5.27) (2026-11-17)
 
 ### Corrections
