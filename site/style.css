@@ -112,6 +112,8 @@ body {
     scrollbar-width: thin;
     padding-right: 16px;
     margin-right: -16px;
+    /* Le relief des cases de la dernière ligne déborde sous la colonne, qui le rognerait. */
+    padding-bottom: 8px;
   }
   .with-chat > .screen-content > :not(.section, .panel-column) {
     width: var(--panel);
