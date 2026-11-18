@@ -23,6 +23,7 @@ import {
   MAX_OBSTACLES,
   MAX_SPEED,
   rotationOf,
+  THROW_TICKS,
 } from '../../src/shared/games/couteaux/rules.ts';
 import { createRandom } from '../../src/shared/games/random.ts';
 
@@ -82,7 +83,7 @@ describe('partie sans rebond', () => {
     expect(ticks).toHaveLength(level.knives);
     const planted: number[] = [];
     ticks.forEach((tick, index) => {
-      if (index > 0) expect(tick - (ticks[index - 1] ?? 0)).toBeGreaterThanOrEqual(FLIGHT_TICKS);
+      if (index > 0) expect(tick - (ticks[index - 1] ?? 0)).toBeGreaterThanOrEqual(THROW_TICKS);
       for (let offset = -Math.floor(MIN_WINDOW / 2); offset <= Math.floor(MIN_WINDOW / 2); offset++) {
         expect(hits(level, planted, impactAt(rotation, tick + offset + FLIGHT_TICKS))).toBe(false);
       }

@@ -16,6 +16,7 @@ import {
   type Rotation,
   rotationOf,
   type Spin,
+  THROW_TICKS,
   TICKS_PER_SECOND,
   TURN,
 } from './rules.ts';
@@ -37,7 +38,7 @@ const plants = (level: Level, rotation: Rotation, planted: readonly number[], ti
 
 /**
  * Une partie gagnée sans rebond : chaque couteau est lancé au milieu de la première fenêtre de MIN_WINDOW pas où
- * il se plante, MAX_WAIT pas au plus après que le précédent est arrivé. Renvoie les pas des lancers, ou `null`
+ * il se plante, MAX_WAIT pas au plus après le moment où il peut partir. Renvoie les pas des lancers, ou `null`
  * si un couteau ne trouve pas de fenêtre.
  */
 export function perfectThrows(level: Level): number[] | null {
@@ -55,7 +56,7 @@ export function perfectThrows(level: Level): number[] | null {
     if (found === null) return null;
     ticks.push(found);
     planted.push(impactAt(rotation, found + FLIGHT_TICKS));
-    ready = found + FLIGHT_TICKS;
+    ready = found + THROW_TICKS;
   }
   return ticks;
 }

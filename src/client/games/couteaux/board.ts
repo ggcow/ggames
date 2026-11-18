@@ -18,13 +18,13 @@ export type KnifeKind = 'obstacle' | 'mine';
 export const degrees = (angle: number): number => (angle * 360) / TURN;
 
 /** Proportions de la scène, relatives à son côté. */
-const RADIUS = 0.22;
+const RADIUS = 0.18;
 const KNIFE = 0.2;
 const KNIFE_WIDTH = 0.034;
 /** Part de la lame enfoncée dans la planète. */
 const SINK = 0.035;
 /** Course d'un couteau, de sa position d'attente jusqu'à la planète. */
-const RUN = 0.3;
+const RUN = 0.56;
 
 /** Variables de taille d'une scène de côté `side`. */
 function sizes(side: number): Record<string, string> {

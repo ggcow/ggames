@@ -15,16 +15,16 @@ export const TICK_MS = 1000 / TICKS_PER_SECOND;
 export const TURN = 3600;
 
 /**
- * Pas de vol d'un couteau, du lancer jusqu'à la planète : trois quarts de seconde, pendant lesquels la planète
+ * Pas de vol d'un couteau, du lancer jusqu'à la planète : un cinquième de seconde, pendant lequel la planète
  * continue de tourner. Il faut lancer en avance sur la place visée.
  */
-export const FLIGHT_TICKS = 45;
+export const FLIGHT_TICKS = 12;
 
 /**
- * Pas au moins entre deux lancers : un dixième de seconde. Plusieurs couteaux peuvent voler en même temps ; ils
- * arrivent dans l'ordre des lancers, chacun sur la planète où les précédents sont déjà plantés.
+ * Pas au moins entre deux lancers : un quart de seconde, un peu plus que le vol. Le couteau suivant part une fois
+ * le précédent planté, et on ne peut pas lancer en rafale.
  */
-export const THROW_TICKS = 6;
+export const THROW_TICKS = 15;
 
 /** Écart minimal entre deux couteaux plantés : plus près, le nouveau touche l'ancien et rebondit. */
 export const GAP = 100;

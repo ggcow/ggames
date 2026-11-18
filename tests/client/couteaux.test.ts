@@ -176,7 +176,7 @@ describe('partie', () => {
     expect(left(host)).toBe(`🔪 ${level.knives - 1}`);
   });
 
-  it('lance pendant le vol du couteau précédent, mais pas juste après un lancer', () => {
+  it('attend entre deux lancers, sans couteau en attente pendant ce temps', () => {
     const { host, clock, tap, onProgress } = mount();
     const ready = () => host.querySelector<HTMLElement>('.ct-stage > .ct-shot:not(.bounce)')?.hidden;
     const flying = () => host.querySelectorAll('.ct-flights .ct-knife').length;
@@ -184,18 +184,17 @@ describe('partie', () => {
     clock.at(first);
     expect(ready()).toBe(false);
     tap();
-    clock.at(first + THROW_TICKS - 1);
+    clock.at(first + 1);
+    expect(flying()).toBe(1);
     expect(ready()).toBe(true);
+    clock.at(first + THROW_TICKS - 1);
+    expect(flying()).toBe(0);
     tap();
     expect(onProgress).toHaveBeenLastCalledWith(expect.objectContaining({ value: 1 }));
     clock.at(first + THROW_TICKS);
     expect(ready()).toBe(false);
     tap();
     expect(onProgress).toHaveBeenLastCalledWith(expect.objectContaining({ value: 2 }));
-    clock.at(first + THROW_TICKS + 1);
-    expect(flying()).toBe(2);
-    clock.at(first + FLIGHT_TICKS);
-    expect(flying()).toBe(1);
   });
 
   it('gagne une fois le dernier couteau arrivé, sans autre lancer possible', () => {
