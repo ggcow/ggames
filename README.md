@@ -54,6 +54,7 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
 | 💐 Bouquets | Glisser les fleurs de pot en pot : trois pareilles devant un pot font un bouquet | 100 niveaux                     |
 | 🐼 Pandas   | Un panda par ligne, par colonne et par bosquet, sans que deux pandas se touchent | 100 niveaux, 3 vies, sans score |
 | 🚗 Parking  | Faire glisser les véhicules pour libérer la sortie de la voiture rouge           | 100 niveaux                     |
+| 🔪 Couteaux | Lancer des couteaux dans une planète qui tourne, sans toucher ceux déjà plantés  | 100 niveaux, 3 vies             |
 
 ## Fonctionnement technique
 

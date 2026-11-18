@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { encodeActions as encodeBouquets } from '../../src/shared/games/bouquets/definition.ts';
 import { campaignKey } from '../../src/shared/games/campaign.ts';
+import { encodeThrows } from '../../src/shared/games/couteaux/definition.ts';
 import { encodeActions, type FiolesAction } from '../../src/shared/games/fioles/definition.ts';
 import { type Board, cloneBoard, pour } from '../../src/shared/games/fioles/rules.ts';
 import { encodeActions as encodePandas } from '../../src/shared/games/pandas/definition.ts';
@@ -13,6 +14,7 @@ import type {
   SubmitRunResponse,
 } from '../../src/shared/platform/protocol.ts';
 import { bouquetsWin } from '../support/bouquets.ts';
+import { couteauxLoss, couteauxWin, couteauxWinWithMiss } from '../support/couteaux.ts';
 import { fiolesLevel, solve } from '../support/fioles-solver.ts';
 import { pandasWin } from '../support/pandas.ts';
 import { parkingWin } from '../support/parking.ts';
@@ -53,6 +55,7 @@ describe('jeux', () => {
       { id: 'bouquets', players: 0, runs: 0, lastPlayed: null },
       { id: 'pandas', players: 0, runs: 0, lastPlayed: null },
       { id: 'parking', players: 0, runs: 0, lastPlayed: null },
+      { id: 'couteaux', players: 0, runs: 0, lastPlayed: null },
     ]);
   });
 
@@ -456,5 +459,50 @@ describe('Parking', () => {
     );
     const win2 = encodeParking(parkingWin(2));
     expect((await submitParking(token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(403);
+  });
+});
+
+describe('Couteaux', () => {
+  const submitCouteaux = (token: string, body: unknown) =>
+    call<SubmitRunResponse>('/api/games/couteaux/runs', { token, body });
+
+  it('enregistre une victoire avec le nombre de rebonds recalculé par le serveur', async () => {
+    const me = await newPlayer();
+    const replay = encodeThrows(couteauxWinWithMiss(1));
+    const { status, body } = await submitCouteaux(me.token, { key: 'c:1', status: 'won', durationMs: 5000, replay });
+    expect(status).toBe(200);
+    expect(body.run).toMatchObject({ key: 'c:1', status: 'won', value: 1, player: me.player.id });
+    const games = await call<GameSummary[]>('/api/games', { token: me.token });
+    expect(games.body.find((game) => game.id === 'couteaux')).toMatchObject({ players: 1, runs: 1 });
+  });
+
+  it('enregistre une partie perdue au troisième rebond, et refuse de la compter gagnée', async () => {
+    const { token } = await newPlayer();
+    const lost = encodeThrows(couteauxLoss(1));
+    expect((await submitCouteaux(token, { key: 'c:1', status: 'won', durationMs: 1, replay: lost })).status).toBe(400);
+    const { status, body } = await submitCouteaux(token, { key: 'c:1', status: 'lost', durationMs: 1, replay: lost });
+    expect(status).toBe(200);
+    expect(body.run).toMatchObject({ status: 'lost', value: 3 });
+  });
+
+  it('refuse une victoire incomplète ou un replay impossible', async () => {
+    const { token } = await newPlayer();
+    const partial = encodeThrows(couteauxWin(1).slice(0, 2));
+    expect((await submitCouteaux(token, { key: 'c:1', status: 'won', durationMs: 1, replay: partial })).status).toBe(
+      400,
+    );
+    // Deux lancers au même pas : le second part avant que le premier arrive.
+    expect(
+      (await submitCouteaux(token, { key: 'c:1', status: 'abandoned', durationMs: 1, replay: '5.0' })).status,
+    ).toBe(400);
+  });
+
+  it('refuse un niveau hors de la campagne ou pas encore débloqué', async () => {
+    const { token } = await newPlayer();
+    expect((await submitCouteaux(token, { key: 'c:101', status: 'abandoned', durationMs: 1, replay: '' })).status).toBe(
+      400,
+    );
+    const win2 = encodeThrows(couteauxWin(2));
+    expect((await submitCouteaux(token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(403);
   });
 });

@@ -932,6 +932,11 @@ input[type="range"] {
   --theme-b: #495057;
   --theme-edge: #212529;
 }
+.theme-couteaux {
+  --theme-a: #ffa94d;
+  --theme-b: #7048e8;
+  --theme-edge: #3b2a99;
+}
 .game-icon {
   width: 64px;
   height: 64px;
@@ -2186,6 +2191,135 @@ input[type="range"] {
   color: var(--muted);
   font-size: 13px;
   font-weight: 600;
+}
+
+/* ---------- Scène (couteaux) ---------- */
+/* Tailles posées par le script d'après la largeur : côté --s, rayon de la planète --r, couteau --kl × --kw, part
+   de lame enfoncée --sink, course du couteau lancé --run. Un couteau planté tourne avec la planète (`--a`, en
+   degrés, 0 vers le bas) ; le couteau lancé reste dans le repère de la scène, à --d de sa course de l'arrivée. */
+.ct-stage {
+  position: relative;
+  width: var(--s);
+  height: calc(var(--s) * 1.15);
+  margin: 0 auto;
+  overflow: hidden;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.ct-planet {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--s) * 0.42);
+  width: calc(var(--r) * 2);
+  height: calc(var(--r) * 2);
+  margin: calc(var(--r) * -1) 0 0 calc(var(--r) * -1);
+}
+.ct-planet.thud {
+  animation: ct-thud 0.14s ease-out;
+}
+@keyframes ct-thud {
+  50% {
+    transform: translateY(calc(var(--r) * -0.05)) scale(1.02);
+  }
+}
+.ct-spin {
+  position: absolute;
+  inset: 0;
+}
+.ct-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 68% 30%, rgba(124, 45, 18, 0.55) 0 9%, transparent 10%),
+    radial-gradient(circle at 30% 64%, rgba(124, 45, 18, 0.5) 0 13%, transparent 14%),
+    radial-gradient(circle at 62% 76%, rgba(124, 45, 18, 0.45) 0 6%, transparent 7%),
+    radial-gradient(circle at 75% 55%, rgba(124, 45, 18, 0.35) 0 5%, transparent 6%), #f76707;
+  box-shadow: 0 0 calc(var(--r) * 0.35) rgba(255, 146, 43, 0.35);
+}
+/* Lumière et ombre fixes par-dessus la surface qui tourne : le soleil, lui, ne tourne pas. */
+.ct-planet::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 244, 230, 0.75) 0, rgba(255, 244, 230, 0) 38%),
+    radial-gradient(circle at 34% 28%, transparent 55%, rgba(60, 10, 0, 0.55) 100%);
+}
+.ct-knife {
+  position: absolute;
+  left: calc(50% - var(--kw) / 2);
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  width: var(--kw);
+  height: var(--kl);
+  transform-origin: 50% 0;
+  transform: rotate(calc(var(--a) * 1deg)) translateY(calc(var(--r) - var(--sink)));
+}
+.ct-blade {
+  flex: 0 0 58%;
+  background: linear-gradient(90deg, #f8f9fa, #adb5bd);
+  clip-path: polygon(50% 0, 100% 16%, 100% 100%, 0 100%, 0 16%);
+}
+.ct-handle {
+  flex: 1;
+  border-radius: 0 0 3px 3px;
+  background: var(--handle);
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+.ct-knife.mine {
+  --handle: linear-gradient(90deg, #ffe066, #f08c00);
+}
+.ct-knife.obstacle {
+  --handle: linear-gradient(90deg, #adb5bd, #495057);
+}
+.ct-knife.ct-shot {
+  top: calc(var(--s) * 0.42);
+  z-index: 2;
+  transform: translateY(calc(var(--r) - var(--sink) + var(--d, 1) * var(--run)));
+}
+.ct-knife.ct-shot.bounce {
+  animation: ct-bounce 0.5s ease-in forwards;
+}
+@keyframes ct-bounce {
+  from {
+    transform: translateY(calc(var(--r) - var(--sink)));
+  }
+  to {
+    transform: translate(var(--r), calc(var(--s) * 0.6)) rotate(220deg);
+    opacity: 0;
+  }
+}
+.ct-left {
+  position: absolute;
+  left: 8px;
+  bottom: 6px;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 900;
+}
+.ct-hint {
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+/* Aperçu : la planète seule, centrée, sans couteau à lancer. */
+.ct-mini .ct-stage {
+  height: var(--s);
+  cursor: default;
+}
+.ct-mini .ct-planet {
+  top: 50%;
 }
 
 /* ---------- États ---------- */

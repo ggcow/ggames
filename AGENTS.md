@@ -102,6 +102,15 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   la voiture rouge, sur un parking de 6 × 6 cases), avec une campagne de 100 niveaux dont la solution la plus
   courte s'allonge de 6 à 45 coups. Un glissement compte pour un coup, quelle que soit sa longueur ; on glisse
   au doigt, ou aux flèches du clavier. Jamais d'impasse : chaque coup se défait.
+- Cinquième jeu : **Couteaux** (une planète tourne ; on lance depuis le bas des couteaux qui s'y plantent, et un
+  couteau qui touche un couteau déjà planté rebondit), avec une campagne de 100 niveaux : plus de couteaux,
+  d'obstacles déjà plantés, une planète plus rapide qui change de vitesse puis de sens. Un toucher (ou Espace,
+  Entrée, flèche haut) lance ; le couteau vole un tiers de seconde, pendant lequel la planète continue de
+  tourner. Trois vies : chaque rebond en coûte une, le troisième perd la partie. Le score est le nombre de
+  rebonds d'une victoire ; sans rebond, c'est le 💎. Le temps avance par pas fixes (60 par seconde) et le replay
+  est le pas de chaque lancer : le serveur en déduit où chaque couteau s'est planté. L'aperçu d'un autre joueur
+  montre sa planète et ses couteaux plantés, ses vies à côté de son nom, et « Impasse » quand la place libre ne
+  suffit plus aux couteaux qui restent.
 
 ## Contraintes à ne jamais casser
 
@@ -136,6 +145,8 @@ src/
       parking/             règles, recherche de la solution la plus courte, replays, niveaux enregistrés,
                            leur générateur (escalade vers un parking aux solutions longues, puis position à la
                            distance voulue de la sortie) et leur meilleur score
+      couteaux/            règles (rotation de la planète en entiers, lancers), replays, niveaux enregistrés et
+                           leur générateur (vérifie qu'une partie sans rebond existe)
   worker/                  serveur Cloudflare
     index.ts               routeur HTTP -> Durable Object
     http.ts                réponses JSON, lecture du corps, jeton
@@ -251,7 +262,8 @@ Aucune modification de la plateforme ne doit être nécessaire. Si elle l'est, c
   ```
 
   Types : `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `build`, `ci`, `chore`, `style`.
-  Portées : `platform`, `worker`, `client`, `shared`, `fioles`, `bouquets`, `pandas`, `parking`, `ci`, `deps`, `release`.
+  Portées : `platform`, `worker`, `client`, `shared`, `fioles`, `bouquets`, `pandas`, `parking`, `couteaux`, `ci`,
+  `deps`, `release`.
 - Un commit = un changement cohérent qui passe `npm run check`. Pas de commit « wip » ni « fix typo » isolé
   d'un changement qu'il corrige.
 - Hook `pre-commit` : Biome sur les fichiers indexés + vérification des types.
