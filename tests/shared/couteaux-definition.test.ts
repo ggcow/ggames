@@ -10,7 +10,7 @@ import {
 } from '../../src/shared/games/couteaux/definition.ts';
 import { perfectThrows } from '../../src/shared/games/couteaux/generate.ts';
 import { LEVELS } from '../../src/shared/games/couteaux/levels.ts';
-import { FLIGHT_TICKS, LIVES, levelToString, parseLevel } from '../../src/shared/games/couteaux/rules.ts';
+import { LIVES, levelToString, parseLevel, THROW_TICKS } from '../../src/shared/games/couteaux/rules.ts';
 import { couteauxLevel, couteauxLoss, couteauxWin, couteauxWinWithMiss } from '../support/couteaux.ts';
 
 describe('niveaux enregistrés', () => {
@@ -58,7 +58,7 @@ describe('replays', () => {
     expect(states).toHaveLength(win.length + 1);
     expect(states?.[win.length]?.planted).toHaveLength(level.knives);
     const [first = 0] = win;
-    expect(playThrows(level, [first, first + FLIGHT_TICKS - 1])).toBeNull();
+    expect(playThrows(level, [first, first + THROW_TICKS - 1])).toBeNull();
   });
 });
 

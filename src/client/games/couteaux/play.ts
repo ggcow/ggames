@@ -4,6 +4,7 @@
 
 import { encodeThrows } from '../../../shared/games/couteaux/definition.ts';
 import {
+  canThrow,
   FLIGHT_TICKS,
   isLost,
   isWon,
@@ -21,9 +22,10 @@ import {
   bounceKnife,
   clearKnives,
   mountStage,
-  placeShot,
+  placeFlights,
   plantKnife,
   type Stage,
+  showReady,
   stageSide,
   turnPlanet,
 } from './board.ts';
@@ -115,10 +117,14 @@ export function mountCouteauxPlay(host: HTMLElement, options: CouteauxPlayOption
   const draw = () => {
     frame = null;
     const elapsed = ticksBetween(startedAt, clock.now());
-    land(Math.floor(elapsed));
+    const tick = Math.floor(elapsed);
+    land(tick);
     turnPlanet(stage, smoothTurn(rotation, elapsed));
-    const flying = flights[flights.length - 1];
-    placeShot(stage, flying ? (elapsed - flying.thrown) / FLIGHT_TICKS : finished() ? null : 0);
+    placeFlights(
+      stage,
+      flights.map((flight) => (elapsed - flight.thrown) / FLIGHT_TICKS),
+    );
+    showReady(stage, canThrow(level, throws, tick));
     if (!ended) frame = clock.frame(draw);
   };
 

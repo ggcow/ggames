@@ -15,10 +15,16 @@ export const TICK_MS = 1000 / TICKS_PER_SECOND;
 export const TURN = 3600;
 
 /**
- * Pas de vol d'un couteau, du lancer jusqu'à la planète : un tiers de seconde, pendant lequel la planète continue
- * de tourner. Il faut lancer en avance sur la place visée. On ne lance pas le suivant avant que celui-ci arrive.
+ * Pas de vol d'un couteau, du lancer jusqu'à la planète : trois quarts de seconde, pendant lesquels la planète
+ * continue de tourner. Il faut lancer en avance sur la place visée.
  */
-export const FLIGHT_TICKS = 20;
+export const FLIGHT_TICKS = 45;
+
+/**
+ * Pas au moins entre deux lancers : un dixième de seconde. Plusieurs couteaux peuvent voler en même temps ; ils
+ * arrivent dans l'ordre des lancers, chacun sur la planète où les précédents sont déjà plantés.
+ */
+export const THROW_TICKS = 6;
 
 /** Écart minimal entre deux couteaux plantés : plus près, le nouveau touche l'ancien et rebondit. */
 export const GAP = 100;
@@ -124,12 +130,20 @@ export interface Throw {
 }
 
 /**
- * Lance un couteau au pas `tick`. `null` si le lancer est impossible : pas invalide, couteau précédent encore en
- * vol, partie déjà gagnée ou perdue.
+ * Vrai si un couteau peut partir au pas `tick` : pas entier, assez loin du lancer précédent, et partie ni gagnée
+ * ni perdue. Les couteaux encore en vol comptent déjà : une fois le dernier couteau utile ou la dernière erreur
+ * lancés, plus rien ne part.
  */
+export const canThrow = (level: Level, throws: Throws, tick: number): boolean =>
+  Number.isInteger(tick) &&
+  tick >= 0 &&
+  (throws.last === null || tick >= throws.last + THROW_TICKS) &&
+  !isWon(level, throws) &&
+  !isLost(throws);
+
+/** Lance un couteau au pas `tick`. `null` si le lancer est impossible (`canThrow`). */
 export function throwKnife(level: Level, rotation: Rotation, throws: Throws, tick: number): Throw | null {
-  if (!Number.isInteger(tick) || tick < 0 || isWon(level, throws) || isLost(throws)) return null;
-  if (throws.last !== null && tick < throws.last + FLIGHT_TICKS) return null;
+  if (!canThrow(level, throws, tick)) return null;
   const arrival = tick + FLIGHT_TICKS;
   const angle = impactAt(rotation, arrival);
   const bounced = hits(level, throws.planted, angle);

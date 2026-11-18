@@ -1,4 +1,4 @@
-// Affichage de Couteaux : la planète, les couteaux plantés et celui qu'on lance. Les dimensions viennent de la
+// Affichage de Couteaux : la planète, les couteaux plantés et ceux qu'on lance. Les dimensions viennent de la
 // largeur disponible ; la feuille de style place chaque couteau d'après son angle (`--a`, en degrés).
 
 import { type Level, TURN } from '../../../shared/games/couteaux/rules.ts';
@@ -55,8 +55,10 @@ export interface Stage {
   readonly planet: HTMLElement;
   /** Partie tournante : la surface et les couteaux plantés. */
   readonly spin: HTMLElement;
-  /** Couteau en attente ou en vol, dans le repère fixe de la scène. */
+  /** Couteau en attente, prêt à partir, dans le repère fixe de la scène. */
   readonly shot: HTMLElement;
+  /** Couteaux en vol, dans l'ordre des lancers. */
+  readonly flights: HTMLElement;
   /** Couteaux restant à planter. */
   readonly left: HTMLElement;
 }
@@ -73,17 +75,22 @@ export function mountStage(host: HTMLElement, level: Level, side: number): Stage
     h('div', { class: 'ct-surface' }),
   );
   const planet = h('div', { class: 'ct-planet' }, spin);
-  const shot = h(
+  const shot = shotElement();
+  const flights = h('div', { class: 'ct-flights' });
+  const left = h('span', { class: 'ct-left' });
+  const root = h('div', { class: 'ct-stage', style: sizes(side) }, planet, shot, flights, left);
+  replaceChildren(host, root);
+  return { root, planet, spin, shot, flights, left };
+}
+
+/** Un couteau du joueur hors de la planète : en attente, en vol ou en train de retomber. */
+const shotElement = (extra = ''): HTMLElement =>
+  h(
     'div',
-    { class: 'ct-knife mine ct-shot' },
+    { class: `ct-knife mine ct-shot${extra}` },
     h('span', { class: 'ct-blade' }),
     h('span', { class: 'ct-handle' }),
   );
-  const left = h('span', { class: 'ct-left' });
-  const root = h('div', { class: 'ct-stage', style: sizes(side) }, planet, shot, left);
-  replaceChildren(host, root);
-  return { root, planet, spin, shot, left };
-}
 
 /** Tourne la planète de `angle` (dixièmes de degré). */
 export const turnPlanet = (stage: Stage, angle: number): void =>
@@ -103,23 +110,27 @@ export const clearKnives = (stage: Stage): void => {
   for (const knife of stage.spin.querySelectorAll('.ct-knife.mine')) knife.remove();
 };
 
+/** Montre ou cache le couteau en attente : caché juste après un lancer, et quand plus rien ne peut partir. */
+export const showReady = (stage: Stage, ready: boolean): void => {
+  stage.shot.hidden = !ready;
+};
+
 /**
- * Place le couteau lancé : `progress` va de 0 (en attente, en bas) à 1 (arrivé sur la planète). `null` le cache,
- * quand il n'en reste plus à lancer.
+ * Place les couteaux en vol : pour chacun, son avancée de 0 (au départ, en bas) à 1 (arrivé sur la planète).
  */
-export function placeShot(stage: Stage, progress: number | null): void {
-  stage.shot.hidden = progress === null;
-  stage.shot.style.setProperty('--d', String(1 - Math.min(1, Math.max(0, progress ?? 0))));
+export function placeFlights(stage: Stage, progress: readonly number[]): void {
+  const knives = stage.flights.children;
+  while (knives.length < progress.length) stage.flights.append(shotElement());
+  while (knives.length > progress.length) knives[knives.length - 1]?.remove();
+  progress.forEach((value, index) => {
+    const knife = knives[index];
+    if (knife instanceof HTMLElement) knife.style.setProperty('--d', String(1 - Math.min(1, Math.max(0, value))));
+  });
 }
 
 /** Fait tomber un couteau qui a rebondi, depuis la planète. */
 export function bounceKnife(stage: Stage): void {
-  const falling = h(
-    'div',
-    { class: 'ct-knife mine ct-shot bounce' },
-    h('span', { class: 'ct-blade' }),
-    h('span', { class: 'ct-handle' }),
-  );
+  const falling = shotElement(' bounce');
   falling.addEventListener('animationend', () => falling.remove());
   stage.root.append(falling);
 }
@@ -130,6 +141,7 @@ export function renderMiniTarget(level: Level, planted: readonly number[]): HTML
   const stage = mountStage(host, level, MINI_STAGE);
   for (const angle of planted) stage.spin.insertBefore(knifeElement(angle, 'mine'), stage.spin.lastChild);
   stage.shot.remove();
+  stage.flights.remove();
   stage.left.remove();
   return host;
 }

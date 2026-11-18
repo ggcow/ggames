@@ -8,13 +8,14 @@ import {
   LIVES,
   rotationOf,
   START,
+  THROW_TICKS,
   type Throw,
   TICKS_PER_SECOND,
   throwKnife,
 } from '../../../shared/games/couteaux/rules.ts';
 import { h, replaceChildren } from '../../platform/dom.ts';
 import { livesBadge, livesText } from '../puzzle-frame.ts';
-import { clearKnives, mountStage, placeShot, plantKnife, stageSide, turnPlanet } from './board.ts';
+import { clearKnives, mountStage, placeFlights, plantKnife, showReady, stageSide, turnPlanet } from './board.ts';
 import { browserClock, type Clock, smoothTurn, ticksBetween } from './clock.ts';
 
 /** Pas montrés après le dernier couteau arrivé, pour voir la fin de la partie. */
@@ -69,8 +70,13 @@ export function mountCouteauxReplay(
     }
     const misses = arrived.filter((step) => step.bounced).length;
     lives.textContent = livesText(misses, LIVES);
-    const flying = done.find((step) => step.arrival - FLIGHT_TICKS <= at && at < step.arrival);
-    placeShot(stage, flying ? (at - (flying.arrival - FLIGHT_TICKS)) / FLIGHT_TICKS : 0);
+    const thrown = done.filter((step) => step.arrival - FLIGHT_TICKS <= at);
+    placeFlights(
+      stage,
+      thrown.filter((step) => at < step.arrival).map((step) => (at - (step.arrival - FLIGHT_TICKS)) / FLIGHT_TICKS),
+    );
+    const last = thrown[thrown.length - 1];
+    showReady(stage, thrown.length < done.length && (!last || at >= last.arrival - FLIGHT_TICKS + THROW_TICKS));
     turnPlanet(stage, smoothTurn(rotation, at));
     stage.left.textContent = `🔪 ${level.knives - arrived.length + misses}`;
     slider.value = String(Math.floor(at));

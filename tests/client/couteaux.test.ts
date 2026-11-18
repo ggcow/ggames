@@ -17,6 +17,7 @@ import {
   liveState,
   rotationOf,
   START,
+  THROW_TICKS,
   TICK_MS,
   TICKS_PER_SECOND,
   TURN,
@@ -175,14 +176,26 @@ describe('partie', () => {
     expect(left(host)).toBe(`🔪 ${level.knives - 1}`);
   });
 
-  it('ignore un toucher pendant le vol du couteau précédent', () => {
-    const { clock, tap, onProgress } = mount();
+  it('lance pendant le vol du couteau précédent, mais pas juste après un lancer', () => {
+    const { host, clock, tap, onProgress } = mount();
+    const ready = () => host.querySelector<HTMLElement>('.ct-stage > .ct-shot:not(.bounce)')?.hidden;
+    const flying = () => host.querySelectorAll('.ct-flights .ct-knife').length;
     const [first = 0] = win;
     clock.at(first);
+    expect(ready()).toBe(false);
     tap();
-    clock.at(first + 1);
+    clock.at(first + THROW_TICKS - 1);
+    expect(ready()).toBe(true);
     tap();
     expect(onProgress).toHaveBeenLastCalledWith(expect.objectContaining({ value: 1 }));
+    clock.at(first + THROW_TICKS);
+    expect(ready()).toBe(false);
+    tap();
+    expect(onProgress).toHaveBeenLastCalledWith(expect.objectContaining({ value: 2 }));
+    clock.at(first + THROW_TICKS + 1);
+    expect(flying()).toBe(2);
+    clock.at(first + FLIGHT_TICKS);
+    expect(flying()).toBe(1);
   });
 
   it('gagne une fois le dernier couteau arrivé, sans autre lancer possible', () => {

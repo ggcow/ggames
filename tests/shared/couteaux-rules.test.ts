@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  canThrow,
   distance,
   FLIGHT_TICKS,
   GAP,
@@ -19,6 +20,7 @@ import {
   room,
   rotationOf,
   START,
+  THROW_TICKS,
   TURN,
   throwKnife,
   turnedAt,
@@ -82,10 +84,22 @@ describe('lancers', () => {
     const near = throwKnife(STEADY, rotation, first.throws, 365);
     expect(near?.bounced).toBe(true);
     expect(near?.throws).toEqual({ planted: first.throws.planted, misses: 1, last: 365 });
-    // Juste après l'arrivée du premier : la planète a tourné de 20 degrés, assez pour l'éviter.
+    // Juste après l'arrivée du premier : la planète a tourné de 45 degrés, assez pour l'éviter.
     const far = throwKnife(STEADY, rotation, first.throws, FLIGHT_TICKS);
     expect(far?.bounced).toBe(false);
     expect(throwKnife(STEADY, rotation, first.throws, GAP / 10 + 360 - 1)?.bounced).toBe(true);
+  });
+
+  it('lance pendant le vol du précédent : le couteau en vol compte déjà comme planté', () => {
+    const first = throwKnife(STEADY, rotation, START, 0);
+    if (!first) throw new Error('lancer attendu');
+    expect(first.arrival).toBeGreaterThan(THROW_TICKS);
+    // Six pas plus tard, la planète n'a tourné que de 6 degrés : trop près du premier.
+    expect(throwKnife(STEADY, rotation, first.throws, THROW_TICKS)?.bounced).toBe(true);
+    // Douze pas plus tard, 12 degrés : il se plante à côté, avant même que le premier arrive.
+    const second = throwKnife(STEADY, rotation, first.throws, 2 * THROW_TICKS);
+    expect(second?.bounced).toBe(false);
+    expect(second?.throws.planted).toHaveLength(2);
   });
 
   it('rebondit aussi sur un obstacle', () => {
@@ -96,10 +110,12 @@ describe('lancers', () => {
     expect(hits(level, [], wrap(target + GAP))).toBe(false);
   });
 
-  it('refuse un lancer pendant le vol du précédent, à un pas invalide ou une fois la partie finie', () => {
+  it('refuse un lancer trop proche du précédent, à un pas invalide ou une fois la partie finie', () => {
     const first = throwKnife(STEADY, rotation, START, 0);
     if (!first) throw new Error('lancer attendu');
-    expect(throwKnife(STEADY, rotation, first.throws, FLIGHT_TICKS - 1)).toBeNull();
+    expect(throwKnife(STEADY, rotation, first.throws, THROW_TICKS - 1)).toBeNull();
+    expect(canThrow(STEADY, first.throws, THROW_TICKS - 1)).toBe(false);
+    expect(canThrow(STEADY, first.throws, THROW_TICKS)).toBe(true);
     expect(throwKnife(STEADY, rotation, START, -1)).toBeNull();
     expect(throwKnife(STEADY, rotation, START, 1.5)).toBeNull();
     const won = { planted: [0, 1200, 2400], misses: 0, last: 0 };
