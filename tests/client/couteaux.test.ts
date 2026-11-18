@@ -9,11 +9,11 @@ import { mountCouteauxReplay } from '../../src/client/games/couteaux/replay.ts';
 import { CLOSE_KNIVES, couteauxStatus } from '../../src/client/games/couteaux/status.ts';
 import { COUTEAUX_STRINGS } from '../../src/client/games/couteaux/strings.ts';
 import { createGameView } from '../../src/client/platform/context.ts';
-import { MAX_LEVEL } from '../../src/shared/games/campaign.ts';
 import { encodeThrows } from '../../src/shared/games/couteaux/definition.ts';
 import {
   FLIGHT_TICKS,
   GAP,
+  LEVEL_COUNT,
   liveState,
   rotationOf,
   START,
@@ -96,9 +96,12 @@ describe('jeu', () => {
     expect(couteauxClient.formatValue?.(2, 'fr')).toBe('2 erreurs');
     expect(couteauxClient.formatValue?.(2, 'zh')).toBe('失误 2 次');
     const v = view({ records: { 'c:1': [{ player: ME, value: 0, run: 'r1' }] } });
-    expect(couteauxClient.levelProgress(v, ME)).toEqual({ unlocked: 2, total: MAX_LEVEL });
+    expect(couteauxClient.levelProgress(v, ME)).toEqual({ unlocked: 2, total: LEVEL_COUNT });
     expect(couteauxClient.levelTile(1, v)).toMatchObject({ status: 'done', perfect: true, recordPerfect: true });
     expect(couteauxClient.keyLabel('c:4', 'zh')).toBe('第 4 关');
+    expect(couteauxClient.nextKey('c:19', v)).toBe('c:20');
+    expect(couteauxClient.nextKey('c:20', v)).toBeNull();
+    expect(couteauxClient.levelOf('c:21')).toBeNull();
   });
 
   it('montre la planète d’un autre joueur, ses vies et sa situation', () => {
@@ -108,7 +111,7 @@ describe('jeu', () => {
     expect(mini?.querySelectorAll('.ct-knife.mine')).toHaveLength(2);
     expect(mini?.querySelector('.ct-shot')).toBeNull();
     expect(couteauxClient.liveStatus(state, 3)).toBe('far');
-    for (const bad of ['x', liveState(MAX_LEVEL + 1, START)]) {
+    for (const bad of ['x', liveState(LEVEL_COUNT + 1, START)]) {
       expect(couteauxClient.renderLiveState(bad)).toBeNull();
       expect(couteauxClient.liveStatus(bad, 0)).toBeNull();
     }
@@ -139,7 +142,7 @@ describe('scène', () => {
   });
 
   it('dessine l’aperçu à sa taille, avec les obstacles du niveau', () => {
-    const withObstacles = couteauxLevel(MAX_LEVEL);
+    const withObstacles = couteauxLevel(LEVEL_COUNT);
     const mini = renderMiniTarget(withObstacles, []);
     expect(mini.querySelectorAll('.ct-knife.obstacle')).toHaveLength(withObstacles.obstacles.length);
     expect(mini.querySelector<HTMLElement>('.ct-stage')?.style.getPropertyValue('--s')).toBe(`${MINI_STAGE}px`);

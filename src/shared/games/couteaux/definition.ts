@@ -1,9 +1,9 @@
-// Définition du jeu Couteaux pour la plateforme : niveaux enregistrés de la campagne, replays.
+// Définition du jeu Couteaux pour la plateforme : niveaux enregistrés de la campagne (LEVEL_COUNT), replays.
 
 import { campaignCompareKeys, campaignIsUnlocked, parseCampaignKey } from '../campaign.ts';
 import type { GameDefinition, ReplayOutcome } from '../game.ts';
 import { LEVELS } from './levels.ts';
-import { isWon, type Level, parseLevel, rotationOf, START, type Throws, throwKnife } from './rules.ts';
+import { isWon, LEVEL_COUNT, type Level, parseLevel, rotationOf, START, type Throws, throwKnife } from './rules.ts';
 
 export const COUTEAUX_ID = 'couteaux';
 
@@ -15,7 +15,7 @@ export function levelOf(level: number): Level | null {
 
 /** Niveau d'une clé, ou `null` si la clé est invalide. */
 export function startLevel(key: string): Level | null {
-  const level = parseCampaignKey(key);
+  const level = parseCampaignKey(key, LEVEL_COUNT);
   return level === null ? null : levelOf(level);
 }
 
@@ -56,9 +56,9 @@ export const couteaux: GameDefinition = {
   id: COUTEAUX_ID,
   // Le score est le nombre de rebonds : moins il y en a, mieux c'est.
   scoreOrder: 'asc',
-  isValidKey: (key) => parseCampaignKey(key) !== null,
+  isValidKey: (key) => parseCampaignKey(key, LEVEL_COUNT) !== null,
   compareKeys: campaignCompareKeys,
-  isUnlocked: campaignIsUnlocked,
+  isUnlocked: (key, won) => campaignIsUnlocked(key, won, LEVEL_COUNT),
   replay(key, replay): ReplayOutcome | null {
     const level = startLevel(key);
     const ticks = decodeThrows(replay);

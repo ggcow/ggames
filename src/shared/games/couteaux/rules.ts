@@ -32,6 +32,9 @@ export const GAP = 100;
 /** Erreurs permises : au troisième rebond, la partie est perdue. */
 export const LIVES = 3;
 
+/** Niveaux de la campagne : une seule page de la grille, où la difficulté monte vite. */
+export const LEVEL_COUNT = 20;
+
 /** Couteaux à planter au plus dans un niveau, et couteaux déjà plantés au plus au départ. */
 export const MAX_KNIVES = 20;
 export const MAX_OBSTACLES = 8;

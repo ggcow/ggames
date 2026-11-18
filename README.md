@@ -9,8 +9,8 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
   pseudo affiché part de l'identifiant ; le bouton Modifier de l'accueil change l'un ou l'autre (ton mot de
   passe est demandé pour changer d'identifiant).
 - L'accueil liste les jeux et les joueurs en ligne.
-- Pour chaque jeu : une grille de 100 niveaux sur 5 pages. Chacun avance à son rythme : un niveau se débloque
-  quand tous les précédents sont gagnés.
+- Pour chaque jeu : une grille de 100 niveaux sur 5 pages (20 sur une page pour Couteaux). Chacun avance à son
+  rythme : un niveau se débloque quand tous les précédents sont gagnés.
 - Si un ami joue un niveau que tu n'as pas encore débloqué, tu peux le rejoindre et faire la course avec lui
   (trois joueurs au plus, quatre aux Pandas). La victoire compte au classement, mais ta progression reste la tienne.
 - En partie, ton plateau occupe le bas de l'écran ; au-dessus, les plateaux des autres joueurs en petit.
@@ -54,7 +54,7 @@ Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur
 | 💐 Bouquets | Glisser les fleurs de pot en pot : trois pareilles devant un pot font un bouquet | 100 niveaux                     |
 | 🐼 Pandas   | Un panda par ligne, par colonne et par bosquet, sans que deux pandas se touchent | 100 niveaux, 3 vies, sans score |
 | 🚗 Parking  | Faire glisser les véhicules pour libérer la sortie de la voiture rouge           | 100 niveaux                     |
-| 🔪 Couteaux | Lancer des couteaux dans une planète qui tourne, sans toucher ceux déjà plantés  | 100 niveaux, 3 vies             |
+| 🔪 Couteaux | Lancer des couteaux dans une planète qui tourne, sans toucher ceux déjà plantés  | 20 niveaux, 3 vies              |
 
 ## Fonctionnement technique
 

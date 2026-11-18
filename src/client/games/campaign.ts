@@ -13,9 +13,9 @@ import { wonKeys } from '../platform/context.ts';
 import type { Lang } from '../platform/i18n.ts';
 import type { ClientGame, GameView, LevelProgress, LevelTile } from './client-game.ts';
 
-export const campaignProgress = (view: GameView, player: PlayerId): LevelProgress => ({
-  unlocked: campaignFrontier(wonKeys(view.state, player)),
-  total: MAX_LEVEL,
+export const campaignProgress = (view: GameView, player: PlayerId, size = MAX_LEVEL): LevelProgress => ({
+  unlocked: campaignFrontier(wonKeys(view.state, player), size),
+  total: size,
 });
 
 /**
@@ -50,25 +50,27 @@ export function campaignTile(
 
 /**
  * Les méthodes de `ClientGame` liées à la campagne, à partir du libellé d'un niveau, du format des scores et du
- * meilleur score possible de chaque clé (`GameDefinition.bestPossible`). L'indication d'un aperçu est son score.
+ * meilleur score possible de chaque clé (`GameDefinition.bestPossible`), pour une campagne de `size` niveaux.
+ * L'indication d'un aperçu est son score.
  */
 export function campaignMethods(
   levelLabel: (level: number, lang: Lang) => string,
   formatValue: ((value: number, lang: Lang) => string) | null,
   bestPossible: (key: string) => number | null,
+  size = MAX_LEVEL,
 ): Pick<ClientGame, 'keyLabel' | 'formatValue' | 'levelProgress' | 'levelOf' | 'levelTile' | 'nextKey' | 'liveTag'> {
   return {
     keyLabel(key, lang) {
-      const level = parseCampaignKey(key);
+      const level = parseCampaignKey(key, size);
       return level === null ? key : levelLabel(level, lang);
     },
     formatValue,
-    levelProgress: campaignProgress,
-    levelOf: parseCampaignKey,
+    levelProgress: (view, player) => campaignProgress(view, player, size),
+    levelOf: (key) => parseCampaignKey(key, size),
     levelTile: (level, view) => campaignTile(level, view, bestPossible, formatValue !== null),
     nextKey(key) {
-      const level = parseCampaignKey(key);
-      return level === null || level >= MAX_LEVEL ? null : campaignKey(level + 1);
+      const level = parseCampaignKey(key, size);
+      return level === null || level >= size ? null : campaignKey(level + 1);
     },
     // Le score de la partie en cours, pour un jeu qui en a un.
     liveTag: (_state, value, lang) => (formatValue ? formatValue(value, lang) : null),

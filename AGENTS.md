@@ -30,7 +30,7 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
 - Chaque joueur a un compte (identifiant + mot de passe) et se connecte depuis n'importe quel appareil. Son pseudo
   affiché part de l'identifiant. Pseudo et identifiant se changent séparément depuis l'accueil (bouton Modifier) ;
   changer d'identifiant demande le mot de passe. L'identifiant n'est montré qu'à son propriétaire.
-- L'accueil liste les jeux. Pour chaque jeu : la grille des 100 niveaux, 5 pages de 20 (réussis, jouable, verrouillés),
+- L'accueil liste les jeux. Pour chaque jeu : la grille de ses niveaux, pages de 20 (réussis, jouable, verrouillés),
   la progression de chaque joueur (niveaux réussis, essais, temps), les classements, et le replay des parties
   gagnées sur les niveaux déjà réussis par le joueur.
 - Égalités : partout où un record ou un score parfait est partagé, tous ses détenteurs ex æquo apparaissent
@@ -103,7 +103,7 @@ Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine co
   courte s'allonge de 6 à 45 coups. Un glissement compte pour un coup, quelle que soit sa longueur ; on glisse
   au doigt, ou aux flèches du clavier. Jamais d'impasse : chaque coup se défait.
 - Cinquième jeu : **Couteaux** (une planète tourne ; on lance depuis le bas des couteaux qui s'y plantent, et un
-  couteau qui touche un couteau déjà planté rebondit), avec une campagne de 100 niveaux : plus de couteaux,
+  couteau qui touche un couteau déjà planté rebondit), avec une campagne de 20 niveaux (une page) : plus de couteaux,
   d'obstacles déjà plantés, une planète plus rapide qui change de vitesse puis de sens. Un toucher (ou Espace,
   Entrée, flèche haut) lance ; le couteau part de loin et vole un cinquième de seconde, pendant lequel la planète
   continue de tourner, et le suivant peut partir 0,15 seconde après le précédent. Trois vies : chaque
@@ -209,10 +209,11 @@ Erreurs attendues : valeurs `Result` renvoyées par le Durable Object, convertie
 
 1. `src/shared/games/<jeu>/` : règles pures + `definition.ts` qui exporte une `GameDefinition` ;
    l'enregistrer dans `src/shared/games/registry.ts`. Un jeu à niveaux utilise la campagne commune
-   (`shared/games/campaign.ts`) et `campaignMethods()` côté client ; son `generate.ts` produit ses 100 niveaux,
-   écrits une fois pour toutes dans `levels.ts` par `npm run levels -- <jeu>` (générateur à déclarer dans
-   `scripts/levels.ts`). Si une recherche exhaustive le permet, `npm run optimal -- <jeu>` écrit le meilleur
-   score possible de chaque niveau dans `optimal.ts` (recherche à déclarer dans `scripts/optimal.ts`).
+   (`shared/games/campaign.ts`) et `campaignMethods()` côté client ; son `generate.ts` produit ses niveaux
+   (100, ou le nombre que le jeu passe à la campagne), écrits une fois pour toutes dans `levels.ts` par
+   `npm run levels -- <jeu>` (générateur et nombre de niveaux à déclarer dans `scripts/levels.ts`). Si une
+   recherche exhaustive le permet, `npm run optimal -- <jeu>` écrit le meilleur score possible de chaque niveau
+   dans `optimal.ts` (recherche à déclarer dans `scripts/optimal.ts`).
 2. `src/client/games/<jeu>/` : `index.ts` qui exporte un `ClientGame`, `strings.ts` (fr + zh), écrans ;
    l'enregistrer dans `src/client/games/registry.ts`. Ses images éventuelles vont dans `site/games/<jeu>/`.
 3. Tests : règles et replays dans `tests/shared/`, interface dans `tests/client/`, une partie complète via

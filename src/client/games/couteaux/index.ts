@@ -2,7 +2,7 @@
 
 import { parseCampaignKey } from '../../../shared/games/campaign.ts';
 import { couteaux, levelOf, startLevel } from '../../../shared/games/couteaux/definition.ts';
-import { LIVES, parseLiveState } from '../../../shared/games/couteaux/rules.ts';
+import { LEVEL_COUNT, LIVES, parseLiveState } from '../../../shared/games/couteaux/rules.ts';
 import { RACE_SIZE } from '../../platform/context.ts';
 import { h } from '../../platform/dom.ts';
 import { campaignMethods } from '../campaign.ts';
@@ -23,6 +23,7 @@ export const couteauxClient: ClientGame = {
     (level, lang) => COUTEAUX_STRINGS[lang].level(level),
     (value, lang) => COUTEAUX_STRINGS[lang].misses(value),
     couteaux.bestPossible,
+    LEVEL_COUNT,
   ),
 
   raceSize: RACE_SIZE,
@@ -47,7 +48,7 @@ export const couteauxClient: ClientGame = {
 
   mountPlay(host, ctx) {
     const level = startLevel(ctx.key);
-    const number = parseCampaignKey(ctx.key);
+    const number = parseCampaignKey(ctx.key, LEVEL_COUNT);
     if (!level || number === null) {
       host.replaceChildren(h('p', { class: 'muted center' }, '?'));
       return () => undefined;

@@ -2,7 +2,6 @@
 // rebond existe, difficulté de la campagne. Utilisé uniquement par `npm run levels` (qui écrit levels.ts) et par
 // les tests : les joueurs et le serveur lisent les niveaux enregistrés, jamais générés à la volée.
 
-import { MAX_LEVEL } from '../campaign.ts';
 import { createRandom } from '../random.ts';
 import {
   distance,
@@ -10,6 +9,7 @@ import {
   GAP,
   hits,
   impactAt,
+  LEVEL_COUNT,
   type Level,
   levelToString,
   MAX_SPEED,
@@ -160,16 +160,16 @@ export function generateLevelFor(
 
 /**
  * Difficulté du niveau `level` : plus de couteaux à planter (8 à 14) et d'obstacles (1 à 7), une planète plus
- * rapide qui change de vitesse dès le premier niveau, de plus en plus souvent, et de sens dès le niveau 21.
+ * rapide qui change de vitesse dès le premier niveau, de plus en plus souvent, et de sens dès le cinquième.
  */
 export function campaignSpec(level: number): LevelSpec {
-  const progress = (level - 1) / (MAX_LEVEL - 1);
+  const progress = (level - 1) / (LEVEL_COUNT - 1);
   return {
     knives: 8 + Math.floor(progress * 6),
     obstacles: 1 + Math.floor(progress * 6),
     speed: 25 + Math.floor(progress * 25),
-    paces: level <= 20 ? 2 : level <= 50 ? 3 : 4,
-    reverse: level > 20,
+    paces: progress < 0.2 ? 2 : progress < 0.5 ? 3 : 4,
+    reverse: progress >= 0.2,
   };
 }
 

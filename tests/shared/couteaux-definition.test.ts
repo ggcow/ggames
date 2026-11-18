@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_LEVEL } from '../../src/shared/games/campaign.ts';
 import {
   couteaux,
   decodeThrows,
@@ -10,13 +9,13 @@ import {
 } from '../../src/shared/games/couteaux/definition.ts';
 import { perfectThrows } from '../../src/shared/games/couteaux/generate.ts';
 import { LEVELS } from '../../src/shared/games/couteaux/levels.ts';
-import { LIVES, levelToString, parseLevel, THROW_TICKS } from '../../src/shared/games/couteaux/rules.ts';
+import { LEVEL_COUNT, LIVES, levelToString, parseLevel, THROW_TICKS } from '../../src/shared/games/couteaux/rules.ts';
 import { couteauxLevel, couteauxLoss, couteauxWin, couteauxWinWithMiss } from '../support/couteaux.ts';
 
 describe('niveaux enregistrés', () => {
-  it('compte 100 niveaux valides et tous différents', () => {
-    expect(LEVELS).toHaveLength(MAX_LEVEL);
-    expect(new Set(LEVELS).size).toBe(MAX_LEVEL);
+  it('compte ses 20 niveaux valides et tous différents', () => {
+    expect(LEVELS).toHaveLength(LEVEL_COUNT);
+    expect(new Set(LEVELS).size).toBe(LEVEL_COUNT);
     for (const text of LEVELS) {
       const level = parseLevel(text);
       expect(level).not.toBeNull();
@@ -33,7 +32,7 @@ describe('niveaux enregistrés', () => {
   it('trouve le niveau d’une clé de la campagne', () => {
     expect(startLevel('c:1')).toEqual(levelOf(1));
     expect(levelOf(0)).toBeNull();
-    expect(levelOf(MAX_LEVEL + 1)).toBeNull();
+    expect(levelOf(LEVEL_COUNT + 1)).toBeNull();
     expect(startLevel('c:0')).toBeNull();
     expect(startLevel('x')).toBeNull();
   });
@@ -67,7 +66,7 @@ describe('définition', () => {
     expect(couteaux.id).toBe('couteaux');
     expect(couteaux.scoreOrder).toBe('asc');
     expect(couteaux.isValidKey('c:1')).toBe(true);
-    expect(couteaux.isValidKey('c:101')).toBe(false);
+    expect(couteaux.isValidKey('c:21')).toBe(false);
     expect(couteaux.isUnlocked('c:2', new Set(['c:1']))).toBe(true);
     expect(couteaux.isUnlocked('c:3', new Set(['c:1']))).toBe(false);
     expect(couteaux.compareKeys('c:2', 'c:10')).toBeLessThan(0);
@@ -76,7 +75,7 @@ describe('définition', () => {
   it('compte une victoire sans rebond à zéro erreur, le meilleur score possible', () => {
     expect(couteaux.replay('c:1', encodeThrows(couteauxWin(1)))).toEqual({ finished: true, value: 0 });
     expect(couteaux.bestPossible('c:1')).toBe(0);
-    expect(couteaux.bestPossible(`c:${MAX_LEVEL}`)).toBe(0);
+    expect(couteaux.bestPossible(`c:${LEVEL_COUNT}`)).toBe(0);
     expect(couteaux.bestPossible('c:0')).toBeNull();
   });
 

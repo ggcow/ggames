@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_LEVEL } from '../../src/shared/games/campaign.ts';
 import {
   campaignSpec,
   generateLevel,
@@ -17,6 +16,7 @@ import {
   GAP,
   hits,
   impactAt,
+  LEVEL_COUNT,
   type Level,
   levelToString,
   MAX_KNIVES,
@@ -29,11 +29,11 @@ import { createRandom } from '../../src/shared/games/random.ts';
 
 describe('campagne', () => {
   it('ajoute couteaux, obstacles, vitesse, changements de vitesse puis de sens', () => {
-    const specs = Array.from({ length: MAX_LEVEL }, (_, i) => campaignSpec(i + 1));
+    const specs = Array.from({ length: LEVEL_COUNT }, (_, i) => campaignSpec(i + 1));
     expect(specs[0]).toEqual({ knives: 8, obstacles: 1, speed: 25, paces: 2, reverse: false });
-    expect(specs[MAX_LEVEL - 1]).toEqual({ knives: 14, obstacles: 7, speed: 50, paces: 4, reverse: true });
-    expect([20, 21, 50, 51].map((level) => campaignSpec(level).paces)).toEqual([2, 3, 3, 4]);
-    expect([20, 21].map((level) => campaignSpec(level).reverse)).toEqual([false, true]);
+    expect(specs[LEVEL_COUNT - 1]).toEqual({ knives: 14, obstacles: 7, speed: 50, paces: 4, reverse: true });
+    expect([4, 5, 10, 11].map((level) => campaignSpec(level).paces)).toEqual([2, 3, 3, 4]);
+    expect([4, 5].map((level) => campaignSpec(level).reverse)).toEqual([false, true]);
     specs.slice(1).forEach((spec, i) => {
       const previous = specs[i];
       if (!previous) throw new Error('niveau précédent attendu');
@@ -47,7 +47,7 @@ describe('campagne', () => {
 
   it('reproduit les niveaux enregistrés', () => {
     expect(generateLevels(3, () => undefined)).toEqual(LEVELS.slice(0, 3));
-    expect(levelToString(generateLevel(70))).toBe(LEVELS[69]);
+    expect(levelToString(generateLevel(15))).toBe(LEVELS[14]);
   });
 });
 
@@ -78,7 +78,7 @@ describe('tirage', () => {
 
 describe('partie sans rebond', () => {
   it('lance chaque couteau au milieu d’une fenêtre assez large, sans rien toucher', () => {
-    const level = generateLevel(80);
+    const level = generateLevel(18);
     const rotation = rotationOf(level);
     const ticks = perfectThrows(level) ?? [];
     expect(ticks).toHaveLength(level.knives);
