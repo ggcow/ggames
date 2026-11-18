@@ -1,11 +1,12 @@
 // Jeu Pandas branché sur la plateforme : campagne de niveaux, écrans de jeu et de replay.
 
-import { pandas, startGrid } from '../../../shared/games/pandas/definition.ts';
+import { LIVES, pandas, startGrid } from '../../../shared/games/pandas/definition.ts';
 import { parseLiveState } from '../../../shared/games/pandas/rules.ts';
 import { h } from '../../platform/dom.ts';
 import { campaignMethods } from '../campaign.ts';
 import type { ClientGame } from '../client-game.ts';
-import { livesText, RACE_SIZE, renderMiniGrid } from './board.ts';
+import { livesText } from '../puzzle-frame.ts';
+import { RACE_SIZE, renderMiniGrid } from './board.ts';
 import { mountPandasPlay } from './play.ts';
 import { mountPandasReplay } from './replay.ts';
 import { pandasStatus } from './status.ts';
@@ -32,7 +33,7 @@ export const pandasClient: ClientGame = {
 
   liveTag(state) {
     const live = parseLiveState(state);
-    return live ? livesText(live.misses) : null;
+    return live ? livesText(live.misses, LIVES) : null;
   },
 
   liveStatus(state, value) {

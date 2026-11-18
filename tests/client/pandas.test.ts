@@ -84,7 +84,7 @@ describe('partie', () => {
     cells(host)[cell]?.click();
     cells(host)[cell]?.click();
   };
-  const lives = (host: HTMLElement) => host.querySelector('.pd-lives');
+  const lives = (host: HTMLElement) => host.querySelector('.lives');
 
   it('signale la grille vide dès le montage, avec trois vies et sans bouton Annuler', () => {
     const { host, onProgress } = mount();

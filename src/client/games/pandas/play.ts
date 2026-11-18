@@ -13,8 +13,8 @@ import {
 } from '../../../shared/games/pandas/definition.ts';
 import { type Grid, isSolved, liveState } from '../../../shared/games/pandas/rules.ts';
 import { h } from '../../platform/dom.ts';
-import { frameBadge, frameButton, mountPuzzleFrame } from '../puzzle-frame.ts';
-import { bindGridInput, livesText, renderGrid } from './board.ts';
+import { frameButton, livesBadge, livesText, mountPuzzleFrame } from '../puzzle-frame.ts';
+import { bindGridInput, renderGrid } from './board.ts';
 import type { PandasStrings } from './strings.ts';
 
 export interface PandasPlayOptions {
@@ -36,15 +36,14 @@ export function mountPandasPlay(host: HTMLElement, options: PandasPlayOptions): 
   let missed: number | undefined;
   let finished = false;
 
-  const lives = frameBadge();
-  lives.classList.add('pd-lives');
+  const lives = livesBadge();
   const restart = frameButton(strings.restart, () => reset());
   const table = mountPuzzleFrame(host, { badge: lives, buttons: [restart] });
   host.append(h('p', { class: 'pd-hint' }, strings.hint));
 
   const render = () => {
     const left = LIVES - state.misses.length;
-    lives.textContent = livesText(state.misses.length);
+    lives.textContent = livesText(state.misses.length, LIVES);
     lives.setAttribute('aria-label', strings.lives(left));
     restart.disabled = finished;
     renderGrid(table, grid, state.pandas, {

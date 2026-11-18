@@ -1,6 +1,6 @@
-// Cadre commun des jeux de réflexion au tour par tour : le plateau, avec une pastille sur son bord (compteur de
-// coups, vies…) pour ne pas lui prendre de hauteur sur un téléphone, puis une rangée de boutons (Recommencer,
-// Annuler…). Le jeu choisit sa pastille et ses boutons, remplit le plateau et les tient à jour.
+// Cadre commun des jeux : le plateau, avec une pastille sur son bord (compteur de coups, vies…) pour ne pas lui
+// prendre de hauteur sur un téléphone, puis une rangée de boutons (Recommencer, Annuler…). Le jeu choisit sa
+// pastille et ses boutons, remplit le plateau et les tient à jour.
 
 import { h, replaceChildren } from '../platform/dom.ts';
 
@@ -13,6 +13,15 @@ export interface PuzzleFrameOptions {
 
 /** Pastille du bord du plateau, que le jeu met à jour et confie au cadre. */
 export const frameBadge = (): HTMLElement => h('span', { class: 'counter' });
+
+/** Pastille des vies d'un jeu qui pardonne quelques erreurs : remplie par `livesText`. */
+export const livesBadge = (): HTMLElement => h('span', { class: 'counter lives' });
+
+/** Vies d'un joueur sur `lives`, en cœurs : pleins pour celles qui restent, noirs pour celles perdues. */
+export function livesText(misses: number, lives: number): string {
+  const left = Math.max(0, lives - misses);
+  return '❤️'.repeat(left) + '🖤'.repeat(lives - left);
+}
 
 /** Bouton de la rangée sous le plateau. */
 export const frameButton = (label: string, onClick: () => void): HTMLButtonElement =>

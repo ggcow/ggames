@@ -1,6 +1,5 @@
 // Affichage d'une grille de Pandas. Aucun état : on redessine toute la grille à chaque changement.
 
-import { LIVES } from '../../../shared/games/pandas/definition.ts';
 import { colOf, type Grid, type LiveView, type Pandas, rowOf } from '../../../shared/games/pandas/rules.ts';
 import { h, replaceChildren } from '../../platform/dom.ts';
 import type { PandasStrings } from './strings.ts';
@@ -206,12 +205,6 @@ export function renderGrid(host: HTMLElement, grid: Grid, pandas: Pandas, option
     ...grid.regions.map((_, cell) => renderCell(grid, cell, pandas, options)),
   );
   replaceChildren(host, element);
-}
-
-/** Vies d'un joueur, en cœurs : pleins pour celles qui restent, noirs pour celles perdues. */
-export function livesText(misses: number): string {
-  const left = Math.max(0, LIVES - misses);
-  return '❤️'.repeat(left) + '🖤'.repeat(LIVES - left);
 }
 
 /**

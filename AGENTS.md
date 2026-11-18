@@ -145,7 +145,7 @@ src/
     platform/              coquille : session, routeur, API, temps réel, salon, écrans communs, UI, i18n
     games/                 interface ClientGame + registre + un dossier par jeu
       campaign.ts          méthodes ClientGame d'une campagne (progression, cases, niveau suivant)
-      puzzle-frame.ts      cadre de partie commun : plateau, compteur de coups facultatif, boutons du jeu
+      puzzle-frame.ts      cadre de partie commun : plateau, pastille facultative (coups, vies), boutons du jeu
 pages/                     projet Cloudflare Pages : relaie /api/* vers le Worker (service binding)
 pages-staging/             même relais pour l'environnement de test
 tests/                     Vitest : shared/ (node), client/ (happy-dom), worker/ (runtime Cloudflare réel)

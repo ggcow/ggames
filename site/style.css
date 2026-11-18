@@ -1514,6 +1514,10 @@ input[type="range"] {
   flex: 1;
   max-width: 180px;
 }
+/* Vies en cœurs. */
+.counter.lives {
+  letter-spacing: 2px;
+}
 /* Compteur en pastille à cheval sur le bord haut du plateau. */
 .table > .counter {
   position: absolute;
@@ -2030,9 +2034,6 @@ input[type="range"] {
       0 0 0 2px var(--pd-edge),
       0 0 18px 6px var(--green);
   }
-}
-.pd-lives {
-  letter-spacing: 2px;
 }
 .pd-hint {
   margin: 0;

@@ -95,7 +95,7 @@ describe('fin de partie', () => {
     expect(buttons.map((button) => button.textContent)).toEqual(['⟲ Rejouer', '← Retour']);
     buttons[0]?.click();
     expect(host.querySelectorAll('.pd-cell.miss')).toHaveLength(0);
-    expect(host.querySelector('.pd-lives')?.textContent).toBe('❤️❤️❤️');
+    expect(host.querySelector('.lives')?.textContent).toBe('❤️❤️❤️');
   });
 });
 
