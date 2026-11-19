@@ -1,14 +1,16 @@
 # Mini-jeux
 
 Plateforme de mini-jeux pour téléphone, à jouer entre amis, y compris depuis la Chine.
-Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur (ou dans WeChat).
+Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur (ou dans WeChat). On peut
+aussi l'ajouter à l'écran d'accueil pour jouer en plein écran.
 
 ## Pour les joueurs
 
 - Crée un compte avec un identifiant et un mot de passe, puis connecte-toi sur n'importe quel appareil. Ton
   pseudo affiché part de l'identifiant ; le bouton Modifier de l'accueil change l'un ou l'autre (ton mot de
   passe est demandé pour changer d'identifiant).
-- L'accueil liste les jeux et les joueurs en ligne.
+- L'accueil liste les jeux et les joueurs en ligne. Son bouton « Installer l'appli » l'ajoute à l'écran
+  d'accueil (ou explique comment faire sur iPhone et depuis WeChat) ; il disparaît dans l'appli installée.
 - Pour chaque jeu : une grille de 100 niveaux sur 5 pages (20 sur une page pour Couteaux). Chacun avance à son
   rythme : un niveau se débloque quand tous les précédents sont gagnés.
 - Si un ami joue un niveau que tu n'as pas encore débloqué, tu peux le rejoindre et faire la course avec lui

@@ -3,6 +3,7 @@ import { ApiClient } from '../../src/client/platform/api.ts';
 import { ChatStore } from '../../src/client/platform/chat.ts';
 import { chatScreen, panelColumn, sideColumn } from '../../src/client/platform/chat-panel.ts';
 import type { AppContext } from '../../src/client/platform/context.ts';
+import { Installer } from '../../src/client/platform/install.ts';
 import { LiveClient } from '../../src/client/platform/live.ts';
 import { createLocalStore } from '../../src/client/platform/storage.ts';
 import { PLATFORM_STRINGS } from '../../src/client/platform/strings.ts';
@@ -19,6 +20,7 @@ function context(): AppContext {
       throw new Error('pas de connexion dans ce test');
     }, 'ws://test'),
     chat: new ChatStore(api, createLocalStore(null), me.id),
+    installer: new Installer({ userAgent: '', standalone: true }),
     lang: 'fr',
     t: PLATFORM_STRINGS.fr,
     me,

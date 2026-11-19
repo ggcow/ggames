@@ -6,14 +6,16 @@ import { chatScreen } from '../chat-panel.ts';
 import type { AppContext, ScreenHandle } from '../context.ts';
 import { h, noTranslate, replaceChildren } from '../dom.ts';
 import { gameIcon } from '../game-icon.ts';
-import { chip, errorMessage, loading, section, toast, withName } from '../ui.ts';
+import type { InstallMode } from '../install.ts';
+import { chip, errorMessage, loading, section, showModal, toast, withName } from '../ui.ts';
 import { renderOnline } from './online.ts';
 
-/** Accueil : compte, liste des jeux, joueurs en ligne. */
+/** Accueil : compte, installation de l'appli, liste des jeux, joueurs en ligne. */
 export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
   const { t, api } = ctx;
   let summaries: GameSummary[] | null = null;
   const onlineHost = h('div');
+  const installHost = h('div', { class: 'install-host' });
   const screen = chatScreen(ctx, 'single');
 
   const renderPresence = () => {
@@ -67,6 +69,37 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
       ),
     );
 
+  const installHelp: Record<Exclude<InstallMode, 'installed' | 'prompt'>, string> = {
+    ios: t.installIos,
+    wechat: t.installWechat,
+    menu: t.installMenu,
+  };
+
+  const install = () => {
+    const mode = ctx.installer.mode();
+    if (mode === 'installed') return;
+    if (mode === 'prompt') {
+      void ctx.installer.prompt();
+      return;
+    }
+    showModal([h('h3', null, t.installApp), h('p', null, installHelp[mode])], [{ label: t.close, primary: true }]);
+  };
+
+  const renderInstall = () => {
+    replaceChildren(
+      installHost,
+      ctx.installer.mode() === 'installed'
+        ? null
+        : h(
+            'button',
+            { class: 'install-card', type: 'button', on: { click: install } },
+            h('span', { class: 'install-icon' }, h('img', { attrs: { src: '/icons/icon-192.png', alt: '' } })),
+            h('span', { class: 'install-text' }, h('strong', null, t.installApp), h('small', null, t.installHint)),
+            h('span', { class: 'game-go' }, '›'),
+          ),
+    );
+  };
+
   const gameCard = (summary: GameSummary) => {
     const game = CLIENT_GAMES.get(summary.id);
     if (!game) return null;
@@ -100,9 +133,11 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
       screen.content,
       account(),
       h('div', { class: 'brand' }, h('h1', null, t.appName), h('p', null, t.tagline)),
+      installHost,
       section(t.games, h('div', { class: 'stack' }, ...summaries.map(gameCard))),
       section(t.online, onlineHost),
     );
+    renderInstall();
     renderPresence();
   };
 
@@ -117,9 +152,13 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
 
   render();
   void load();
+  const stopInstall = ctx.installer.subscribe(renderInstall);
   return {
     onDataChanged: () => void load(),
     onPresenceChanged: renderPresence,
-    dispose: screen.dispose,
+    dispose: () => {
+      stopInstall();
+      screen.dispose();
+    },
   };
 }

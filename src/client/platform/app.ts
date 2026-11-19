@@ -9,6 +9,7 @@ import { setAvatar, setAvatars } from './avatar.ts';
 import { ChatStore } from './chat.ts';
 import type { AppContext, ScreenHandle } from './context.ts';
 import { detectLang, isLang, type Lang } from './i18n.ts';
+import type { Installer } from './install.ts';
 import { LiveClient } from './live.ts';
 import { formatRoute, type GameRoute, parseRoute, type Route } from './router.ts';
 import { mountGame } from './screens/game.ts';
@@ -43,6 +44,7 @@ export interface AppDependencies {
   createSocket: (url: string) => WebSocket;
   socketBase: string;
   languages: readonly string[];
+  installer: Installer;
 }
 
 export class App {
@@ -50,6 +52,7 @@ export class App {
   private readonly store: LocalStore;
   private readonly api: ApiClient;
   private readonly live: LiveClient;
+  private readonly installer: Installer;
   private chat: ChatStore | null = null;
   private lang: Lang;
   private session: SessionResponse | null;
@@ -61,6 +64,7 @@ export class App {
     this.store = createLocalStore(deps.storage);
     this.api = new ApiClient(deps.fetch);
     this.live = new LiveClient(deps.createSocket, deps.socketBase);
+    this.installer = deps.installer;
     this.lang = this.store.get(LANG_KEY, (v) => (isLang(v) ? v : null)) ?? detectLang(deps.languages);
     this.session = this.store.get(SESSION_KEY, parseSession);
     this.api.onUnauthorized(() => this.endSession());
@@ -125,6 +129,7 @@ export class App {
       api: this.api,
       live: this.live,
       chat: this.chat,
+      installer: this.installer,
       lang: this.lang,
       t: PLATFORM_STRINGS[this.lang],
       me,
