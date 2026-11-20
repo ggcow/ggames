@@ -1,6 +1,6 @@
 import type { SessionResponse } from '../../../shared/platform/protocol.ts';
 import type { ApiClient } from '../api.ts';
-import { h, replaceChildren } from '../dom.ts';
+import { h, noTranslate, replaceChildren } from '../dom.ts';
 import type { Lang } from '../i18n.ts';
 import type { PlatformStrings } from '../strings.ts';
 import { errorMessage } from '../ui.ts';
@@ -79,7 +79,7 @@ export function mountLogin(host: HTMLElement, options: LoginOptions): void {
       'div',
       { class: 'brand big' },
       h('div', { class: 'brand-icons', attrs: { 'aria-hidden': 'true' } }, '🧪🎲🧩'),
-      h('h1', null, t.appName),
+      noTranslate(h('h1', null, t.appName)),
       h('p', null, t.tagline),
     ),
     form,

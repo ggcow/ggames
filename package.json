@@ -1,7 +1,7 @@
 {
   "name": "ggames",
   "private": true,
-  "description": "Plateforme de mini-jeux pour téléphone : comptes, progression, replays et temps réel, hébergée sur Cloudflare.",
+  "description": "Jouons ensemble (一起玩) : jeux pour téléphone entre amis, avec comptes, progression, replays et temps réel, sur Cloudflare.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --ip 0.0.0.0 --port 8787",

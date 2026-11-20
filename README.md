@@ -1,6 +1,6 @@
-# Mini-jeux
+# Jouons ensemble · 一起玩
 
-Plateforme de mini-jeux pour téléphone, à jouer entre amis, y compris depuis la Chine.
+Jeux pour téléphone, à jouer entre amis, y compris depuis la Chine.
 Rien à installer : on ouvre **https://ggames-cw2.pages.dev** dans le navigateur (ou dans WeChat). On peut
 aussi l'ajouter à l'écran d'accueil pour jouer en plein écran.
 

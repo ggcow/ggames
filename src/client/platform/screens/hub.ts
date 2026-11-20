@@ -132,7 +132,7 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
     replaceChildren(
       screen.content,
       account(),
-      h('div', { class: 'brand' }, h('h1', null, t.appName), h('p', null, t.tagline)),
+      h('div', { class: 'brand' }, noTranslate(h('h1', null, t.appName)), h('p', null, t.tagline)),
       installHost,
       section(t.games, h('div', { class: 'stack' }, ...summaries.map(gameCard))),
       section(t.online, onlineHost),

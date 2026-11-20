@@ -3,7 +3,7 @@ import { defineStrings } from './i18n.ts';
 /** Textes de la plateforme (hors jeux). */
 export const PLATFORM_STRINGS = defineStrings({
   fr: {
-    appName: 'Mini-jeux',
+    appName: 'Jouons ensemble',
     tagline: 'Joue, progresse, défie tes amis.',
     installApp: "Installer l'appli",
     installHint: "Sur l'écran d'accueil, en plein écran",
@@ -113,8 +113,8 @@ export const PLATFORM_STRINGS = defineStrings({
     passwordHint: '4 caractères minimum',
   },
   zh: {
-    appName: '小游戏',
-    tagline: '一起玩，一起闯关。',
+    appName: '一起玩',
+    tagline: '闯关、进步，挑战好友。',
     installApp: '安装应用',
     installHint: '添加到主屏幕，全屏畅玩',
     installIos: '在 Safari 中点击“分享”按钮，然后选择“添加到主屏幕”。',

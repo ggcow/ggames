@@ -25,7 +25,9 @@ Il décrit l'état actuel du projet et les règles à respecter. `CLAUDE.md` l'i
 
 ## Le produit
 
-Plateforme de mini-jeux pour téléphone, jouée entre amis, dont un en Chine continentale.
+**Jouons ensemble** (en chinois **一起玩**) : plateforme de jeux pour téléphone, jouée entre amis, dont un en Chine
+continentale. Le nom suit la langue de l'interface (titre, onglet, nom proposé par Safari iOS) ; le manifeste
+porte les deux (`Jouons ensemble · 一起玩`), et 一起玩 seul sous l'icône installée.
 
 - Chaque joueur a un compte (identifiant + mot de passe) et se connecte depuis n'importe quel appareil. Son pseudo
   affiché part de l'identifiant. Pseudo et identifiant se changent séparément depuis l'accueil (bouton Modifier) ;

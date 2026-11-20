@@ -32,6 +32,18 @@ function context(logout: () => Promise<void>): AppContext {
 }
 
 describe('accueil', () => {
+  it("écrit le nom de l'appli à l'abri de la traduction automatique", async () => {
+    expect(PLATFORM_STRINGS.fr.appName).toBe('Jouons ensemble');
+    expect(PLATFORM_STRINGS.zh.appName).toBe('一起玩');
+    const host = document.createElement('div');
+    const handle = mountHub(host, context(vi.fn(async () => undefined)));
+    await vi.waitFor(() => expect(host.querySelector('.brand')).not.toBeNull());
+    const title = host.querySelector('.brand h1');
+    expect(title?.textContent).toBe('Jouons ensemble');
+    expect(title?.getAttribute('translate')).toBe('no');
+    handle.dispose?.();
+  });
+
   it('dessine le bouton de déconnexion sans caractère, absent des polices de WeChat', async () => {
     const logout = vi.fn(async () => undefined);
     const host = document.createElement('div');

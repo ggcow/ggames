@@ -8,7 +8,14 @@ import { detectLang, formatDuration, isLang } from '../../src/client/platform/i1
 import { formatRoute, parseRoute, type Route } from '../../src/client/platform/router.ts';
 import { createLocalStore } from '../../src/client/platform/storage.ts';
 import { PLATFORM_STRINGS } from '../../src/client/platform/strings.ts';
-import { closeModals, errorMessage, screenHeader, showModal, withName } from '../../src/client/platform/ui.ts';
+import {
+  closeModals,
+  errorMessage,
+  screenHeader,
+  showAppName,
+  showModal,
+  withName,
+} from '../../src/client/platform/ui.ts';
 
 describe('router', () => {
   const routes: Route[] = [
@@ -339,5 +346,18 @@ describe('fenêtres modales', () => {
     showModal([], []);
     closeModals();
     expect(document.querySelectorAll('.modal')).toHaveLength(0);
+  });
+});
+
+describe("nom de l'appli", () => {
+  it("change l'onglet et le nom proposé par Safari iOS pour l'écran d'accueil", () => {
+    const meta = document.createElement('meta');
+    meta.name = 'apple-mobile-web-app-title';
+    meta.content = 'Jouons ensemble';
+    document.head.append(meta);
+    showAppName('一起玩');
+    expect(document.title).toBe('一起玩');
+    expect(meta.content).toBe('一起玩');
+    meta.remove();
   });
 });
