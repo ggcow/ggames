@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.30](https://github.com/ggcow/ggames/compare/v0.5.29...v0.5.30) (2026-11-20)
+
+### Fonctionnalités
+
+* **client:** appli nommée Jouons ensemble, 一起玩 en chinois ([65de771](https://github.com/ggcow/ggames/commit/65de7711b7bf8207b7344e070d821035c9bca6db))
+* **client:** bouton pour installer l'appli sur l'écran d'accueil ([f41636e](https://github.com/ggcow/ggames/commit/f41636e2617d73460c4dda22abc62aea2168943e))
+
+### Corrections
+
+* **client:** icône de déconnexion visible dans WeChat ([2760eee](https://github.com/ggcow/ggames/commit/2760eee9f45d45f2ddd33fd692c1d68d308ba105))
+
 ## [0.5.29](https://github.com/ggcow/ggames/compare/v0.5.28...v0.5.29) (2026-11-18)
 
 ### Fonctionnalités
