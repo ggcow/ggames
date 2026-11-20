@@ -1,0 +1,47 @@
+import { describe, expect, it, vi } from 'vitest';
+import { ApiClient } from '../../src/client/platform/api.ts';
+import { ChatStore } from '../../src/client/platform/chat.ts';
+import type { AppContext } from '../../src/client/platform/context.ts';
+import { Installer } from '../../src/client/platform/install.ts';
+import { LiveClient } from '../../src/client/platform/live.ts';
+import { mountHub } from '../../src/client/platform/screens/hub.ts';
+import { createLocalStore } from '../../src/client/platform/storage.ts';
+import { PLATFORM_STRINGS } from '../../src/client/platform/strings.ts';
+import type { Account } from '../../src/shared/platform/protocol.ts';
+
+const t = PLATFORM_STRINGS.fr;
+const me: Account = { id: 'abc123', name: 'Léa', created: 1, login: 'lea', avatar: '🐶' };
+
+function context(logout: () => Promise<void>): AppContext {
+  const api = new ApiClient(vi.fn(async () => new Response('[]', { status: 200 })));
+  return {
+    api,
+    live: new LiveClient(() => {
+      throw new Error('pas de connexion dans ce test');
+    }, 'ws://test'),
+    chat: new ChatStore(api, createLocalStore(null), me.id),
+    installer: new Installer({ userAgent: '', standalone: true }),
+    lang: 'fr',
+    t,
+    me,
+    navigate: vi.fn(),
+    setLang: vi.fn(),
+    setMe: vi.fn(),
+    logout,
+  };
+}
+
+describe('accueil', () => {
+  it('dessine le bouton de déconnexion sans caractère, absent des polices de WeChat', async () => {
+    const logout = vi.fn(async () => undefined);
+    const host = document.createElement('div');
+    const handle = mountHub(host, context(logout));
+    await vi.waitFor(() => expect(host.querySelector('.brand')).not.toBeNull());
+    const button = host.querySelector<HTMLButtonElement>(`button[aria-label="${t.logout}"]`);
+    expect(button?.textContent).toBe('');
+    expect(button?.querySelector('.power')).not.toBeNull();
+    button?.click();
+    expect(logout).toHaveBeenCalledOnce();
+    handle.dispose?.();
+  });
+});

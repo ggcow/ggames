@@ -65,7 +65,7 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
       h(
         'button',
         { class: 'round small', attrs: { 'aria-label': t.logout }, on: { click: () => void ctx.logout() } },
-        '⏻',
+        h('span', { class: 'power' }),
       ),
     );
 
