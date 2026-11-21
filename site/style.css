@@ -2248,9 +2248,11 @@ input[type="range"] {
     transform: translateY(calc(var(--r) * -0.05)) scale(1.02);
   }
 }
+/* Calque à part : Safari tourne la planète sans repeindre à chaque image ses dégradés, ses couteaux ni le fond. */
 .ct-spin {
   position: absolute;
   inset: 0;
+  will-change: transform;
 }
 .ct-surface {
   position: absolute;
@@ -2307,10 +2309,12 @@ input[type="range"] {
 .ct-knife.ct-shot[hidden] {
   display: none;
 }
+/* Calque à part lui aussi : en vol, il bouge à chaque image. */
 .ct-knife.ct-shot {
   top: calc(var(--s) * 0.36);
   z-index: 2;
   transform: translateY(calc(var(--r) - var(--sink) + var(--d, 1) * var(--run)));
+  will-change: transform;
 }
 .ct-knife.ct-shot.bounce {
   animation: ct-bounce 0.5s ease-in forwards;

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import type { GameView } from '../../src/client/games/client-game.ts';
 import { degrees, MINI_STAGE, renderMiniTarget, stageSide } from '../../src/client/games/couteaux/board.ts';
@@ -322,5 +323,20 @@ describe('replay', () => {
     const { host, slider } = mountReplay('zz.!');
     expect(slider.max).toBe(String(TICKS_PER_SECOND));
     expect(planted(host)).toBe(0);
+  });
+});
+
+/** Déclarations de la règle `selector` de la feuille de style du site (chemin depuis la racine, où tourne Vitest). */
+function cssRule(selector: string): string {
+  const css = readFileSync('site/style.css', 'utf8');
+  const start = css.indexOf(`\n${selector} {`);
+  return start < 0 ? '' : css.slice(start, css.indexOf('}', start));
+}
+
+describe('feuille de style de Couteaux', () => {
+  // Sans calque à part, Safari repeint la planète et le fond à chaque image : la partie saccade.
+  it('anime la planète et le couteau lancé chacun sur son calque', () => {
+    expect(cssRule('.ct-spin')).toContain('will-change: transform');
+    expect(cssRule('.ct-knife.ct-shot')).toContain('will-change: transform');
   });
 });
