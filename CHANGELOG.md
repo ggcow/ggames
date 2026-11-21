@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.33](https://github.com/ggcow/ggames/compare/v0.5.32...v0.5.33) (2026-11-21)
+
+### Fonctionnalités
+
+* **client:** instructions d'installation pour Chrome, Edge et Firefox sur ordinateur ([afd629e](https://github.com/ggcow/ggames/commit/afd629e500cdeff132fdeeb2890e0711da91a71b))
+* **pandas:** niveau perdu bloqué trente minutes ([5c64262](https://github.com/ggcow/ggames/commit/5c64262b8feea9ddc2da85a0c9e712b54b09044c))
+
 ## [0.5.32](https://github.com/ggcow/ggames/compare/v0.5.31...v0.5.32) (2026-11-21)
 
 ### Corrections
