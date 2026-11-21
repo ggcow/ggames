@@ -97,8 +97,9 @@ porte les deux (`Jouons ensemble · 一起玩`), et 一起玩 seul sous l'icône
   un bouton « Installer l'appli », absent dans l'appli installée. Il ouvre la fenêtre d'installation du
   navigateur quand elle existe (`beforeinstallprompt`), sinon il explique la marche à suivre : Partager puis
   « Sur l'écran d'accueil » dans Safari iOS, ouvrir la page dans le navigateur depuis WeChat (qui n'installe
-  rien), menu du navigateur ailleurs (`client/platform/install.ts`). Pas de service worker : le jeu demande le
-  réseau, et un cache risquerait de servir un client périmé.
+  rien), le chemin du menu de Chrome ou d'Edge sur ordinateur, Chrome ou Edge depuis Firefox sur ordinateur (qui
+  n'installe rien), menu du navigateur ailleurs (`client/platform/install.ts`). Pas de service worker : le jeu
+  demande le réseau, et un cache risquerait de servir un client périmé.
 - Les niveaux de chaque jeu sont générés une fois pour toutes et enregistrés dans le projet, jamais à la volée.
 - Premier jeu : **Fioles** (trier des couleurs dans des fioles), avec une campagne de 100 niveaux.
 - Deuxième jeu : **Bouquets** (réunir trois fleurs pareilles devant un pot ; des couches cachées avancent quand

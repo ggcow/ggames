@@ -72,6 +72,9 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
   const installHelp: Record<Exclude<InstallMode, 'installed' | 'prompt'>, string> = {
     ios: t.installIos,
     wechat: t.installWechat,
+    chrome: t.installChrome,
+    edge: t.installEdge,
+    firefox: t.installFirefox,
     menu: t.installMenu,
   };
 

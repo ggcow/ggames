@@ -10,6 +10,12 @@ export const PLATFORM_STRINGS = defineStrings({
     installIos: "Dans Safari, touchez le bouton Partager, puis « Sur l'écran d'accueil ».",
     installWechat:
       "WeChat n'installe pas d'appli : ouvrez le menu ··· en haut à droite, choisissez « Ouvrir dans le navigateur », puis installez depuis le navigateur.",
+    installChrome:
+      "Cliquez sur l'icône d'installation à droite de la barre d'adresse, ou ouvrez le menu ⋮, puis « Caster, enregistrer et partager » et « Installer la page en tant qu'application ».",
+    installEdge:
+      "Cliquez sur l'icône d'installation à droite de la barre d'adresse, ou ouvrez le menu ···, puis « Applications » et « Installer ce site en tant qu'application ».",
+    installFirefox:
+      "Firefox n'installe pas d'appli sur ordinateur : ouvrez cette page dans Chrome ou Edge pour l'installer.",
     installMenu: "Ouvrez le menu du navigateur, puis « Installer l'application » ou « Ajouter à l'écran d'accueil ».",
     switchLang: 'Passer en chinois',
     langShort: '中',
@@ -124,6 +130,9 @@ export const PLATFORM_STRINGS = defineStrings({
     installHint: '添加到主屏幕，全屏畅玩',
     installIos: '在 Safari 中点击“分享”按钮，然后选择“添加到主屏幕”。',
     installWechat: '微信内无法安装应用：点击右上角的 ··· 菜单，选择“在浏览器中打开”，再从浏览器安装。',
+    installChrome: '点击地址栏右侧的安装图标，或打开 ⋮ 菜单，选择“投放、保存和分享”，再选择“将页面作为应用安装”。',
+    installEdge: '点击地址栏右侧的安装图标，或打开 ··· 菜单，选择“应用”，再选择“将此站点作为应用安装”。',
+    installFirefox: 'Firefox 在电脑上无法安装应用：请在 Chrome 或 Edge 中打开本页面再安装。',
     installMenu: '打开浏览器菜单，选择“安装应用”或“添加到主屏幕”。',
     switchLang: '切换到法语',
     langShort: 'Fr',

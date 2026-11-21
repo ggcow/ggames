@@ -10,9 +10,10 @@ const isInstallPromptEvent = (event: Event): event is InstallPromptEvent =>
 
 /**
  * Façon d'installer l'application depuis le navigateur courant : déjà installée, fenêtre d'installation du
- * navigateur, ou instructions (Safari iOS, WeChat qui n'installe rien, menu d'un autre navigateur).
+ * navigateur, ou instructions (Safari iOS, WeChat qui n'installe rien, Chrome ou Edge sur ordinateur, Firefox sur
+ * ordinateur qui n'installe rien, menu d'un autre navigateur).
  */
-export type InstallMode = 'installed' | 'prompt' | 'ios' | 'wechat' | 'menu';
+export type InstallMode = 'installed' | 'prompt' | 'ios' | 'wechat' | 'chrome' | 'edge' | 'firefox' | 'menu';
 
 export interface InstallEnvironment {
   readonly userAgent: string;
@@ -25,6 +26,11 @@ export function installMode(env: InstallEnvironment, canPrompt: boolean): Instal
   if (/MicroMessenger/i.test(env.userAgent)) return 'wechat';
   if (canPrompt) return 'prompt';
   if (/iPhone|iPad|iPod/.test(env.userAgent)) return 'ios';
+  // Sur téléphone, le menu des navigateurs propose l'écran d'accueil ; sur ordinateur, chacun a son chemin.
+  if (/Android|Mobile/.test(env.userAgent)) return 'menu';
+  if (/Firefox\//.test(env.userAgent)) return 'firefox';
+  if (/Edg\//.test(env.userAgent)) return 'edge';
+  if (/Chrome\//.test(env.userAgent) && !/OPR\//.test(env.userAgent)) return 'chrome';
   return 'menu';
 }
 

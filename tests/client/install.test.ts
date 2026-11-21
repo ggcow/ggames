@@ -14,6 +14,11 @@ const me: Account = { id: 'abc123', name: 'Léa', created: 1, login: 'lea', avat
 
 const ANDROID = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/131.0 Mobile Safari/537.36';
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 Version/17.5 Safari/604.1';
+const CHROME = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36';
+const EDGE = `${CHROME} Edg/131.0.0.0`;
+const OPERA = `${CHROME} OPR/115.0.0.0`;
+const FIREFOX = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0';
+const FIREFOX_ANDROID = 'Mozilla/5.0 (Android 14; Mobile; rv:133.0) Gecko/133.0 Firefox/133.0';
 const WECHAT = `${IPHONE} MicroMessenger/8.0.50(0x1800322c) NetType/WIFI Language/zh_CN`;
 
 const browser = (userAgent: string, standalone = false): InstallEnvironment => ({ userAgent, standalone });
@@ -70,6 +75,19 @@ describe("mode d'installation", () => {
     expect(installMode(browser(IPHONE), false)).toBe('ios');
     expect(installMode(browser(WECHAT), false)).toBe('wechat');
     expect(installMode(browser(ANDROID), false)).toBe('menu');
+  });
+
+  it('explique Chrome et Edge sur ordinateur, et renvoie Firefox vers eux', () => {
+    expect(installMode(browser(CHROME), false)).toBe('chrome');
+    expect(installMode(browser(EDGE), false)).toBe('edge');
+    expect(installMode(browser(FIREFOX), false)).toBe('firefox');
+    expect(installMode(browser(CHROME), true)).toBe('prompt');
+  });
+
+  it('garde le menu du navigateur sur téléphone et pour un navigateur inconnu sur ordinateur', () => {
+    expect(installMode(browser(FIREFOX_ANDROID), false)).toBe('menu');
+    expect(installMode(browser(OPERA), false)).toBe('menu');
+    expect(installMode(browser(''), false)).toBe('menu');
   });
 
   it("renvoie WeChat vers le navigateur, même s'il offrait une fenêtre", () => {
@@ -155,6 +173,9 @@ describe("bouton d'installation de l'accueil", () => {
     [IPHONE, t.installIos],
     [WECHAT, t.installWechat],
     [ANDROID, t.installMenu],
+    [CHROME, t.installChrome],
+    [EDGE, t.installEdge],
+    [FIREFOX, t.installFirefox],
   ])('explique comment installer (%s)', async (userAgent, help) => {
     const { host, dispose } = await hub(new Installer(browser(userAgent)));
     const card = host.querySelector<HTMLButtonElement>('.install-card');

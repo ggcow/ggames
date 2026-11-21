@@ -10,7 +10,8 @@ aussi l'ajouter à l'écran d'accueil pour jouer en plein écran.
   pseudo affiché part de l'identifiant ; le bouton Modifier de l'accueil change l'un ou l'autre (ton mot de
   passe est demandé pour changer d'identifiant).
 - L'accueil liste les jeux et les joueurs en ligne. Son bouton « Installer l'appli » l'ajoute à l'écran
-  d'accueil (ou explique comment faire sur iPhone et depuis WeChat) ; il disparaît dans l'appli installée.
+  d'accueil (ou explique comment faire sur iPhone, depuis WeChat et sur ordinateur) ; il disparaît dans l'appli
+  installée.
 - Pour chaque jeu : une grille de 100 niveaux sur 5 pages (20 sur une page pour Couteaux). Chacun avance à son
   rythme : un niveau se débloque quand tous les précédents sont gagnés ; aux Pandas, les trois premiers niveaux
   pas encore gagnés sont jouables.
