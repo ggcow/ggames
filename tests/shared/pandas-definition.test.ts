@@ -6,6 +6,7 @@ import {
   isLost,
   LOSS_COOLDOWN_MS,
   levelGrid,
+  OPEN_LEVELS,
   pandas,
   playActions,
   solutionOf,
@@ -75,15 +76,26 @@ describe('définition', () => {
     expect(startGrid('x:1')).toBeNull();
   });
 
-  it('valide les clés et ouvre les trois niveaux qui suivent le premier pas encore gagné', () => {
+  it('valide les clés et ouvre toujours les trois premiers niveaux pas encore gagnés', () => {
+    const open = (won: readonly number[]) =>
+      Array.from({ length: 100 }, (_, i) => i + 1).filter((level) =>
+        pandas.isUnlocked(`c:${level}`, new Set(won.map((n) => `c:${n}`))),
+      );
     expect(pandas.isValidKey('c:1')).toBe(true);
     expect(pandas.isValidKey('c:101')).toBe(false);
-    expect(pandas.isUnlocked('c:4', new Set())).toBe(true);
-    expect(pandas.isUnlocked('c:5', new Set())).toBe(false);
-    // Un niveau gagné plus loin ne déplace pas la fenêtre : le niveau 2 reste à gagner.
-    expect(pandas.isUnlocked('c:5', new Set(['c:1', 'c:3']))).toBe(true);
-    expect(pandas.isUnlocked('c:6', new Set(['c:1', 'c:3']))).toBe(false);
-    expect(pandas.isUnlocked('c:100', new Set(Array.from({ length: 98 }, (_, i) => `c:${i + 1}`)))).toBe(true);
+    expect(OPEN_LEVELS).toBe(3);
+    expect(open([])).toEqual([1, 2, 3]);
+    expect(open([1, 2])).toEqual([1, 2, 3, 4, 5]);
+    // Les niveaux déjà gagnés plus loin restent ouverts et ne comptent pas parmi les trois.
+    expect(open([1, 3])).toEqual([1, 2, 3, 4, 5]);
+    expect(open([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 21, 22, 73])).toEqual([
+      ...Array.from({ length: 13 }, (_, i) => i + 1),
+      21,
+      22,
+      73,
+    ]);
+    expect(open([2, 3, 4, 6])).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(open(Array.from({ length: 99 }, (_, i) => i + 1))).toHaveLength(100);
     expect(pandas.isUnlocked('c:101', new Set())).toBe(false);
   });
 

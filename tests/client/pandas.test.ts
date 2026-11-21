@@ -14,6 +14,8 @@ import { mountPandasReplay } from '../../src/client/games/pandas/replay.ts';
 import { pandasStatus } from '../../src/client/games/pandas/status.ts';
 import { PANDAS_STRINGS } from '../../src/client/games/pandas/strings.ts';
 import { createGameView } from '../../src/client/platform/context.ts';
+import { renderLevelGrid } from '../../src/client/platform/level-grid.ts';
+import { PLATFORM_STRINGS } from '../../src/client/platform/strings.ts';
 import { MAX_LEVEL } from '../../src/shared/games/campaign.ts';
 import { encodeActions, pandas } from '../../src/shared/games/pandas/definition.ts';
 import { liveState } from '../../src/shared/games/pandas/rules.ts';
@@ -54,8 +56,8 @@ describe('jeu', () => {
     const v = view({
       records: { 'c:1': [{ player: ME, value: 5, run: 'r1' }], 'c:2': [{ player: ME, value: 7, run: 'r2' }] },
     });
-    // Le niveau 3 est le premier à gagner ; les trois suivants sont ouverts aussi.
-    expect(pandasClient.levelProgress(v, ME)).toEqual({ current: 3, unlocked: 6, total: MAX_LEVEL });
+    // Niveaux 1 et 2 gagnés : les trois premiers à gagner sont 3, 4 et 5.
+    expect(pandasClient.levelProgress(v, ME)).toEqual({ current: 3, unlocked: 5, total: MAX_LEVEL });
     expect(pandasClient.levelTile(1, v)).toEqual({
       key: 'c:1',
       label: '1',
@@ -65,10 +67,41 @@ describe('jeu', () => {
       recordPerfect: false,
     });
     expect(pandasClient.levelTile(3, v).status).toBe('open');
-    expect(pandasClient.levelTile(6, v).status).toBe('open');
-    expect(pandasClient.levelTile(7, v).status).toBe('locked');
+    expect(pandasClient.levelTile(5, v).status).toBe('open');
+    expect(pandasClient.levelTile(6, v).status).toBe('locked');
     expect(pandasClient.keyLabel('c:5', 'zh')).toBe('第 5 关');
     expect(pandasClient.formatValue).toBeNull();
+  });
+
+  it('garde trois niveaux à gagner ouverts dans la grille, au-delà des niveaux déjà gagnés, sauf blocage', () => {
+    const now = 1_000_000;
+    const records = Object.fromEntries(
+      [1, 2, 4, 9].map((level) => [`c:${level}`, [{ player: ME, value: 0, run: `r${level}` }]]),
+    );
+    const grid = (lockedUntil: Record<string, number>) => {
+      const v = view({ records, lockedUntil });
+      const levels = [
+        ...renderLevelGrid({
+          progress: pandasClient.levelProgress(v, ME),
+          page: 0,
+          tile: (level) => pandasClient.levelTile(level, v),
+          positions: [],
+          raceSize: pandasClient.raceSize,
+          lockedUntil,
+          now,
+          t: PLATFORM_STRINGS.fr,
+          onPage: vi.fn(),
+          onPlay: vi.fn(),
+        }).querySelectorAll<HTMLButtonElement>('.level'),
+      ];
+      const levelsIn = (state: string) =>
+        levels.flatMap((cell, index) => (cell.classList.contains(state) ? [index + 1] : []));
+      return { done: levelsIn('done'), open: levelsIn('open'), cooling: levelsIn('cooling') };
+    };
+    expect(pandasClient.levelProgress(view({ records }), ME)).toEqual({ current: 3, unlocked: 9, total: MAX_LEVEL });
+    expect(grid({})).toEqual({ done: [1, 2, 4, 9], open: [3, 5, 6], cooling: [] });
+    // Le niveau 5 perdu il y a peu : il reste parmi les trois, bloqué, sans ouvrir le 7.
+    expect(grid({ 'c:5': now + 60_000 })).toEqual({ done: [1, 2, 4, 9], open: [3, 6], cooling: [5] });
   });
 
   it('a les mêmes textes dans chaque langue', () => {

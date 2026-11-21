@@ -36,19 +36,34 @@ describe('campagne : progression', () => {
     expect(campaignFrontier(won)).toBe(4);
   });
 
-  it('débloque un niveau quand tous les précédents sont gagnés', () => {
+  it('débloque un niveau quand tous les précédents sont gagnés, et garde ouvert un niveau gagné', () => {
     expect(campaignIsUnlocked('c:1', new Set())).toBe(true);
     expect(campaignIsUnlocked('c:4', won)).toBe(true);
     expect(campaignIsUnlocked('c:5', won)).toBe(false);
+    expect(campaignIsUnlocked('c:10', won)).toBe(true);
     expect(campaignIsUnlocked('c:11', won)).toBe(false);
     expect(campaignIsUnlocked('x:1', won)).toBe(false);
   });
 
-  it('ouvre au besoin quelques niveaux après le premier non gagné, sans dépasser la campagne', () => {
-    expect(campaignIsUnlocked('c:7', won, MAX_LEVEL, 3)).toBe(true);
-    expect(campaignIsUnlocked('c:8', won, MAX_LEVEL, 3)).toBe(false);
+  it('ouvre au besoin les premiers niveaux non gagnés, sans dépasser la campagne', () => {
+    expect(campaignIsUnlocked('c:6', won, MAX_LEVEL, 3)).toBe(true);
+    expect(campaignIsUnlocked('c:7', won, MAX_LEVEL, 3)).toBe(false);
     expect(campaignIsUnlocked('c:4', won, MAX_LEVEL, 3)).toBe(true);
+    expect(campaignIsUnlocked('c:10', won, MAX_LEVEL, 3)).toBe(true);
+    expect(campaignIsUnlocked('c:11', won, MAX_LEVEL, 3)).toBe(false);
     expect(campaignIsUnlocked('c:21', new Set(), 20, 30)).toBe(false);
+  });
+
+  it('saute les niveaux déjà gagnés pour compter les niveaux ouverts', () => {
+    // Niveaux 1, 3 et 4 gagnés : les trois premiers à gagner sont 2, 5 et 6.
+    const gaps = new Set(['c:1', 'c:3', 'c:4']);
+    const open = Array.from({ length: 10 }, (_, i) => i + 1).filter((level) =>
+      campaignIsUnlocked(campaignKey(level), gaps, MAX_LEVEL, 3),
+    );
+    expect(open).toEqual([1, 2, 3, 4, 5, 6]);
+    // Tout gagné jusqu'au 98 : il ne reste que deux niveaux à ouvrir.
+    const almost = new Set(Array.from({ length: 98 }, (_, i) => campaignKey(i + 1)));
+    expect(campaignIsUnlocked('c:100', almost, MAX_LEVEL, 3)).toBe(true);
   });
 
   it('s’arrête au dernier niveau d’une campagne plus courte', () => {

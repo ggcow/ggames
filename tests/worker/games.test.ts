@@ -414,15 +414,23 @@ describe('Pandas', () => {
     );
   });
 
-  it('ouvre les trois niveaux après le premier pas encore gagné, pas au-delà ni hors de la campagne', async () => {
+  it('ouvre les trois premiers niveaux pas encore gagnés, pas au-delà ni hors de la campagne', async () => {
     const { token } = await newPlayer();
+    const win = (level: number) =>
+      submitPandas(token, { key: `c:${level}`, status: 'won', durationMs: 1, replay: encodePandas(pandasWin(level)) });
     expect((await submitPandas(token, { key: 'c:101', status: 'abandoned', durationMs: 1, replay: '' })).status).toBe(
       400,
     );
-    const win4 = encodePandas(pandasWin(4));
-    expect((await submitPandas(token, { key: 'c:4', status: 'won', durationMs: 1, replay: win4 })).status).toBe(200);
-    const win5 = encodePandas(pandasWin(5));
-    expect((await submitPandas(token, { key: 'c:5', status: 'won', durationMs: 1, replay: win5 })).status).toBe(403);
+    expect((await win(4)).status).toBe(403);
+    expect((await win(3)).status).toBe(200);
+    // Le niveau 3 gagné, les trois premiers à gagner sont 1, 2 et 4.
+    expect((await win(4)).status).toBe(200);
+    expect((await win(6)).status).toBe(403);
+    expect((await win(5)).status).toBe(200);
+    // Un niveau déjà gagné se rejoue ; 3, 4 et 5 gagnés, les trois premiers à gagner sont 1, 2 et 6.
+    expect((await win(3)).status).toBe(200);
+    expect((await win(7)).status).toBe(403);
+    expect((await win(6)).status).toBe(200);
   });
 
   it('bloque cinq minutes, pour le seul perdant, le niveau perdu, sans bloquer les suivants', async () => {

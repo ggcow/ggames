@@ -47,7 +47,7 @@ export interface LevelTile {
 export interface LevelProgress {
   /** Niveau où en est le joueur : le premier qu'il n'a pas gagné (1 = premier niveau). */
   current: number;
-  /** Numéro du plus haut niveau jouable : `current`, ou plus loin pour un jeu qui ouvre les suivants. */
+  /** Numéro du plus haut niveau jouable : `current`, ou plus loin (niveau déjà gagné, jeu qui ouvre les suivants). */
   unlocked: number;
   /** Nombre total de niveaux. */
   total: number;

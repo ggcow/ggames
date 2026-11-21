@@ -52,8 +52,8 @@ porte les deux (`Jouons ensemble · 一起玩`), et 一起玩 seul sous l'icône
   un niveau qu'on a soi-même réussi avec un score au moins aussi bon. La fiche d'un joueur ne liste que les niveaux
   réussis par les deux ; les replays encore hors de portée y sont verrouillés.
 - Un replay se regarde sans les coups annulés : on voit le chemin final de la partie.
-- Progression individuelle : on joue le premier niveau pas encore gagné (et tous ceux d'avant ; aux Pandas, aussi
-  les trois suivants).
+- Progression individuelle : on joue le premier niveau pas encore gagné (aux Pandas, les trois premiers) et on
+  rejoue tout niveau gagné.
 - Rejoindre : un niveau verrouillé qu'un ami joue en direct peut être rejoint (course sur le même plateau, trois
   joueurs au plus, quatre aux Pandas). La victoire compte au classement mais ne fait pas avancer la
   progression. Le serveur accepte une partie sur un niveau débloqué par le joueur ou par n'importe quel autre
@@ -108,8 +108,8 @@ porte les deux (`Jouons ensemble · 一起玩`), et 一起玩 seul sous l'icône
   unique. Un toucher met ou enlève une croix (repère qui n'entre pas dans le replay), glisser le doigt en met
   sur chaque case parcourue, sans jamais en enlever ; seul un triple toucher (ou un triple clic) tente un
   panda. Un panda bien placé reste ; une tentative ratée perd la partie : une seule vie, sans cœurs affichés.
-  Un niveau perdu se bloque cinq minutes pour le perdant ; les trois niveaux qui suivent le premier pas encore
-  gagné restent jouables, pour que la progression continue. Pas de score : seule la réussite compte (ni 💎, ni
+  Un niveau perdu se bloque cinq minutes pour le perdant ; les trois premiers niveaux pas encore gagnés sont
+  jouables, déjà gagnés sautés, pour que la progression continue pendant un blocage. Pas de score : seule la réussite compte (ni 💎, ni
   record, ni classement par score, ni Annuler) ; essais, temps et replay restent. L'aperçu d'un autre joueur ne
   révèle rien de la solution : la grille part grise, chaque bosquet où il a trouvé le panda prend sa couleur, et
   « Impasse » s'affiche après son erreur ; l'état diffusé ne contient pas la case des pandas.

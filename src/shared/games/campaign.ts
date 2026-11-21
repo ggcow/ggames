@@ -1,7 +1,7 @@
 // Campagne de niveaux numérotés, commune aux jeux qui en ont une : clés `c:<niveau>` de 1 au nombre de niveaux
 // du jeu (`size`, MAX_LEVEL par défaut).
-// Progression individuelle : on joue le premier niveau pas encore gagné, tous ceux d'avant et, pour un jeu qui le
-// permet, quelques-uns après lui (`ahead`).
+// Progression individuelle : on rejoue tout niveau gagné, et on joue le premier niveau pas encore gagné ou, pour un
+// jeu qui le permet, les premiers (`open`).
 
 /**
  * Nombre de niveaux d'une campagne, sauf pour un jeu qui en déclare moins : cinq pages de la grille, enregistrés
@@ -46,10 +46,14 @@ export function campaignFrontier(won: ReadonlySet<string>, size = MAX_LEVEL): nu
 }
 
 /**
- * Vrai si `key` est un niveau que la progression du joueur a atteint : au plus `ahead` niveaux après le premier
- * qu'il n'a pas gagné.
+ * Vrai si `key` est un niveau que la progression du joueur a atteint : un niveau gagné, ou l'un des `open` premiers
+ * niveaux qu'il n'a pas encore gagnés. Un niveau gagné plus loin (en rejoignant un ami) n'en ouvre pas d'autre.
  */
-export function campaignIsUnlocked(key: string, won: ReadonlySet<string>, size = MAX_LEVEL, ahead = 0): boolean {
+export function campaignIsUnlocked(key: string, won: ReadonlySet<string>, size = MAX_LEVEL, open = 1): boolean {
   const level = parseCampaignKey(key, size);
-  return level !== null && level <= campaignFrontier(won, size) + ahead;
+  if (level === null) return false;
+  if (won.has(key)) return true;
+  let unwon = 0;
+  for (let before = 1; before <= level; before++) if (!won.has(campaignKey(before))) unwon++;
+  return unwon <= open;
 }

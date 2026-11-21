@@ -10,7 +10,7 @@ import type { ClientGame, GameView, LevelProgress, LevelTile } from './client-ga
 
 /**
  * Avancement d'un joueur : le premier niveau qu'il n'a pas gagné, et le plus haut niveau que le déblocage du jeu
- * (`GameDefinition.isUnlocked`) lui ouvre, au même niveau ou plus loin.
+ * (`GameDefinition.isUnlocked`) lui ouvre, au même niveau ou plus loin, même au-delà d'un trou.
  */
 export function campaignProgress(
   view: GameView,
@@ -20,8 +20,8 @@ export function campaignProgress(
 ): LevelProgress {
   const won = wonKeys(view.state, player);
   const current = campaignFrontier(won, size);
-  let unlocked = current;
-  while (unlocked < size && definition.isUnlocked(campaignKey(unlocked + 1), won)) unlocked++;
+  let unlocked = size;
+  while (unlocked > current && !definition.isUnlocked(campaignKey(unlocked), won)) unlocked--;
   return { current, unlocked, total: size };
 }
 

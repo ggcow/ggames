@@ -79,15 +79,15 @@ export function playActions(grid: Grid, cells: readonly number[]): PandasState[]
 /** Blocage d'un niveau après une défaite, pour le joueur qui l'a perdu. */
 export const LOSS_COOLDOWN_MS = 5 * 60 * 1000;
 
-/** Niveaux jouables après le premier pas encore gagné : un niveau bloqué n'arrête pas la progression. */
-export const AHEAD = 3;
+/** Niveaux pas encore gagnés jouables à la fois : un niveau bloqué n'arrête pas la progression. */
+export const OPEN_LEVELS = 3;
 
 export const pandas: GameDefinition = {
   id: PANDAS_ID,
   scoreOrder: 'asc',
   isValidKey: (key) => parseCampaignKey(key) !== null,
   compareKeys: campaignCompareKeys,
-  isUnlocked: (key, won) => campaignIsUnlocked(key, won, MAX_LEVEL, AHEAD),
+  isUnlocked: (key, won) => campaignIsUnlocked(key, won, MAX_LEVEL, OPEN_LEVELS),
   lossCooldownMs: LOSS_COOLDOWN_MS,
   replay(key, replay): ReplayOutcome | null {
     const grid = startGrid(key);

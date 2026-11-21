@@ -41,7 +41,7 @@ describe('niveaux', () => {
 
   it('situe chaque joueur au premier niveau qu’il n’a pas gagné', () => {
     expect(fiolesClient.levelProgress(v, ME)).toEqual({ current: 3, unlocked: 3, total: MAX_LEVEL });
-    expect(fiolesClient.levelProgress(v, OTHER)).toEqual({ current: 1, unlocked: 1, total: MAX_LEVEL });
+    expect(fiolesClient.levelProgress(v, OTHER)).toEqual({ current: 1, unlocked: 7, total: MAX_LEVEL });
     expect(fiolesClient.levelProgress(view(), ME)).toEqual({ current: 1, unlocked: 1, total: MAX_LEVEL });
     expect(fiolesClient.levelOf('c:12')).toBe(12);
     expect(fiolesClient.levelOf('x')).toBeNull();
@@ -51,7 +51,8 @@ describe('niveaux', () => {
     const joined = view({
       records: { 'c:1': [{ player: ME, value: 9, run: 'r1' }], 'c:5': [{ player: ME, value: 30, run: 'r2' }] },
     });
-    expect(fiolesClient.levelProgress(joined, ME).unlocked).toBe(2);
+    expect(fiolesClient.levelProgress(joined, ME)).toEqual({ current: 2, unlocked: 5, total: MAX_LEVEL });
+    expect(fiolesClient.levelTile(3, joined).status).toBe('locked');
     expect(fiolesClient.levelTile(5, joined).status).toBe('done');
     expect(fiolesClient.levelTile(6, joined).status).toBe('locked');
   });

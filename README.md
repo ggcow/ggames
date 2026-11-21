@@ -12,8 +12,8 @@ aussi l'ajouter à l'écran d'accueil pour jouer en plein écran.
 - L'accueil liste les jeux et les joueurs en ligne. Son bouton « Installer l'appli » l'ajoute à l'écran
   d'accueil (ou explique comment faire sur iPhone et depuis WeChat) ; il disparaît dans l'appli installée.
 - Pour chaque jeu : une grille de 100 niveaux sur 5 pages (20 sur une page pour Couteaux). Chacun avance à son
-  rythme : un niveau se débloque quand tous les précédents sont gagnés (aux Pandas, les trois niveaux suivants
-  sont jouables aussi).
+  rythme : un niveau se débloque quand tous les précédents sont gagnés ; aux Pandas, les trois premiers niveaux
+  pas encore gagnés sont jouables.
 - Si un ami joue un niveau que tu n'as pas encore débloqué, tu peux le rejoindre et faire la course avec lui
   (trois joueurs au plus, quatre aux Pandas). La victoire compte au classement, mais ta progression reste la tienne.
 - En partie, ton plateau occupe le bas de l'écran ; au-dessus, les plateaux des autres joueurs en petit.
