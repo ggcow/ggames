@@ -3,7 +3,7 @@
 import { type ChatMessage, LIMITS, type VoiceNote } from '../../shared/platform/protocol.ts';
 import { avatar } from './avatar.ts';
 import type { AppContext } from './context.ts';
-import { type Child, h, noTranslate, replaceChildren } from './dom.ts';
+import { h, noTranslate, replaceChildren } from './dom.ts';
 import { formatDuration, formatTime } from './i18n.ts';
 import { createVoiceRecorder } from './recorder.ts';
 import { errorMessage, section, toast } from './ui.ts';
@@ -206,42 +206,33 @@ export function chatPanel(ctx: AppContext): ChatPanel {
   };
 }
 
-/** Écran accompagné du salon : sous le contenu sur un téléphone, à sa droite quand la fenêtre est large. */
+/**
+ * Écran accompagné d'une barre latérale (joueurs en ligne…) et du salon : l'une puis l'autre sous le contenu sur un
+ * téléphone ; sur une fenêtre large, la barre à gauche et le salon à droite, toujours visibles sur toute la hauteur.
+ */
 export interface ChatScreen {
   /** Partie de l'écran redessinée à chaque changement. */
   content: HTMLElement;
-  /** Place contenu et salon dans `host`, une seule fois : le salon garde sa saisie et son défilement. */
+  /** Barre latérale, redessinée à chaque changement comme le contenu. */
+  side: HTMLElement;
+  /** Place contenu, barre et salon dans `host`, une seule fois : le salon garde sa saisie et son défilement. */
   show(host: HTMLElement): void;
   dispose(): void;
 }
 
-/**
- * Disposition sur une fenêtre large : `single`, une colonne de panneaux à côté du salon ; `side`, en plus,
- * une colonne latérale à gauche (`sideColumn`) quand la fenêtre est assez large.
- */
-export type ChatScreenLayout = 'single' | 'side';
-
-export function chatScreen(ctx: AppContext, layout: ChatScreenLayout): ChatScreen {
+export function chatScreen(ctx: AppContext): ChatScreen {
   const content = h('div', { class: 'screen-content' });
+  const side = h('div', { class: 'side-bar' });
   const chat = chatPanel(ctx);
   const aside = section(ctx.t.chat, chat.element);
   aside.classList.add('chat-section');
-  const element = h('div', { class: 'with-chat', attrs: { 'data-layout': layout } }, content, aside);
+  const element = h('div', { class: 'with-chat' }, content, side, aside);
   return {
     content,
+    side,
     show: (host) => {
       if (element.parentElement !== host) replaceChildren(host, element);
     },
     dispose: chat.dispose,
   };
 }
-
-/**
- * Colonne de panneaux d'un écran avec salon : sur une fenêtre large, ses panneaux restent empilés l'un sous
- * l'autre, à côté de la colonne suivante ; sur un téléphone, elle s'efface et ses panneaux suivent le fil.
- */
-export const panelColumn = (...panels: Child[]): HTMLElement => h('div', { class: 'panel-column' }, ...panels);
-
-/** Colonne latérale d'un écran `side` : à gauche sur une fenêtre large, après le reste sur un téléphone. */
-export const sideColumn = (...panels: Child[]): HTMLElement =>
-  h('div', { class: 'panel-column side-column' }, ...panels);

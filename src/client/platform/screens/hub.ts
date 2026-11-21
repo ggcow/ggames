@@ -16,7 +16,7 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
   let summaries: GameSummary[] | null = null;
   const onlineHost = h('div');
   const installHost = h('div', { class: 'install-host' });
-  const screen = chatScreen(ctx, 'single');
+  const screen = chatScreen(ctx);
 
   const renderPresence = () => {
     replaceChildren(
@@ -138,8 +138,8 @@ export function mountHub(host: HTMLElement, ctx: AppContext): ScreenHandle {
       h('div', { class: 'brand' }, noTranslate(h('h1', null, t.appName)), h('p', null, t.tagline)),
       installHost,
       section(t.games, h('div', { class: 'stack' }, ...summaries.map(gameCard))),
-      section(t.online, onlineHost),
     );
+    replaceChildren(screen.side, section(t.online, onlineHost));
     renderInstall();
     renderPresence();
   };

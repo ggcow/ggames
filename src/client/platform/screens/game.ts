@@ -2,7 +2,7 @@ import type { GameState, PlayerProgress } from '../../../shared/platform/protoco
 import { denseRanks } from '../../../shared/platform/ranking.ts';
 import type { ClientGame } from '../../games/client-game.ts';
 import { avatar } from '../avatar.ts';
-import { chatScreen, panelColumn, sideColumn } from '../chat-panel.ts';
+import { chatScreen } from '../chat-panel.ts';
 import { type AppContext, createGameView, type ScreenHandle } from '../context.ts';
 import { h, noTranslate, replaceChildren } from '../dom.ts';
 import { gameIcon } from '../game-icon.ts';
@@ -20,7 +20,7 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
   let refresh: ReturnType<typeof setTimeout> | null = null;
   const onlineHost = h('div');
   const gridHost = h('div');
-  const screen = chatScreen(ctx, 'side');
+  const screen = chatScreen(ctx);
 
   const others = () => ctx.live.presence.filter((p) => p.player !== ctx.me.id && p.game === gameId);
 
@@ -117,11 +117,8 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
   const render = () => {
     if (!state) return loading(host, t);
     screen.show(host);
-    replaceChildren(
-      screen.content,
-      panelColumn(hero(state), section(t.levels, gridHost)),
-      sideColumn(section(t.online, onlineHost), section(t.players, renderPlayers(state))),
-    );
+    replaceChildren(screen.content, hero(state), section(t.levels, gridHost));
+    replaceChildren(screen.side, section(t.online, onlineHost), section(t.players, renderPlayers(state)));
     renderPresence();
   };
 

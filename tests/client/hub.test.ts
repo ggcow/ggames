@@ -56,4 +56,15 @@ describe('accueil', () => {
     expect(logout).toHaveBeenCalledOnce();
     handle.dispose?.();
   });
+
+  it('met les joueurs en ligne dans la barre latérale, à part des jeux', async () => {
+    const host = document.createElement('div');
+    const handle = mountHub(host, context(vi.fn(async () => undefined)));
+    await vi.waitFor(() => expect(host.querySelector('.brand')).not.toBeNull());
+    const titles = (selector: string) =>
+      [...host.querySelectorAll(`${selector} .section-title`)].map((title) => title.textContent);
+    expect(titles('.side-bar')).toEqual([t.online]);
+    expect(titles('.screen-content')).toEqual([t.games]);
+    handle.dispose?.();
+  });
 });

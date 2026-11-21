@@ -66,12 +66,11 @@ porte les deux (`Jouons ensemble · 一起玩`), et 一起玩 seul sous l'icône
 - Un salon global est intégré à l'accueil et à la page d'un jeu : on échange des messages texte directement
   dans la page, sous le contenu sur un téléphone. Sur un écran large, l'accueil et la page d'un jeu
   remplissent la fenêtre : les panneaux gardent leurs proportions de téléphone, agrandis par paliers (`zoom`),
-  le salon à droite sur toute la hauteur (`chatScreen()`). La page elle-même ne défile pas : le contenu défile
-  dans sa colonne, le salon reste en place. Les panneaux d'une même `panelColumn()` restent empilés. L'accueil reste sur une colonne (En ligne sous les jeux) ; la page d'un jeu met sa colonne
-  latérale (`sideColumn()` : En ligne puis Joueurs) à gauche de la grille ; sur une fenêtre moyenne, le salon
-  s'affine pour lui laisser la place.
-  L'écran de partie n'est pas concerné. L'historique est court (50 derniers messages, 7 jours) et les messages sont limités en
-  longueur et en débit.
+  le salon à droite et la barre latérale à gauche, sur toute la hauteur (`chatScreen()`) : En ligne à l'accueil,
+  En ligne puis Joueurs sur la page d'un jeu ; sur un téléphone, la barre suit le contenu. La page elle-même ne
+  défile pas : le contenu et la barre défilent chacun dans leur colonne, barre et salon restent en place ; sur une
+  fenêtre moyenne, le salon s'affine pour laisser la place à la barre. L'écran de partie n'est pas concerné.
+  L'historique est court (50 derniers messages, 7 jours) et les messages sont limités en longueur et en débit.
 - Le salon accepte des notes vocales comme des messages normaux. Pendant une course, on peut aussi envoyer
   des messages vocaux courts : une note disparaît pour chaque destinataire après son écoute, reste visible
   pour ceux qui ne l'ont pas encore écoutée, et expire au bout de 30 secondes. Elle disparaît pour tous, auteur

@@ -52,6 +52,18 @@ describe('page d’un jeu', () => {
     screen.dispose?.();
   });
 
+  it('met les joueurs en ligne puis le classement des joueurs dans la barre latérale, la grille au centre', async () => {
+    const host = document.createElement('div');
+    const screen = mountGame(host, context(vi.fn()), fiolesClient);
+    await vi.waitFor(() => expect(host.querySelector('.level')).not.toBeNull());
+    const titles = (selector: string) =>
+      [...host.querySelectorAll(`${selector} .section-title`)].map((title) => title.textContent);
+    expect(titles('.side-bar')).toEqual([PLATFORM_STRINGS.fr.online, PLATFORM_STRINGS.fr.players]);
+    expect(titles('.screen-content')).toEqual([PLATFORM_STRINGS.fr.levels]);
+    expect(host.querySelector('.screen-content .level')).not.toBeNull();
+    screen.dispose?.();
+  });
+
   afterEach(() => vi.useRealTimers());
 
   it('compte les minutes d’un niveau bloqué, puis le rouvre de lui-même', async () => {
