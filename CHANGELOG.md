@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.31](https://github.com/ggcow/ggames/compare/v0.5.30...v0.5.31) (2026-11-21)
+
+### Fonctionnalités
+
+* **pandas:** une seule vie, triple toucher et niveau bloqué après une défaite ([5f920a5](https://github.com/ggcow/ggames/commit/5f920a528ddc828fa70b967ee85805b32ee9c47a))
+
 ## [0.5.30](https://github.com/ggcow/ggames/compare/v0.5.29...v0.5.30) (2026-11-20)
 
 ### Fonctionnalités
