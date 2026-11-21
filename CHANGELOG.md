@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.34](https://github.com/ggcow/ggames/compare/v0.5.33...v0.5.34) (2026-11-21)
+
+### Fonctionnalités
+
+* **client:** joueurs en ligne dans une barre à gauche, toujours visible sur ordinateur ([e240ec3](https://github.com/ggcow/ggames/commit/e240ec361c6a2c483b186d5558b176c2a3487604))
+
+### Corrections
+
+* **couteaux:** planète et couteau lancé sur leur propre calque ([bf548ce](https://github.com/ggcow/ggames/commit/bf548ce812d5a76343bef29538b38893ec17a72a))
+
 ## [0.5.33](https://github.com/ggcow/ggames/compare/v0.5.32...v0.5.33) (2026-11-21)
 
 ### Fonctionnalités
