@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.32](https://github.com/ggcow/ggames/compare/v0.5.31...v0.5.32) (2026-11-21)
+
+### Corrections
+
+* **pandas:** toujours trois niveaux à gagner ouverts, niveaux gagnés sautés ([5ac4632](https://github.com/ggcow/ggames/commit/5ac46329f9fed154d482c15d2c9ea92c2d860293))
+
 ## [0.5.31](https://github.com/ggcow/ggames/compare/v0.5.30...v0.5.31) (2026-11-21)
 
 ### Fonctionnalités
