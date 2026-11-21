@@ -22,7 +22,7 @@ export const couteauxClient: ClientGame = {
   ...campaignMethods(
     (level, lang) => COUTEAUX_STRINGS[lang].level(level),
     (value, lang) => COUTEAUX_STRINGS[lang].misses(value),
-    couteaux.bestPossible,
+    couteaux,
     LEVEL_COUNT,
   ),
 

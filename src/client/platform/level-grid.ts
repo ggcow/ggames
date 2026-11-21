@@ -10,6 +10,8 @@ import type { PlatformStrings } from './strings.ts';
 
 export const PAGE_SIZE = 20;
 
+const MINUTE_MS = 60_000;
+
 /** Avatars des joueurs posés sur une case, au plus ; au-delà, un compteur « +n ». */
 const MAX_MARKERS = 3;
 
@@ -29,15 +31,32 @@ export function pageCount(progress: LevelProgress, pageSize = PAGE_SIZE): number
 export const pageOfLevel = (level: number, pageSize = PAGE_SIZE): number =>
   Math.floor((Math.max(1, level) - 1) / pageSize);
 
-/** Page qui contient le plus haut niveau jouable : celle à ouvrir par défaut. */
+/** Page qui contient le niveau où en est le joueur : celle à ouvrir par défaut. */
 export const currentPage = (progress: LevelProgress, pageSize = PAGE_SIZE): number =>
-  pageOfLevel(progress.unlocked, pageSize);
+  pageOfLevel(progress.current, pageSize);
 
 /** Numéros des niveaux d'une page, bornés au nombre total de niveaux. */
 export function pageLevels(page: number, progress: LevelProgress, pageSize = PAGE_SIZE): number[] {
   const first = page * pageSize + 1;
   const last = Math.min(progress.total, first + pageSize - 1);
   return Array.from({ length: Math.max(0, last - first + 1) }, (_, i) => first + i);
+}
+
+/** Minutes entamées d'une durée en ms : ce qu'on affiche d'un blocage qui reste. */
+export const minutesLeft = (ms: number): number => Math.ceil(ms / MINUTE_MS);
+
+/** Minutes entamées avant la fin d'un blocage, ou `null` si la clé n'est pas bloquée à l'instant `now`. */
+export function cooldownMinutes(until: number | undefined, now: number): number | null {
+  return until === undefined || until <= now ? null : minutesLeft(until - now);
+}
+
+/**
+ * Délai avant que l'affichage d'un blocage change (minute suivante ou fin du blocage), ou `null` si aucune clé
+ * n'est bloquée : la grille se redessine alors.
+ */
+export function nextCooldownChange(lockedUntil: Readonly<Record<string, number>>, now: number): number | null {
+  const left = Object.values(lockedUntil).flatMap((until) => (until > now ? [until - now] : []));
+  return left.length === 0 ? null : Math.min(...left.map((ms) => ms % MINUTE_MS || MINUTE_MS));
 }
 
 /** Où se trouve un joueur dans les niveaux. */
@@ -57,8 +76,8 @@ export interface PositionsInput {
   gameId: string;
   /** Joueur qui regarde la grille. */
   me: PlayerId;
-  /** Plus haut niveau jouable d'un joueur. */
-  unlockedOf: (player: PlayerId) => number;
+  /** Niveau où en est un joueur (`LevelProgress.current`). */
+  currentOf: (player: PlayerId) => number;
   /** Le joueur a déjà joué au moins une partie de ce jeu. */
   played: (player: PlayerId) => boolean;
   /** Niveau désigné par une clé, ou null. */
@@ -66,8 +85,8 @@ export interface PositionsInput {
 }
 
 /**
- * Position de chaque joueur : le niveau qu'il joue s'il est en ligne dans ce jeu, sinon le plus haut niveau
- * qu'il a débloqué. Un joueur qui n'a jamais joué à ce jeu et n'y joue pas en direct n'a pas de position : il
+ * Position de chaque joueur : le niveau qu'il joue s'il est en ligne dans ce jeu, sinon le premier niveau qu'il
+ * n'a pas gagné. Un joueur qui n'a jamais joué à ce jeu et n'y joue pas en direct n'a pas de position : il
  * encombrerait le premier niveau. Triées du plus avancé au moins avancé.
  */
 export function playerPositions(input: PositionsInput): PlayerPosition[] {
@@ -80,7 +99,7 @@ export function playerPositions(input: PositionsInput): PlayerPosition[] {
         {
           player: player.id,
           name: player.name,
-          level: liveLevel ?? input.unlockedOf(player.id),
+          level: liveLevel ?? input.currentOf(player.id),
           live: liveLevel !== null,
           me: player.id === input.me,
         },
@@ -96,6 +115,10 @@ export interface LevelGridOptions {
   positions: readonly PlayerPosition[];
   /** Joueurs au plus dans une course du jeu (`ClientGame.raceSize`). */
   raceSize: number;
+  /** Fin du blocage de chaque clé perdue trop récemment par le joueur (`GameState.lockedUntil`). */
+  lockedUntil: Readonly<Record<string, number>>;
+  /** Heure de l'affichage, en ms. */
+  now: number;
   t: PlatformStrings;
   onPage: (page: number) => void;
   onPlay: (key: string) => void;
@@ -169,9 +192,10 @@ function renderTile(options: LevelGridOptions, level: number): HTMLElement {
   const { t } = options;
   const tile = options.tile(level);
   const here = options.positions.filter((p) => p.level === level);
+  const cooling = cooldownMinutes(options.lockedUntil[tile.key], options.now);
   // Un niveau verrouillé qu'un ami joue en ce moment peut être rejoint, tant que la course n'est pas complète.
   const joinable = canJoinRace(here.filter((p) => p.live).length, options.raceSize);
-  const state = tile.status === 'locked' && joinable ? 'join' : tile.status;
+  const state = cooling !== null ? 'cooling' : tile.status === 'locked' && joinable ? 'join' : tile.status;
   const players = here.map((p) => `${p.name}${p.live ? ` (${t.inGame})` : ''}`).join(', ');
   const record = recordText(tile, t);
   const label = [`${tile.label} ${t[`level_${state}`]}`, record].filter(Boolean).join(', ');
@@ -179,11 +203,14 @@ function renderTile(options: LevelGridOptions, level: number): HTMLElement {
     'button',
     {
       class: `level ${state}${tile.status === 'done' && tile.perfect ? ' perfect' : ''}`,
-      disabled: state === 'locked',
+      disabled: state === 'locked' || state === 'cooling',
       attrs: { 'aria-label': `${label}${players ? ` — ${players}` : ''}` },
       on: { click: () => options.onPlay(tile.key) },
     },
-    noTranslate(h('span', { class: 'level-number' }, state === 'locked' ? '🔒' : tile.label)),
+    noTranslate(
+      h('span', { class: 'level-number' }, state === 'locked' ? '🔒' : state === 'cooling' ? '⏳' : tile.label),
+    ),
+    cooling !== null ? noTranslate(h('span', { class: 'level-hint' }, t.minutesShort(cooling))) : null,
     state === 'join' ? h('span', { class: 'level-hint' }, t.join) : null,
     state === 'open' ? h('span', { class: 'level-hint' }, t.play) : null,
     renderRecord(tile, record),

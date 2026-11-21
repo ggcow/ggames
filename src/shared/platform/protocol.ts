@@ -92,6 +92,11 @@ export interface GameState {
   progress: PlayerProgress[];
   /** Classement par clé, du meilleur au moins bon. */
   records: Record<string, RecordEntry[]>;
+  /**
+   * Clés que le demandeur ne peut pas rejouer tout de suite après une défaite (`GameDefinition.lossCooldownMs`),
+   * avec la fin de chaque blocage (horloge du serveur, en ms).
+   */
+  lockedUntil: Record<string, number>;
 }
 
 /** Détail d'un joueur sur une clé. */

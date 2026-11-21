@@ -191,13 +191,15 @@ export class World extends DurableObject<Env> {
   }
 
   async getGame(token: unknown, gameId: unknown): Promise<Result<GameState>> {
-    if (!(await this.authenticate(token))) return unauthorized();
+    const me = await this.authenticate(token);
+    if (!me) return unauthorized();
     const game = findGame(gameId);
     if (!game) return unknownGame();
     return ok({
       players: this.store.listPlayers(),
       progress: this.store.progress(game.id),
       records: this.store.records(game.id, game.scoreOrder),
+      lockedUntil: this.lockedUntil(game, me.id, Date.now()),
     });
   }
 
@@ -414,7 +416,8 @@ export class World extends DurableObject<Env> {
 
   /**
    * Enregistre une partie après l'avoir rejouée : le score retenu est celui calculé par le serveur.
-   * Refusée si ni le joueur ni personne d'autre n'a débloqué la clé.
+   * Refusée si ni le joueur ni personne d'autre n'a débloqué la clé, ou si elle a commencé pendant le blocage
+   * qui suit une défaite du joueur sur cette clé.
    */
   async submitRun(
     token: unknown,
@@ -434,6 +437,7 @@ export class World extends DurableObject<Env> {
     }
     if (!game.isValidKey(key)) return fail(400, 'invalid key');
     if (!this.canPlay(game, me.id, key)) return fail(403, 'locked');
+    if (this.lockedUntil(game, me.id, Date.now() - duration)[key] !== undefined) return fail(403, 'cooldown');
     const run = this.verifiedRun(game, me, key, status, duration, replay);
     if (!run) return fail(400, 'invalid replay');
     this.store.insertRun(run);
@@ -538,6 +542,16 @@ export class World extends DurableObject<Env> {
     const won = this.store.wonKeysByPlayer(game.id);
     if (game.isUnlocked(key, won.get(player) ?? new Set())) return true;
     return [...won.values()].some((keys) => game.isUnlocked(key, keys));
+  }
+
+  /**
+   * Clés qu'un joueur ne peut pas jouer à l'instant `at` parce qu'il les a perdues trop récemment, avec la fin de
+   * chaque blocage. Une partie est refusée si elle a commencé pendant le blocage.
+   */
+  private lockedUntil(game: GameDefinition, player: PlayerId, at: number): Record<string, number> {
+    if (game.lossCooldownMs === 0) return {};
+    const losses = this.store.lastLosses(game.id, player, at - game.lossCooldownMs);
+    return Object.fromEntries([...losses].map(([key, ended]) => [key, ended + game.lossCooldownMs]));
   }
 
   /** Rejoue la partie et construit l'enregistrement. `null` si le replay ne correspond pas au statut annoncé. */

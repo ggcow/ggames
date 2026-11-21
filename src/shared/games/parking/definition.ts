@@ -93,6 +93,7 @@ export const parking: GameDefinition = {
   isValidKey: (key) => parseCampaignKey(key) !== null,
   compareKeys: campaignCompareKeys,
   isUnlocked: campaignIsUnlocked,
+  lossCooldownMs: 0,
   replay(key, replay): ReplayOutcome | null {
     const start = startBoard(key);
     const actions = decodeActions(replay);

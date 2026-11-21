@@ -13,6 +13,7 @@ import { avatar, avatarGroup } from '../avatar.ts';
 import { type AppContext, canJoinRace, createGameView, rivalsOn, type ScreenHandle, wonKeys } from '../context.ts';
 import { type Child, h, noTranslate, replaceChildren } from '../dom.ts';
 import { formatDuration, type Lang } from '../i18n.ts';
+import { minutesLeft } from '../level-grid.ts';
 import { reactionLabel } from '../reactions.ts';
 import { createVoiceRecorder, type VoiceRecorder } from '../recorder.ts';
 import type { PlatformStrings } from '../strings.ts';
@@ -451,22 +452,32 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     );
   };
 
-  /** Niveau suivant, proposé seulement si sa propre progression l'a débloqué après cette victoire. */
-  const nextAfterWin = (): string | null => {
+  /** Vrai si le joueur a perdu `target` trop récemment pour le rejouer. */
+  const coolingDown = (target: string): boolean => (view?.state.lockedUntil[target] ?? 0) > Date.now();
+
+  /**
+   * Niveau suivant, proposé seulement si sa propre progression l'ouvre après cette partie et qu'il n'est pas
+   * bloqué par une défaite.
+   */
+  const nextAfter = (won: boolean): string | null => {
     if (!view) return null;
     const next = game.nextKey(key, view);
-    const won = wonKeys(view.state, ctx.me.id).add(key);
-    return next !== null && game.definition.isUnlocked(next, won) ? next : null;
+    const keys = wonKeys(view.state, ctx.me.id);
+    if (won) keys.add(key);
+    return next !== null && game.definition.isUnlocked(next, keys) && !coolingDown(next) ? next : null;
   };
 
   const showResult = (won: boolean, value: number, records: RecordEntry[]) => {
-    const next = won ? nextAfterWin() : null;
+    // Une défaite qui bloque le niveau ne propose pas de le rejouer, mais propose le suivant s'il est ouvert.
+    const cooldown = won ? 0 : game.definition.lossCooldownMs;
+    const next = won || cooldown > 0 ? nextAfter(won) : null;
     const perfect = won && value === bestPossible;
     showModal(
       [
         h('div', { class: 'modal-emoji' }, perfect ? '💎' : won ? '🎉' : '😵'),
         h('h2', null, won ? t.won : t.lost),
         perfect ? h('p', { class: 'perfect-note' }, t.perfect) : null,
+        cooldown > 0 ? h('p', { class: 'muted' }, t.cooldownHint(minutesLeft(cooldown))) : null,
         won && format && view ? recordNote(view, records, value, game.definition.scoreOrder, t) : null,
         ...leaderboard(records, value),
       ],
@@ -475,8 +486,12 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
           ? [{ label: t.next, primary: true, action: () => ctx.navigate({ name: 'play', game: gameId, key: next }) }]
           : []),
         // Rejouer le même niveau, gagné ou non : pour améliorer son score sans repasser par la grille.
-        { label: t.playAgain, primary: next === null, action: start },
-        { label: t.back, action: () => ctx.navigate({ name: 'game', game: gameId }) },
+        ...(cooldown > 0 ? [] : [{ label: t.playAgain, primary: next === null, action: start }]),
+        {
+          label: t.back,
+          primary: cooldown > 0 && next === null,
+          action: () => ctx.navigate({ name: 'game', game: gameId }),
+        },
       ],
     );
   };
@@ -489,6 +504,19 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
     const won = wonKeys(state, ctx.me.id);
     return game.definition.isUnlocked(key, won) || won.has(key) || canJoinRace(rivals().length, game.raceSize);
   };
+
+  const showCooldown = (until: number) =>
+    replaceChildren(
+      host,
+      screenHeader(game.keyLabel(key, ctx.lang), () => ctx.navigate({ name: 'game', game: gameId }), t),
+      h(
+        'div',
+        { class: 'empty' },
+        h('span', { class: 'empty-icon' }, '⏳'),
+        h('h2', null, t.cooldown),
+        h('p', { class: 'muted' }, t.cooldownHint(minutesLeft(until - Date.now()))),
+      ),
+    );
 
   const showLocked = () =>
     replaceChildren(
@@ -511,6 +539,8 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         view = createGameView(state, ctx.me.id, ctx.lang);
         renderRecord();
         if (!first) return;
+        const until = state.lockedUntil[key];
+        if (until !== undefined && coolingDown(key)) return showCooldown(until);
         if (!canPlay(state)) return showLocked();
         replaceChildren(
           host,

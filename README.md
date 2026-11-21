@@ -12,11 +12,13 @@ aussi l'ajouter à l'écran d'accueil pour jouer en plein écran.
 - L'accueil liste les jeux et les joueurs en ligne. Son bouton « Installer l'appli » l'ajoute à l'écran
   d'accueil (ou explique comment faire sur iPhone et depuis WeChat) ; il disparaît dans l'appli installée.
 - Pour chaque jeu : une grille de 100 niveaux sur 5 pages (20 sur une page pour Couteaux). Chacun avance à son
-  rythme : un niveau se débloque quand tous les précédents sont gagnés.
+  rythme : un niveau se débloque quand tous les précédents sont gagnés (aux Pandas, les trois niveaux suivants
+  sont jouables aussi).
 - Si un ami joue un niveau que tu n'as pas encore débloqué, tu peux le rejoindre et faire la course avec lui
   (trois joueurs au plus, quatre aux Pandas). La victoire compte au classement, mais ta progression reste la tienne.
 - En partie, ton plateau occupe le bas de l'écran ; au-dessus, les plateaux des autres joueurs en petit.
-  Après une victoire, Rejouer relance le même niveau pour améliorer ton score.
+  Après une victoire, Rejouer relance le même niveau pour améliorer ton score. Aux Pandas, un niveau perdu se
+  bloque cinq minutes.
 - Sur la grille, chaque joueur qui a déjà joué apparaît sur son niveau (celui qu'il joue s'il est en ligne).
 - La progression de chacun (niveaux réussis, parties, temps de jeu), les classements et le replay des parties
   gagnées sur les niveaux que tu as toi-même réussis. À égalité, même rang, et le suivant prend le rang
@@ -50,13 +52,13 @@ aussi l'ajouter à l'écran d'accueil pour jouer en plein écran.
 
 ### Jeux
 
-| Jeu         | Principe                                                                         | Extras                          |
-| ----------- | -------------------------------------------------------------------------------- | ------------------------------- |
-| 🧪 Fioles   | Verser les couleurs jusqu'à ce que chaque fiole soit d'une seule couleur         | 100 niveaux                     |
-| 💐 Bouquets | Glisser les fleurs de pot en pot : trois pareilles devant un pot font un bouquet | 100 niveaux                     |
-| 🐼 Pandas   | Un panda par ligne, par colonne et par bosquet, sans que deux pandas se touchent | 100 niveaux, 3 vies, sans score |
-| 🚗 Parking  | Faire glisser les véhicules pour libérer la sortie de la voiture rouge           | 100 niveaux                     |
-| 🔪 Couteaux | Lancer des couteaux dans une planète qui tourne, sans toucher ceux déjà plantés  | 20 niveaux, 3 vies              |
+| Jeu         | Principe                                                                         | Extras                         |
+| ----------- | -------------------------------------------------------------------------------- | ------------------------------ |
+| 🧪 Fioles   | Verser les couleurs jusqu'à ce que chaque fiole soit d'une seule couleur         | 100 niveaux                    |
+| 💐 Bouquets | Glisser les fleurs de pot en pot : trois pareilles devant un pot font un bouquet | 100 niveaux                    |
+| 🐼 Pandas   | Un panda par ligne, par colonne et par bosquet, sans que deux pandas se touchent | 100 niveaux, 1 vie, sans score |
+| 🚗 Parking  | Faire glisser les véhicules pour libérer la sortie de la voiture rouge           | 100 niveaux                    |
+| 🔪 Couteaux | Lancer des couteaux dans une planète qui tourne, sans toucher ceux déjà plantés  | 20 niveaux, 3 vies             |
 
 ## Fonctionnement technique
 

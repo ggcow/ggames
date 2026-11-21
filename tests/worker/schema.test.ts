@@ -198,19 +198,46 @@ describe('schéma', () => {
       sql.exec(
         "INSERT INTO players (id, name, name_key, login, login_key, password_hash, created) VALUES ('stu901', 'Ana', 'ana', 'ana', 'ana', 'x', 1)",
       );
-      const insert = (id: string, game: string) =>
+      const insert = (id: string, game: string, value: number) =>
         sql.exec(
-          "INSERT INTO runs (id, game, key, player, status, value, duration_ms, replay, ended) VALUES (?, ?, 'c:1', 'stu901', 'won', 5, 1, '', 1)",
+          "INSERT INTO runs (id, game, key, player, status, value, duration_ms, replay, ended) VALUES (?, ?, 'c:1', 'stu901', 'won', ?, 1, '', 1)",
           id,
           game,
+          value,
         );
-      insert('run301', 'parking');
-      insert('run302', 'fioles');
-      insert('run303', 'pandas');
+      insert('run301', 'parking', 5);
+      insert('run302', 'fioles', 5);
+      insert('run303', 'pandas', 0);
       sql.exec('UPDATE schema_version SET version = 11');
       migrate(sql);
       const left = sql.exec<{ id: string }>('SELECT id FROM runs ORDER BY id').toArray();
       expect(left.map((row) => row.id)).toEqual(['run302', 'run303']);
+      expect(sql.exec<{ version: number }>('SELECT version FROM schema_version').one().version).toBe(SCHEMA_VERSION);
+    });
+  });
+
+  it('supprime les victoires Pandas obtenues malgré des erreurs, et garde le reste', async () => {
+    await runInDurableObject(world(), (_instance, state) => {
+      const { sql } = state.storage;
+      sql.exec(
+        "INSERT INTO players (id, name, name_key, login, login_key, password_hash, created, avatar) VALUES ('vwx234', 'Max', 'max', 'max', 'max', 'x', 1, NULL)",
+      );
+      const insert = (id: string, game: string, status: string, value: number) =>
+        sql.exec(
+          "INSERT INTO runs (id, game, key, player, status, value, duration_ms, replay, ended) VALUES (?, ?, 'c:1', 'vwx234', ?, ?, 1, '', 1)",
+          id,
+          game,
+          status,
+          value,
+        );
+      insert('run401', 'pandas', 'won', 2);
+      insert('run402', 'pandas', 'won', 0);
+      insert('run403', 'pandas', 'lost', 3);
+      insert('run404', 'couteaux', 'won', 2);
+      sql.exec('UPDATE schema_version SET version = ?', SCHEMA_VERSION - 1);
+      migrate(sql);
+      const left = sql.exec<{ id: string }>('SELECT id FROM runs ORDER BY id').toArray();
+      expect(left.map((row) => row.id)).toEqual(['run402', 'run403', 'run404']);
       expect(sql.exec<{ version: number }>('SELECT version FROM schema_version').one().version).toBe(SCHEMA_VERSION);
     });
   });

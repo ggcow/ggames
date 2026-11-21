@@ -7,7 +7,7 @@ import { type AppContext, createGameView, type ScreenHandle } from '../context.t
 import { h, noTranslate, replaceChildren } from '../dom.ts';
 import { gameIcon } from '../game-icon.ts';
 import { formatDuration } from '../i18n.ts';
-import { currentPage, playerPositions, renderLevelGrid } from '../level-grid.ts';
+import { currentPage, nextCooldownChange, playerPositions, renderLevelGrid } from '../level-grid.ts';
 import { backButton, errorMessage, loading, section, toast } from '../ui.ts';
 import { renderOnline } from './online.ts';
 
@@ -17,6 +17,7 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
   const gameId = game.definition.id;
   let state: GameState | null = null;
   let page: number | null = null;
+  let refresh: ReturnType<typeof setTimeout> | null = null;
   const onlineHost = h('div');
   const gridHost = h('div');
   const screen = chatScreen(ctx, 'side');
@@ -25,6 +26,11 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
 
   const renderGrid = () => {
     if (!state) return;
+    const now = Date.now();
+    // Un niveau bloqué après une défaite affiche les minutes qui restent, puis se rouvre de lui-même.
+    if (refresh) clearTimeout(refresh);
+    const delay = nextCooldownChange(state.lockedUntil, now);
+    refresh = delay === null ? null : setTimeout(renderGrid, delay);
     const view = createGameView(state, ctx.me.id, ctx.lang);
     const progress = game.levelProgress(view, ctx.me.id);
     const played = new Set(state.progress.map((entry) => entry.player));
@@ -40,11 +46,13 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
           online: ctx.live.presence,
           gameId,
           me: ctx.me.id,
-          unlockedOf: (player) => game.levelProgress(view, player).unlocked,
+          currentOf: (player) => game.levelProgress(view, player).current,
           played: (player) => played.has(player),
           levelOf: (key) => game.levelOf(key),
         }),
         raceSize: game.raceSize,
+        lockedUntil: state.lockedUntil,
+        now,
         t,
         onPage: (next) => {
           page = next;
@@ -131,6 +139,9 @@ export function mountGame(host: HTMLElement, ctx: AppContext, game: ClientGame):
   return {
     onDataChanged: () => void load(),
     onPresenceChanged: renderPresence,
-    dispose: screen.dispose,
+    dispose: () => {
+      if (refresh) clearTimeout(refresh);
+      screen.dispose();
+    },
   };
 }

@@ -4,7 +4,7 @@ import {
   decodeActions,
   encodeActions,
   isLost,
-  LIVES,
+  LOSS_COOLDOWN_MS,
   levelGrid,
   pandas,
   playActions,
@@ -23,24 +23,24 @@ describe('tentatives', () => {
     expect(solution).toEqual([1, 8, 10, 17, 24]);
   });
 
-  it('pose un panda sur une case de la solution, et compte une erreur ailleurs', () => {
+  it('pose un panda sur une case de la solution, et note l’erreur ailleurs', () => {
     expect(attempt(grid, solution, START, 8)).toEqual({ pandas: [8], misses: [] });
     expect(attempt(grid, solution, { pandas: [8], misses: [] }, 1)).toEqual({ pandas: [1, 8], misses: [] });
     expect(attempt(grid, solution, START, 0)).toEqual({ pandas: [], misses: [0] });
   });
 
   it('refuse une case déjà tentée ou hors de la grille', () => {
-    expect(attempt(grid, solution, { pandas: [8], misses: [0] }, 8)).toBeNull();
-    expect(attempt(grid, solution, { pandas: [8], misses: [0] }, 0)).toBeNull();
+    expect(attempt(grid, solution, { pandas: [8], misses: [] }, 8)).toBeNull();
     expect(attempt(grid, solution, START, 25)).toBeNull();
+    expect(attempt(grid, solution, START, -1)).toBeNull();
   });
 
-  it('perd la partie à la troisième erreur, et refuse toute tentative ensuite ou après la victoire', () => {
-    expect(LIVES).toBe(3);
-    const lost = { pandas: [8], misses: [0, 2, 3] };
-    expect(isLost({ pandas: [], misses: [0, 2] })).toBe(false);
+  it('perd la partie à la première erreur, et refuse toute tentative ensuite ou après la victoire', () => {
+    const lost = { pandas: [8], misses: [0] };
+    expect(isLost({ pandas: [8], misses: [] })).toBe(false);
     expect(isLost(lost)).toBe(true);
     expect(attempt(grid, solution, lost, 1)).toBeNull();
+    expect(attempt(grid, solution, lost, 2)).toBeNull();
     expect(attempt(grid, solution, { pandas: solution, misses: [] }, 0)).toBeNull();
   });
 });
@@ -61,6 +61,7 @@ describe('replays', () => {
   it('rejoue chaque tentative, et refuse une tentative impossible', () => {
     expect(playActions(grid, [8, 0])).toEqual([START, { pandas: [8], misses: [] }, { pandas: [8], misses: [0] }]);
     expect(playActions(grid, [8, 8])).toBeNull();
+    expect(playActions(grid, [0, 8])).toBeNull();
     expect(playActions(grid, [25])).toBeNull();
   });
 });
@@ -74,23 +75,33 @@ describe('définition', () => {
     expect(startGrid('x:1')).toBeNull();
   });
 
-  it('valide les clés et suit la progression de la campagne', () => {
+  it('valide les clés et ouvre les trois niveaux qui suivent le premier pas encore gagné', () => {
     expect(pandas.isValidKey('c:1')).toBe(true);
     expect(pandas.isValidKey('c:101')).toBe(false);
-    expect(pandas.isUnlocked('c:2', new Set(['c:1']))).toBe(true);
-    expect(pandas.isUnlocked('c:3', new Set(['c:1']))).toBe(false);
+    expect(pandas.isUnlocked('c:4', new Set())).toBe(true);
+    expect(pandas.isUnlocked('c:5', new Set())).toBe(false);
+    // Un niveau gagné plus loin ne déplace pas la fenêtre : le niveau 2 reste à gagner.
+    expect(pandas.isUnlocked('c:5', new Set(['c:1', 'c:3']))).toBe(true);
+    expect(pandas.isUnlocked('c:6', new Set(['c:1', 'c:3']))).toBe(false);
+    expect(pandas.isUnlocked('c:100', new Set(Array.from({ length: 98 }, (_, i) => `c:${i + 1}`)))).toBe(true);
+    expect(pandas.isUnlocked('c:101', new Set())).toBe(false);
   });
 
-  it('reconnaît une victoire, garde le nombre d’erreurs et n’a pas de meilleur score possible', () => {
+  it('bloque un niveau cinq minutes après une défaite', () => {
+    expect(pandas.lossCooldownMs).toBe(LOSS_COOLDOWN_MS);
+    expect(LOSS_COOLDOWN_MS).toBe(5 * 60 * 1000);
+  });
+
+  it('reconnaît une victoire, sans erreur, et n’a pas de meilleur score possible', () => {
     expect(pandas.replay('c:30', encodeActions(pandasWin(30)))).toEqual({ finished: true, value: 0 });
-    expect(pandas.replay('c:1', encodeActions([0, 2, ...pandasWin(1)]))).toEqual({ finished: true, value: 2 });
+    expect(pandas.replay('c:1', encodeActions([0, ...pandasWin(1)]))).toBeNull();
     expect(pandas.bestPossible('c:30')).toBeNull();
   });
 
   it('reconnaît une partie perdue ou pas finie, et refuse un replay impossible', () => {
-    expect(pandas.replay('c:1', encodeActions([8, 0, 2, 3]))).toEqual({ finished: false, value: 3 });
+    expect(pandas.replay('c:1', encodeActions([8, 0]))).toEqual({ finished: false, value: 1 });
     expect(pandas.replay('c:1', encodeActions([8, 1]))).toEqual({ finished: false, value: 0 });
-    expect(pandas.replay('c:1', encodeActions([0, 2, 3, 1]))).toBeNull();
+    expect(pandas.replay('c:1', encodeActions([0, 2]))).toBeNull();
     expect(pandas.replay('c:1', encodeActions([...pandasWin(1), 0]))).toBeNull();
     expect(pandas.replay('c:1', 'zz')).toBeNull();
     expect(pandas.replay('x:1', '')).toBeNull();

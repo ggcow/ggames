@@ -143,6 +143,11 @@ const MIGRATIONS: readonly string[] = [
   `
   DELETE FROM runs WHERE game = 'parking';
   `,
+  // Pandas ne laisse plus qu'une vie : une erreur perd la partie. Les victoires obtenues malgré des erreurs ne se
+  // rejouent plus.
+  `
+  DELETE FROM runs WHERE game = 'pandas' AND status = 'won' AND value > 0;
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

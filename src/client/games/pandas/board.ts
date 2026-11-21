@@ -51,8 +51,11 @@ export interface GridOptions {
   revealed?: ReadonlySet<number>;
 }
 
-/** Écart maximal entre deux touchers sur la même case pour faire un double toucher. */
-export const DOUBLE_TAP_MS = 350;
+/** Écart maximal entre deux touchers successifs sur la même case pour enchaîner un triple toucher. */
+export const MULTI_TAP_MS = 350;
+
+/** Touchers enchaînés sur une même case pour tenter un panda. */
+const ATTEMPT_TAPS = 3;
 
 /** Ce que la grille demande au jeu. */
 export interface GridActions {
@@ -73,11 +76,12 @@ const cellOf = (target: EventTarget | null): number | null => {
  * Commandes d'une grille jouable, écoutées sur `host` qui la contient : la grille est redessinée à chaque
  * changement, et un geste doit survivre au redessin. Un toucher ou un clic met ou enlève une croix ; glisser le
  * doigt (ou la souris, bouton enfoncé) met une croix sur chaque case parcourue, première case comprise, sans en
- * enlever aucune : seul un toucher levé sur la case où il a commencé enlève une croix ; un double toucher, un double clic ou un clic droit tente un panda. Le premier toucher d'un double toucher a
- * déjà agi : la tentative vaut quel que soit son effet.
+ * enlever aucune : seul un toucher levé sur la case où il a commencé enlève une croix. Un triple toucher (ou un
+ * triple clic) tente un panda, et rien d'autre : une erreur perd la partie, aucun geste plus court ne doit la
+ * provoquer. Les deux premiers touchers ont déjà agi : la tentative vaut quel que soit leur effet.
  */
 export function bindGridInput(host: HTMLElement, actions: GridActions): () => void {
-  let last: { cell: number; at: number } | null = null;
+  let last: { cell: number; at: number; taps: number } | null = null;
   let drag: { start: number; current: number; moved: boolean } | null = null;
   // Un glissement se termine par un clic sur sa dernière case : il ne doit pas compter.
   let ignoreClick = false;
@@ -90,20 +94,14 @@ export function bindGridInput(host: HTMLElement, actions: GridActions): () => vo
       return;
     }
     const now = Date.now();
-    if (last?.cell === cell && now - last.at <= DOUBLE_TAP_MS) {
+    const taps = last?.cell === cell && now - last.at <= MULTI_TAP_MS ? last.taps + 1 : 1;
+    if (taps === ATTEMPT_TAPS) {
       last = null;
       actions.attempt(cell);
       return;
     }
-    last = { cell, at: now };
+    last = { cell, at: now, taps };
     actions.setMark(cell, !actions.isMarked(cell));
-  };
-  const onContextMenu = (event: MouseEvent) => {
-    const cell = cellOf(event.target);
-    if (cell === null) return;
-    event.preventDefault();
-    last = null;
-    actions.attempt(cell);
   };
   const onPointerDown = (event: PointerEvent) => {
     const cell = cellOf(event.target);
@@ -133,7 +131,6 @@ export function bindGridInput(host: HTMLElement, actions: GridActions): () => vo
   };
 
   host.addEventListener('click', onClick);
-  host.addEventListener('contextmenu', onContextMenu);
   host.addEventListener('pointerdown', onPointerDown);
   host.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerEnd);

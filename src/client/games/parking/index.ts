@@ -20,7 +20,7 @@ export const parkingClient: ClientGame = {
   ...campaignMethods(
     (level, lang) => PARKING_STRINGS[lang].level(level),
     (value, lang) => PARKING_STRINGS[lang].moves(value),
-    parking.bestPossible,
+    parking,
   ),
 
   raceSize: RACE_SIZE,

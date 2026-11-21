@@ -36,6 +36,7 @@ function view(overrides: Partial<GameState> = {}): GameView {
     ],
     progress: [],
     records: {},
+    lockedUntil: {},
     ...overrides,
   };
   return createGameView(state, ME, 'fr');
@@ -55,7 +56,7 @@ describe('jeu', () => {
 
   it('suit la campagne commune : progression, cases, noms et niveau suivant', () => {
     const v = view({ records: { 'c:1': [{ player: ME, value: 12, run: 'r1' }] } });
-    expect(bouquetsClient.levelProgress(v, ME)).toEqual({ unlocked: 2, total: MAX_LEVEL });
+    expect(bouquetsClient.levelProgress(v, ME)).toEqual({ current: 2, unlocked: 2, total: MAX_LEVEL });
     expect(bouquetsClient.levelTile(1, v)).toEqual({
       key: 'c:1',
       label: '1',

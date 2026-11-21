@@ -1249,6 +1249,14 @@ input[type="range"] {
   filter: grayscale(1);
   opacity: 0.55;
 }
+/* Niveau bloqué un moment après une défaite : le sablier, puis les minutes qui restent. */
+.level.cooling {
+  background: rgba(37, 28, 87, 0.6);
+  color: var(--muted);
+}
+.level.cooling .level-number {
+  font-size: 16px;
+}
 .level:active:not(:disabled) {
   transform: translateY(var(--press));
   box-shadow: none;
@@ -2030,7 +2038,7 @@ input[type="range"] {
   --pd-edge: #1b1340;
 }
 .pd-cell {
-  /* Toucher, double toucher et glisser : pas de sélection de texte ni de menu du système. */
+  /* Toucher, triple toucher et glisser : pas de sélection de texte ni de menu du système. */
   -webkit-touch-callout: none;
   user-select: none;
   -webkit-user-select: none;

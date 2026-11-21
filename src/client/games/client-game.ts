@@ -14,7 +14,10 @@ export interface GameView {
   playerName(id: PlayerId): string;
 }
 
-/** `done` : gagné au moins une fois. `open` : jouable. `locked` : prérequis pas encore gagné. */
+/**
+ * `done` : gagné au moins une fois. `open` : jouable. `locked` : prérequis pas encore gagné. Un niveau bloqué après
+ * une défaite garde son statut : la plateforme l'affiche bloqué d'après `GameState.lockedUntil`.
+ */
 export type LevelStatus = 'locked' | 'open' | 'done';
 
 /** Situation d'une partie en cours, pour l'indicateur compact d'un aperçu. */
@@ -42,7 +45,9 @@ export interface LevelTile {
 
 /** Avancement d'un joueur dans les niveaux d'un jeu. */
 export interface LevelProgress {
-  /** Numéro du plus haut niveau jouable (1 = premier niveau). */
+  /** Niveau où en est le joueur : le premier qu'il n'a pas gagné (1 = premier niveau). */
+  current: number;
+  /** Numéro du plus haut niveau jouable : `current`, ou plus loin pour un jeu qui ouvre les suivants. */
   unlocked: number;
   /** Nombre total de niveaux. */
   total: number;
@@ -81,7 +86,7 @@ export interface ClientGame {
    * seule la réussite compte).
    */
   readonly formatValue: ((value: number, lang: Lang) => string) | null;
-  /** Avancement d'un joueur : dimensionne la grille et situe chaque joueur dessus. */
+  /** Avancement d'un joueur : dimensionne la grille et situe chaque joueur dessus (`current`). */
   levelProgress(view: GameView, player: PlayerId): LevelProgress;
   /** Numéro du niveau désigné par une clé, ou null si la clé n'est pas un niveau. */
   levelOf(key: string): number | null;

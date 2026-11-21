@@ -1,3 +1,4 @@
+import { env, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import { encodeActions as encodeBouquets } from '../../src/shared/games/bouquets/definition.ts';
 import { campaignKey } from '../../src/shared/games/campaign.ts';
@@ -13,6 +14,7 @@ import type {
   Run,
   SubmitRunResponse,
 } from '../../src/shared/platform/protocol.ts';
+import type { World } from '../../src/worker/platform/world.ts';
 import { bouquetsWin } from '../support/bouquets.ts';
 import { couteauxLoss, couteauxWin, couteauxWinWithMiss } from '../support/couteaux.ts';
 import { fiolesLevel, solve } from '../support/fioles-solver.ts';
@@ -43,6 +45,8 @@ const detour = (board: Board, moves: number): FiolesAction[] => {
 };
 const LEVEL_2 = fiolesLevel(2);
 const WIN_2 = encodeActions(solution(LEVEL_2));
+
+const world = () => (env.WORLD as DurableObjectNamespace<World>).getByName('main');
 
 const submit = (token: string, body: unknown) => call<SubmitRunResponse>('/api/games/fioles/runs', { token, body });
 
@@ -384,20 +388,24 @@ describe('Pandas', () => {
     expect(games.body.find((game) => game.id === 'pandas')).toMatchObject({ players: 1, runs: 1 });
   });
 
-  it('enregistre une partie perdue à la troisième erreur, et refuse de la compter gagnée', async () => {
+  it('enregistre une partie perdue à la première erreur, et refuse de la compter gagnée', async () => {
     const { token } = await newPlayer();
-    // Cases 0, 2 et 3 : hors de la solution du niveau 1.
-    const lost = encodePandas([0, 2, 3]);
+    // Case 0 : hors de la solution du niveau 1.
+    const lost = encodePandas([win[0] ?? 0, 0]);
     expect((await submitPandas(token, { key: 'c:1', status: 'won', durationMs: 1, replay: lost })).status).toBe(400);
     const { status, body } = await submitPandas(token, { key: 'c:1', status: 'lost', durationMs: 1, replay: lost });
     expect(status).toBe(200);
-    expect(body.run).toMatchObject({ status: 'lost', value: 3 });
+    expect(body.run).toMatchObject({ status: 'lost', value: 1 });
   });
 
-  it('refuse une victoire incomplète ou un replay impossible', async () => {
+  it('refuse une victoire incomplète, obtenue malgré une erreur ou au replay impossible', async () => {
     const { token } = await newPlayer();
     const partial = encodePandas(win.slice(0, 2));
     expect((await submitPandas(token, { key: 'c:1', status: 'won', durationMs: 1, replay: partial })).status).toBe(400);
+    const afterMiss = encodePandas([0, ...win]);
+    expect((await submitPandas(token, { key: 'c:1', status: 'won', durationMs: 1, replay: afterMiss })).status).toBe(
+      400,
+    );
     expect((await submitPandas(token, { key: 'c:1', status: 'abandoned', durationMs: 1, replay: 'u' })).status).toBe(
       400,
     );
@@ -406,13 +414,59 @@ describe('Pandas', () => {
     );
   });
 
-  it('refuse un niveau hors de la campagne ou pas encore débloqué', async () => {
+  it('ouvre les trois niveaux après le premier pas encore gagné, pas au-delà ni hors de la campagne', async () => {
     const { token } = await newPlayer();
     expect((await submitPandas(token, { key: 'c:101', status: 'abandoned', durationMs: 1, replay: '' })).status).toBe(
       400,
     );
+    const win4 = encodePandas(pandasWin(4));
+    expect((await submitPandas(token, { key: 'c:4', status: 'won', durationMs: 1, replay: win4 })).status).toBe(200);
+    const win5 = encodePandas(pandasWin(5));
+    expect((await submitPandas(token, { key: 'c:5', status: 'won', durationMs: 1, replay: win5 })).status).toBe(403);
+  });
+
+  it('bloque cinq minutes, pour le seul perdant, le niveau perdu, sans bloquer les suivants', async () => {
+    const me = await newPlayer();
+    const friend = await newPlayer();
+    const lost = await submitPandas(me.token, { key: 'c:1', status: 'lost', durationMs: 1, replay: '00' });
+    const ended = lost.body.run.ended;
+
+    const again = await submitPandas(me.token, { key: 'c:1', status: 'won', durationMs: 1, replay });
+    expect(again.status).toBe(403);
+    expect(again.body).toEqual({ error: 'cooldown' });
+    const state = await call<GameState>('/api/games/pandas', { token: me.token });
+    expect(state.body.lockedUntil).toEqual({ 'c:1': ended + 5 * 60 * 1000 });
     const win2 = encodePandas(pandasWin(2));
-    expect((await submitPandas(token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(403);
+    expect((await submitPandas(me.token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(200);
+
+    const theirs = await call<GameState>('/api/games/pandas', { token: friend.token });
+    expect(theirs.body.lockedUntil).toEqual({});
+    expect((await submitPandas(friend.token, { key: 'c:1', status: 'won', durationMs: 1, replay })).status).toBe(200);
+  });
+
+  it('refuse une partie commencée pendant le blocage, et rouvre le niveau ensuite', async () => {
+    const me = await newPlayer();
+    const lost = await submitPandas(me.token, { key: 'c:1', status: 'lost', durationMs: 1, replay: '00' });
+    // La défaite remonte à quatre minutes : une partie de deux minutes a commencé pendant le blocage.
+    await runInDurableObject(world(), (_instance, state) => {
+      state.storage.sql.exec('UPDATE runs SET ended = ? WHERE id = ?', Date.now() - 4 * 60 * 1000, lost.body.run.id);
+    });
+    const long = await submitPandas(me.token, { key: 'c:1', status: 'won', durationMs: 2 * 60 * 1000, replay });
+    expect(long.status).toBe(403);
+    await runInDurableObject(world(), (_instance, state) => {
+      state.storage.sql.exec('UPDATE runs SET ended = ? WHERE id = ?', Date.now() - 6 * 60 * 1000, lost.body.run.id);
+    });
+    const state = await call<GameState>('/api/games/pandas', { token: me.token });
+    expect(state.body.lockedUntil).toEqual({});
+    expect((await submitPandas(me.token, { key: 'c:1', status: 'won', durationMs: 1000, replay })).status).toBe(200);
+  });
+
+  it('ne bloque rien dans un jeu sans blocage après une défaite', async () => {
+    const { token } = await newPlayer();
+    await submit(token, { key: 'c:1', status: 'lost', durationMs: 1, replay: WIN_1.slice(0, 2) });
+    const state = await call<GameState>('/api/games/fioles', { token });
+    expect(state.body.lockedUntil).toEqual({});
+    expect((await submit(token, { key: 'c:1', status: 'won', durationMs: 1, replay: WIN_1 })).status).toBe(200);
   });
 });
 

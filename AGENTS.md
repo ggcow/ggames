@@ -52,7 +52,8 @@ porte les deux (`Jouons ensemble · 一起玩`), et 一起玩 seul sous l'icône
   un niveau qu'on a soi-même réussi avec un score au moins aussi bon. La fiche d'un joueur ne liste que les niveaux
   réussis par les deux ; les replays encore hors de portée y sont verrouillés.
 - Un replay se regarde sans les coups annulés : on voit le chemin final de la partie.
-- Progression individuelle : on joue le premier niveau pas encore gagné (et tous ceux d'avant).
+- Progression individuelle : on joue le premier niveau pas encore gagné (et tous ceux d'avant ; aux Pandas, aussi
+  les trois suivants).
 - Rejoindre : un niveau verrouillé qu'un ami joue en direct peut être rejoint (course sur le même plateau, trois
   joueurs au plus, quatre aux Pandas). La victoire compte au classement mais ne fait pas avancer la
   progression. Le serveur accepte une partie sur un niveau débloqué par le joueur ou par n'importe quel autre
@@ -83,6 +84,11 @@ porte les deux (`Jouons ensemble · 一起玩`), et 一起玩 seul sous l'icône
 - Le serveur rejoue chaque partie pour calculer le score : impossible d'envoyer un faux score.
 - Score d'un jeu au tour par tour : le nombre de coups joués ; Annuler en retire un, Recommencer repart de zéro.
   En fin de partie, Rejouer relance le même niveau, même gagné, pour améliorer son score.
+- Blocage après une défaite : un jeu peut bloquer un niveau perdu, pour le seul perdant, pendant une durée qu'il
+  fixe (`lossCooldownMs`). Le serveur refuse toute partie commencée pendant le blocage et donne la fin de chaque
+  blocage du joueur avec l'état du jeu (`GameState.lockedUntil`). La case du niveau montre un sablier et les
+  minutes qui restent, puis se rouvre d'elle-même ; la fin de partie ne propose pas Rejouer, mais le niveau
+  suivant s'il est ouvert ; on ne peut pas non plus y rejoindre une course.
 - Temps réel : on voit qui est en ligne, sur quel niveau, et son plateau en direct. Dans la liste En ligne, un
   joueur en partie porte « Rejoindre » et une aura qui pulse : le toucher rejoint son niveau. L'aperçu affiche
   « Impasse » dès que le joueur ne peut plus gagner, même s'il lui reste des coups qui tournent en rond.
@@ -100,12 +106,13 @@ porte les deux (`Jouons ensemble · 一起玩`), et 一起玩 seul sous l'icône
 - Troisième jeu : **Pandas** (un panda par ligne, par colonne et par bosquet coloré, sans que deux pandas se
   touchent, même en diagonale), avec une campagne de 100 grilles de 5 à 10 cases de côté, chacune à solution
   unique. Un toucher met ou enlève une croix (repère qui n'entre pas dans le replay), glisser le doigt en met
-  sur chaque case parcourue, sans jamais en enlever ; un double toucher, un double clic ou un clic droit tente un panda. Un panda bien
-  placé reste, une tentative ratée coûte une vie : trois vies, et la troisième erreur perd la partie (Rejouer
-  la relance). Pas de score : seule la réussite compte (ni 💎, ni record, ni classement par score, ni Annuler) ;
-  essais, temps et replay restent, et le nombre d'erreurs est gardé avec chaque partie. L'aperçu d'un autre
-  joueur ne révèle rien de la solution : la grille part grise, chaque bosquet où il a trouvé le panda prend sa
-  couleur, et ses vies s'affichent à côté de son nom ; l'état diffusé ne contient pas la case des pandas.
+  sur chaque case parcourue, sans jamais en enlever ; seul un triple toucher (ou un triple clic) tente un
+  panda. Un panda bien placé reste ; une tentative ratée perd la partie : une seule vie, sans cœurs affichés.
+  Un niveau perdu se bloque cinq minutes pour le perdant ; les trois niveaux qui suivent le premier pas encore
+  gagné restent jouables, pour que la progression continue. Pas de score : seule la réussite compte (ni 💎, ni
+  record, ni classement par score, ni Annuler) ; essais, temps et replay restent. L'aperçu d'un autre joueur ne
+  révèle rien de la solution : la grille part grise, chaque bosquet où il a trouvé le panda prend sa couleur, et
+  « Impasse » s'affiche après son erreur ; l'état diffusé ne contient pas la case des pandas.
 - Quatrième jeu : **Parking** (faire glisser voitures et camions le long de leur axe pour libérer la sortie de
   la voiture rouge, sur un parking de 6 × 6 cases), avec une campagne de 100 niveaux dont la solution la plus
   courte s'allonge de 6 à 45 coups. Un glissement compte pour un coup, quelle que soit sa longueur ; on glisse
@@ -179,8 +186,9 @@ scripts/optimal.ts         écrit le meilleur score possible de chaque niveau d'
 La plateforme ne connaît aucune règle de jeu. Un jeu fournit :
 
 - côté partagé, une `GameDefinition` (`src/shared/games/game.ts`) : ordre des scores, validation des clés de
-  partie, déblocage par la progression (`isUnlocked()`), `replay()` qui rejoue une partie et calcule son score,
-  et `bestPossible()`, le meilleur score prouvé d'une clé (`null` s'il n'est pas connu) ;
+  partie, déblocage par la progression (`isUnlocked()`), blocage d'une clé après une défaite (`lossCooldownMs`,
+  0 sans blocage), `replay()` qui rejoue une partie et calcule son score, et `bestPossible()`, le meilleur score
+  prouvé d'une clé (`null` s'il n'est pas connu) ;
 - côté client, un `ClientGame` (`src/client/games/client-game.ts`) : nom, icône (emoji ou image servie par le
   site), libellés, avancement de chaque joueur
   et case de chaque niveau (`levelProgress()`, `levelOf()`, `levelTile()`), écrans de jeu et de replay, et `formatValue` pour afficher un score
@@ -189,8 +197,9 @@ La plateforme ne connaît aucune règle de jeu. Un jeu fournit :
   (`renderLiveState()`) et l'indication à côté du nom (`liveTag()` : score, vies…).
 
 La plateforme affiche la grille des niveaux (`src/client/platform/level-grid.ts`, 20 niveaux par page) à partir
-de `levelProgress()` et `levelTile()`, avec la position de chaque joueur (niveau joué en direct, sinon plus haut
-niveau débloqué). Un joueur qui n'a jamais joué à ce jeu n'y apparaît que s'il y joue en direct.
+de `levelProgress()` et `levelTile()`, avec la position de chaque joueur (niveau joué en direct, sinon premier
+niveau pas encore gagné) et les niveaux bloqués après une défaite. Un joueur qui n'a jamais joué à ce jeu n'y
+apparaît que s'il y joue en direct.
 
 ### Modèle de données (SQLite du Durable Object `World`)
 

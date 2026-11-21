@@ -100,8 +100,8 @@ describe('aperçus en direct', () => {
     }
   });
 
-  it('place trois aperçus resserrés aux Pandas, les vies à côté du nom', () => {
-    const state = liveState(pandasLevel(1), [], 1);
+  it('place trois aperçus resserrés aux Pandas, sans vies à côté du nom', () => {
+    const state = liveState(pandasLevel(1), [], 0);
     const others = ['Tom', 'Zoé', 'Max', 'Ana'].map((name) => racer(name, 'pandas', state, 1));
     const boards = renderLiveBoards(others, context(vi.fn()), 'pandas');
     expect(boards?.classList.contains('compact')).toBe(true);
@@ -109,7 +109,7 @@ describe('aperçus en direct', () => {
     const cards = boards?.querySelectorAll('.live-board') ?? [];
     expect(cards).toHaveLength(3);
     expect(cards[2]?.querySelector('.live-board-head strong')?.textContent).toBe('Max');
-    expect(cards[2]?.querySelector('.live-board-head small')?.textContent).toBe('❤️❤️🖤');
+    expect(cards[2]?.querySelector('.live-board-head small')).toBeNull();
   });
 
   it('ne montre rien sans autre joueur ni pour un jeu inconnu', () => {

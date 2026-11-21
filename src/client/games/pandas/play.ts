@@ -1,19 +1,20 @@
 // Partie de Pandas : un toucher met ou enlève une croix pour écarter une case, et glisser le doigt en met sur
-// chaque case parcourue ; un double toucher (ou un double clic, ou un clic droit) tente d'y poser un panda. Sur
-// une case de la solution, le panda reste ; ailleurs, la tentative coûte une vie, et la troisième erreur perd la
-// partie. Les tentatives forment le replay envoyé au serveur ; les croix restent sur l'écran.
+// chaque case parcourue ; un triple toucher (ou un triple clic) tente d'y poser un panda. Sur une case de la
+// solution, le panda reste ; ailleurs, la tentative perd la partie. Les tentatives forment le replay envoyé au
+// serveur ; les croix restent sur l'écran.
 
 import {
   attempt,
   encodeActions,
   isLost,
-  LIVES,
+  LOSS_COOLDOWN_MS,
   type PandasState,
   solutionOf,
 } from '../../../shared/games/pandas/definition.ts';
 import { type Grid, isSolved, liveState } from '../../../shared/games/pandas/rules.ts';
 import { h } from '../../platform/dom.ts';
-import { frameButton, livesBadge, livesText, mountPuzzleFrame } from '../puzzle-frame.ts';
+import { minutesLeft } from '../../platform/level-grid.ts';
+import { frameButton, mountPuzzleFrame } from '../puzzle-frame.ts';
 import { bindGridInput, renderGrid } from './board.ts';
 import type { PandasStrings } from './strings.ts';
 
@@ -36,15 +37,11 @@ export function mountPandasPlay(host: HTMLElement, options: PandasPlayOptions): 
   let missed: number | undefined;
   let finished = false;
 
-  const lives = livesBadge();
   const restart = frameButton(strings.restart, () => reset());
-  const table = mountPuzzleFrame(host, { badge: lives, buttons: [restart] });
-  host.append(h('p', { class: 'pd-hint' }, strings.hint));
+  const table = mountPuzzleFrame(host, { buttons: [restart] });
+  host.append(h('p', { class: 'pd-hint' }, strings.hint(minutesLeft(LOSS_COOLDOWN_MS))));
 
   const render = () => {
-    const left = LIVES - state.misses.length;
-    lives.textContent = livesText(state.misses.length, LIVES);
-    lives.setAttribute('aria-label', strings.lives(left));
     restart.disabled = finished;
     renderGrid(table, grid, state.pandas, {
       width: (host.clientWidth || window.innerWidth) - 16,

@@ -60,6 +60,7 @@ describe('badge du record', () => {
     ],
     progress: [],
     records,
+    lockedUntil: {},
   });
   const moves = (value: number) => `${value} coups`;
 
@@ -107,6 +108,7 @@ describe('classement d’un niveau', () => {
       players: ['p1', 'p2', 'p3', 'p4', 'p5'].map((id, index) => ({ id, name: id, created: index, avatar: null })),
       progress: [],
       records: {},
+      lockedUntil: {},
     },
     'p2',
     'fr',
@@ -156,7 +158,7 @@ describe('classement d’un niveau', () => {
 
 describe('meilleur score possible', () => {
   const view = createGameView(
-    { players: [{ id: 'p1', name: 'Léa', created: 1, avatar: null }], progress: [], records: {} },
+    { players: [{ id: 'p1', name: 'Léa', created: 1, avatar: null }], progress: [], records: {}, lockedUntil: {} },
     'p1',
     'fr',
   );
@@ -184,6 +186,7 @@ describe('record en fin de partie', () => {
       ],
       progress: [],
       records: {},
+      lockedUntil: {},
     },
     'p1',
     'fr',

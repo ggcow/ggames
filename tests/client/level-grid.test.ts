@@ -3,7 +3,10 @@ import type { LevelTile } from '../../src/client/games/client-game.ts';
 import { avatar, avatarOf, setAvatar, setAvatars, takenAvatars } from '../../src/client/platform/avatar.ts';
 import { RACE_SIZE } from '../../src/client/platform/context.ts';
 import {
+  cooldownMinutes,
   currentPage,
+  minutesLeft,
+  nextCooldownChange,
   type PlayerPosition,
   pageCount,
   pageLevels,
@@ -17,21 +20,25 @@ import type { Presence } from '../../src/shared/platform/protocol.ts';
 
 describe('pagination', () => {
   it.each([
-    [{ unlocked: 1, total: 9999 }, 1, 0],
-    [{ unlocked: 19, total: 9999 }, 1, 0],
-    [{ unlocked: 20, total: 9999 }, 2, 0],
-    [{ unlocked: 21, total: 9999 }, 2, 1],
-    [{ unlocked: 45, total: 9999 }, 3, 2],
-    [{ unlocked: 30, total: 30 }, 2, 1],
+    [{ current: 1, unlocked: 1, total: 9999 }, 1, 0],
+    [{ current: 19, unlocked: 19, total: 9999 }, 1, 0],
+    [{ current: 20, unlocked: 20, total: 9999 }, 2, 0],
+    [{ current: 21, unlocked: 21, total: 9999 }, 2, 1],
+    [{ current: 45, unlocked: 45, total: 9999 }, 3, 2],
+    [{ current: 30, unlocked: 30, total: 30 }, 2, 1],
+    // Des niveaux ouverts plus loin que le niveau en cours : leur page s'affiche, celle du niveau en cours s'ouvre.
+    [{ current: 18, unlocked: 21, total: 9999 }, 2, 0],
   ])('progression %j : %i page(s), page courante %i', (progress, pages, current) => {
     expect(pageCount(progress)).toBe(pages);
     expect(currentPage(progress)).toBe(current);
   });
 
   it('liste les niveaux d’une page, bornés au total', () => {
-    expect(pageLevels(0, { unlocked: 1, total: 9999 })).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
-    expect(pageLevels(1, { unlocked: 30, total: 25 })).toEqual([21, 22, 23, 24, 25]);
-    expect(pageLevels(2, { unlocked: 1, total: 25 })).toEqual([]);
+    expect(pageLevels(0, { current: 1, unlocked: 1, total: 9999 })).toEqual(
+      Array.from({ length: 20 }, (_, i) => i + 1),
+    );
+    expect(pageLevels(1, { current: 30, unlocked: 30, total: 25 })).toEqual([21, 22, 23, 24, 25]);
+    expect(pageLevels(2, { current: 1, unlocked: 1, total: 25 })).toEqual([]);
   });
 });
 
@@ -58,11 +65,13 @@ describe('grille', () => {
 
   const render = (page = 0, onPage = vi.fn(), onPlay = vi.fn()) =>
     renderLevelGrid({
-      progress: { unlocked: 3, total: 9999 },
+      progress: { current: 3, unlocked: 3, total: 9999 },
       page,
       tile,
       positions,
       raceSize: RACE_SIZE,
+      lockedUntil: {},
+      now: 0,
       t: PLATFORM_STRINGS.fr,
       onPage,
       onPlay,
@@ -92,7 +101,7 @@ describe('grille', () => {
 
   const holdersGrid = (holders: LevelTile['holders'], recordPerfect = false) =>
     renderLevelGrid({
-      progress: { unlocked: 2, total: 9999 },
+      progress: { current: 2, unlocked: 2, total: 9999 },
       page: 0,
       tile: (level) => ({
         key: `c:${level}`,
@@ -104,6 +113,8 @@ describe('grille', () => {
       }),
       positions: [],
       raceSize: RACE_SIZE,
+      lockedUntil: {},
+      now: 0,
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay: vi.fn(),
@@ -153,6 +164,50 @@ describe('grille', () => {
     expect(onPlay).toHaveBeenCalledExactlyOnceWith('c:3');
   });
 
+  const cooldownGrid = (lockedUntil: Record<string, number>, positionsOnTile: PlayerPosition[] = []) =>
+    renderLevelGrid({
+      progress: { current: 3, unlocked: 3, total: 9999 },
+      page: 0,
+      tile,
+      positions: positionsOnTile,
+      raceSize: RACE_SIZE,
+      lockedUntil,
+      now: 1_000_000,
+      t: PLATFORM_STRINGS.fr,
+      onPage: vi.fn(),
+      onPlay: vi.fn(),
+    }).querySelectorAll<HTMLButtonElement>('.level');
+
+  it('bloque un niveau perdu trop récemment, avec les minutes entamées qui restent', () => {
+    const cells = cooldownGrid({ 'c:3': 1_000_000 + 4 * 60_000 + 1, 'c:1': 1_000_000 });
+    expect(cells[2]?.classList.contains('cooling')).toBe(true);
+    expect(cells[2]?.disabled).toBe(true);
+    expect(cells[2]?.textContent).toBe('⏳5 min');
+    expect(cells[2]?.querySelector('.level-hint')?.getAttribute('translate')).toBe('no');
+    expect(cells[2]?.getAttribute('aria-label')).toBe('3 bloqué');
+    // Un blocage échu ne compte plus.
+    expect(cells[0]?.classList.contains('done')).toBe(true);
+  });
+
+  it('ne propose pas de rejoindre un niveau qu’on vient de perdre', () => {
+    const live = [{ player: 'abc123', name: 'Léa', level: 8, live: true, me: false }];
+    const cell = cooldownGrid({ 'c:8': 1_000_000 + 60_000 }, live)[7];
+    expect(cell?.classList.contains('cooling')).toBe(true);
+    expect(cell?.disabled).toBe(true);
+  });
+
+  it('compte les minutes entamées d’un blocage et prévoit quand son affichage change', () => {
+    expect(minutesLeft(1)).toBe(1);
+    expect(minutesLeft(5 * 60_000)).toBe(5);
+    expect(cooldownMinutes(undefined, 10)).toBeNull();
+    expect(cooldownMinutes(10, 10)).toBeNull();
+    expect(cooldownMinutes(10 + 60_001, 10)).toBe(2);
+    expect(nextCooldownChange({}, 0)).toBeNull();
+    expect(nextCooldownChange({ 'c:1': 0 }, 0)).toBeNull();
+    expect(nextCooldownChange({ 'c:1': 90_000, 'c:2': 130_000 }, 0)).toBe(10_000);
+    expect(nextCooldownChange({ 'c:1': 120_000 }, 0)).toBe(60_000);
+  });
+
   it('place chaque joueur sur son niveau, en direct ou non', () => {
     const cells = render().querySelectorAll('.level');
     expect(cells[1]?.querySelector('.level-live .avatar.live')?.getAttribute('aria-label')).toBe('léa — en jeu');
@@ -164,11 +219,13 @@ describe('grille', () => {
   it('propose de rejoindre un niveau verrouillé qu’un ami joue en direct', () => {
     const onPlay = vi.fn();
     const grid = renderLevelGrid({
-      progress: { unlocked: 3, total: 9999 },
+      progress: { current: 3, unlocked: 3, total: 9999 },
       page: 0,
       tile,
       positions: [{ player: 'abc123', name: 'Léa', level: 8, live: true, me: false }],
       raceSize: RACE_SIZE,
+      lockedUntil: {},
+      now: 0,
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay,
@@ -183,13 +240,15 @@ describe('grille', () => {
 
   const raceGrid = (live: number, raceSize: number) =>
     renderLevelGrid({
-      progress: { unlocked: 3, total: 9999 },
+      progress: { current: 3, unlocked: 3, total: 9999 },
       page: 0,
       tile,
       positions: ['a1', 'b2', 'c3', 'd4']
         .slice(0, live)
         .map((player) => ({ player, name: player, level: 8, live: true, me: false })),
       raceSize,
+      lockedUntil: {},
+      now: 0,
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay: vi.fn(),
@@ -208,11 +267,13 @@ describe('grille', () => {
 
   it('permet d’aller jusqu’à la page du joueur le plus avancé', () => {
     const grid = renderLevelGrid({
-      progress: { unlocked: 3, total: 9999 },
+      progress: { current: 3, unlocked: 3, total: 9999 },
       page: 0,
       tile,
       positions: [{ player: 'abc123', name: 'Léa', level: 45, live: false, me: false }],
       raceSize: RACE_SIZE,
+      lockedUntil: {},
+      now: 0,
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay: vi.fn(),
@@ -229,11 +290,13 @@ describe('grille', () => {
       me: false,
     }));
     const grid = renderLevelGrid({
-      progress: { unlocked: 3, total: 9999 },
+      progress: { current: 3, unlocked: 3, total: 9999 },
       page: 0,
       tile,
       positions: crowd,
       raceSize: RACE_SIZE,
+      lockedUntil: {},
+      now: 0,
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay: vi.fn(),
@@ -249,11 +312,13 @@ describe('grille', () => {
     expect(previous?.disabled).toBe(true);
     expect(next?.disabled).toBe(true);
     const twoPages = renderLevelGrid({
-      progress: { unlocked: 25, total: 9999 },
+      progress: { current: 25, unlocked: 25, total: 9999 },
       page: 0,
       tile,
       positions: [],
       raceSize: RACE_SIZE,
+      lockedUntil: {},
+      now: 0,
       t: PLATFORM_STRINGS.fr,
       onPage,
       onPlay: vi.fn(),
@@ -299,7 +364,7 @@ describe('avatars', () => {
 describe('traduction automatique', () => {
   it('soustrait numéros et avatars à la traduction automatique du navigateur', () => {
     const grid = renderLevelGrid({
-      progress: { unlocked: 2, total: 9999 },
+      progress: { current: 2, unlocked: 2, total: 9999 },
       page: 0,
       tile: (level) => ({
         key: `c:${level}`,
@@ -315,6 +380,8 @@ describe('traduction automatique', () => {
       }),
       positions: [],
       raceSize: RACE_SIZE,
+      lockedUntil: {},
+      now: 0,
       t: PLATFORM_STRINGS.fr,
       onPage: vi.fn(),
       onPlay: vi.fn(),
@@ -333,7 +400,7 @@ describe('positions des joueurs', () => {
     { id: 'bbb222', name: 'Tom', created: 2, avatar: null },
     { id: 'ccc333', name: 'Zoé', created: 3, avatar: null },
   ];
-  const unlocked: Record<string, number> = { aaa111: 5, bbb222: 12, ccc333: 5 };
+  const current: Record<string, number> = { aaa111: 5, bbb222: 12, ccc333: 5 };
   const presence = (player: string, game: string, key: string | null): Presence => ({
     player,
     name: '',
@@ -343,13 +410,13 @@ describe('positions des joueurs', () => {
     value: 0,
   });
 
-  it('prend le plus haut niveau débloqué, ou le niveau joué en direct, et trie du plus avancé', () => {
+  it('prend le premier niveau pas encore gagné, ou le niveau joué en direct, et trie du plus avancé', () => {
     const positions = playerPositions({
       players,
       online: [presence('ccc333', 'fioles', 'c:2'), presence('aaa111', 'autre', 'c:40')],
       gameId: 'fioles',
       me: 'aaa111',
-      unlockedOf: (id) => unlocked[id] ?? 1,
+      currentOf: (id) => current[id] ?? 1,
       played: () => true,
       levelOf: (key) => Number(key.slice(2)),
     });
@@ -366,7 +433,7 @@ describe('positions des joueurs', () => {
       online: [presence('aaa111', 'fioles', 'menu')],
       gameId: 'fioles',
       me: 'aaa111',
-      unlockedOf: () => 3,
+      currentOf: () => 3,
       played: () => true,
       levelOf: () => null,
     });
@@ -379,7 +446,7 @@ describe('positions des joueurs', () => {
       online: [presence('ccc333', 'fioles', 'c:1')],
       gameId: 'fioles',
       me: 'aaa111',
-      unlockedOf: () => 1,
+      currentOf: () => 1,
       played: (id) => id === 'bbb222',
       levelOf: (key) => Number(key.slice(2)),
     });

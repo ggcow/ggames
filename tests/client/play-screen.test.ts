@@ -13,7 +13,7 @@ import type { Account, GameState, Presence, SubmitRunResponse } from '../../src/
 import { pandasLevel, pandasSolution } from '../support/pandas.ts';
 
 const me: Account = { id: 'abc123', name: 'Léa', created: 1, login: 'lea', avatar: '🐶' };
-const state: GameState = { players: [me], progress: [], records: {} };
+const state: GameState = { players: [me], progress: [], records: {}, lockedUntil: {} };
 const won: SubmitRunResponse = {
   run: { id: 'r1', game: 'pandas', key: 'c:1', player: me.id, status: 'won', value: 5, durationMs: 1, ended: 1 },
   records: [{ player: me.id, value: 5, run: 'r1' }],
@@ -36,10 +36,10 @@ class StaticLive extends LiveClient {
 }
 
 /** Contexte réel, sans réseau : l'API simulée sert la partie et accepte la victoire. */
-function context(navigate: (route: unknown) => void, online: readonly Presence[] = []): AppContext {
+function context(navigate: (route: unknown) => void, online: readonly Presence[] = [], game = state): AppContext {
   const api = new ApiClient(
     vi.fn(async (input: string) => {
-      if (input === '/api/games/pandas') return new Response(JSON.stringify(state));
+      if (input === '/api/games/pandas') return new Response(JSON.stringify(game));
       if (input === '/api/games/pandas/runs') return new Response(JSON.stringify(won));
       return new Response(JSON.stringify([]));
     }),
@@ -61,6 +61,17 @@ function context(navigate: (route: unknown) => void, online: readonly Presence[]
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
+/** Tente un panda sur chaque case : trois touchers enchaînés, puis une pause avant la case suivante. */
+function attemptAll(host: HTMLElement, cells: readonly number[]): void {
+  const now = Date.now();
+  const clock = vi.spyOn(Date, 'now');
+  cells.forEach((cell, index) => {
+    clock.mockReturnValue(now + index * 1000);
+    for (let tap = 0; tap < 3; tap++) host.querySelectorAll<HTMLButtonElement>('.pd-cell')[cell]?.click();
+  });
+  clock.mockRestore();
+}
+
 describe('fin de partie', () => {
   afterEach(closeModals);
 
@@ -69,10 +80,7 @@ describe('fin de partie', () => {
     const host = document.createElement('div');
     mountPlay(host, context(navigate), pandasClient, 'c:1');
     await settle();
-    const cells = () => [...host.querySelectorAll<HTMLButtonElement>('.pd-cell')];
-    for (const cell of pandasSolution(pandasLevel(1))) {
-      cells()[cell]?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
-    }
+    attemptAll(host, pandasSolution(pandasLevel(1)));
     await settle();
     const buttons = [...document.querySelectorAll<HTMLButtonElement>('.modal-buttons button')];
     expect(buttons.map((button) => button.textContent)).toEqual(['Suivant', '⟲ Rejouer', '← Retour']);
@@ -82,22 +90,52 @@ describe('fin de partie', () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it('propose de recommencer après trois erreurs, avec toutes ses vies', async () => {
+  it('bloque le niveau après une erreur : pas de Rejouer, mais le niveau suivant, encore ouvert', async () => {
+    const navigate = vi.fn();
     const host = document.createElement('div');
-    mountPlay(host, context(vi.fn()), pandasClient, 'c:1');
+    mountPlay(host, context(navigate), pandasClient, 'c:1');
     await settle();
-    const cells = () => [...host.querySelectorAll<HTMLButtonElement>('.pd-cell')];
-    // Cases 0, 2 et 3 : hors de la solution du niveau 1.
-    for (const cell of [0, 2, 3]) {
-      cells()[cell]?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
-    }
+    // Case 0 : hors de la solution du niveau 1.
+    attemptAll(host, [0]);
     await settle();
     expect(document.querySelector('.modal h2')?.textContent).toBe(PLATFORM_STRINGS.fr.lost);
+    expect(document.querySelector('.modal-box')?.textContent).toContain(PLATFORM_STRINGS.fr.cooldownHint(5));
     const buttons = [...document.querySelectorAll<HTMLButtonElement>('.modal-buttons button')];
-    expect(buttons.map((button) => button.textContent)).toEqual(['⟲ Rejouer', '← Retour']);
+    expect(buttons.map((button) => button.textContent)).toEqual(['Suivant', '← Retour']);
     buttons[0]?.click();
-    expect(host.querySelectorAll('.pd-cell.miss')).toHaveLength(0);
-    expect(host.querySelector('.lives')?.textContent).toBe('❤️❤️❤️');
+    expect(navigate).toHaveBeenCalledWith({ name: 'play', game: 'pandas', key: 'c:2' });
+  });
+
+  it('ne propose pas un niveau suivant lui-même bloqué', async () => {
+    const host = document.createElement('div');
+    const blocked = { ...state, lockedUntil: { 'c:2': Date.now() + 60_000 } };
+    mountPlay(host, context(vi.fn(), [], blocked), pandasClient, 'c:1');
+    await settle();
+    attemptAll(host, [0]);
+    await settle();
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>('.modal-buttons button')];
+    expect(buttons.map((button) => button.textContent)).toEqual(['← Retour']);
+    expect(buttons[0]?.classList.contains('primary')).toBe(true);
+  });
+});
+
+describe('niveau bloqué', () => {
+  it('n’ouvre pas la grille d’un niveau perdu il y a peu, et dit dans combien de minutes il se rejoue', async () => {
+    const host = document.createElement('div');
+    const blocked = { ...state, lockedUntil: { 'c:1': Date.now() + 2 * 60_000 + 30_000 } };
+    mountPlay(host, context(vi.fn(), [], blocked), pandasClient, 'c:1');
+    await settle();
+    expect(host.querySelector('.pd-cell')).toBeNull();
+    expect(host.querySelector('.empty h2')?.textContent).toBe(PLATFORM_STRINGS.fr.cooldown);
+    expect(host.textContent).toContain(PLATFORM_STRINGS.fr.cooldownHint(3));
+  });
+
+  it('ouvre la grille une fois le blocage échu', async () => {
+    const host = document.createElement('div');
+    const expired = { ...state, lockedUntil: { 'c:1': Date.now() - 1 } };
+    mountPlay(host, context(vi.fn(), [], expired), pandasClient, 'c:1');
+    await settle();
+    expect(host.querySelector('.pd-cell')).not.toBeNull();
   });
 });
 

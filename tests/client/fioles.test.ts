@@ -24,6 +24,7 @@ function view(overrides: Partial<GameState> = {}): GameView {
     ],
     progress: [],
     records: {},
+    lockedUntil: {},
     ...overrides,
   };
   return createGameView(state, ME, 'fr');
@@ -39,9 +40,9 @@ describe('niveaux', () => {
   });
 
   it('situe chaque joueur au premier niveau qu’il n’a pas gagné', () => {
-    expect(fiolesClient.levelProgress(v, ME)).toEqual({ unlocked: 3, total: MAX_LEVEL });
-    expect(fiolesClient.levelProgress(v, OTHER)).toEqual({ unlocked: 1, total: MAX_LEVEL });
-    expect(fiolesClient.levelProgress(view(), ME)).toEqual({ unlocked: 1, total: MAX_LEVEL });
+    expect(fiolesClient.levelProgress(v, ME)).toEqual({ current: 3, unlocked: 3, total: MAX_LEVEL });
+    expect(fiolesClient.levelProgress(v, OTHER)).toEqual({ current: 1, unlocked: 1, total: MAX_LEVEL });
+    expect(fiolesClient.levelProgress(view(), ME)).toEqual({ current: 1, unlocked: 1, total: MAX_LEVEL });
     expect(fiolesClient.levelOf('c:12')).toBe(12);
     expect(fiolesClient.levelOf('x')).toBeNull();
   });

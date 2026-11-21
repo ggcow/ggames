@@ -1,11 +1,10 @@
 // Jeu Pandas branché sur la plateforme : campagne de niveaux, écrans de jeu et de replay.
 
-import { LIVES, pandas, startGrid } from '../../../shared/games/pandas/definition.ts';
+import { pandas, startGrid } from '../../../shared/games/pandas/definition.ts';
 import { parseLiveState } from '../../../shared/games/pandas/rules.ts';
 import { h } from '../../platform/dom.ts';
 import { campaignMethods } from '../campaign.ts';
 import type { ClientGame } from '../client-game.ts';
-import { livesText } from '../puzzle-frame.ts';
 import { RACE_SIZE, renderMiniGrid } from './board.ts';
 import { mountPandasPlay } from './play.ts';
 import { mountPandasReplay } from './replay.ts';
@@ -21,7 +20,7 @@ export const pandasClient: ClientGame = {
     (level, lang) => PANDAS_STRINGS[lang].level(level),
     // Seule la réussite compte : ni score, ni classement par score, ni record.
     null,
-    pandas.bestPossible,
+    pandas,
   ),
 
   raceSize: RACE_SIZE,
@@ -31,14 +30,12 @@ export const pandasClient: ClientGame = {
     return live ? renderMiniGrid(live) : null;
   },
 
-  liveTag(state) {
-    const live = parseLiveState(state);
-    return live ? livesText(live.misses, LIVES) : null;
-  },
+  // Une seule vie : rien à montrer à côté du nom, l'aperçu dit « Impasse » après l'erreur.
+  liveTag: () => null,
 
   liveStatus(state, value) {
     const live = parseLiveState(state);
-    return live ? pandasStatus(live.grid, live.found.size, value) : null;
+    return live ? pandasStatus(live, value) : null;
   },
 
   mountPlay(host, ctx) {

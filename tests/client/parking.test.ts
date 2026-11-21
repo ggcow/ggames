@@ -31,6 +31,7 @@ function view(overrides: Partial<GameState> = {}): GameView {
     players: [{ id: ME, name: 'Moi', created: 1, avatar: null }],
     progress: [],
     records: {},
+    lockedUntil: {},
     ...overrides,
   };
   return createGameView(state, ME, 'fr');
@@ -94,7 +95,7 @@ describe('jeu', () => {
     expect(parkingClient.definition.id).toBe('parking');
     expect(parkingClient.icon).toEqual({ kind: 'emoji', emoji: '🚗' });
     const v = view({ records: { 'c:1': [{ player: ME, value: OPTIMAL[0] ?? 0, run: 'r1' }] } });
-    expect(parkingClient.levelProgress(v, ME)).toEqual({ unlocked: 2, total: MAX_LEVEL });
+    expect(parkingClient.levelProgress(v, ME)).toEqual({ current: 2, unlocked: 2, total: MAX_LEVEL });
     expect(parkingClient.levelTile(1, v)).toMatchObject({ status: 'done', perfect: true, recordPerfect: true });
     expect(parkingClient.levelTile(2, v).status).toBe('open');
     expect(parkingClient.keyLabel('c:5', 'zh')).toBe('第 5 关');

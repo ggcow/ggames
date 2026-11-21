@@ -278,6 +278,17 @@ export class PlatformStore {
     return won;
   }
 
+  /** Fin de la dernière défaite d'un joueur sur chaque clé perdue après `since`. */
+  lastLosses(game: GameId, player: PlayerId, since: number): Map<string, number> {
+    const rows = this.sql.exec<{ key: string; ended: number }>(
+      "SELECT key, MAX(ended) AS ended FROM runs WHERE game = ? AND player = ? AND ended > ? AND status = 'lost' GROUP BY key",
+      game,
+      player,
+      since,
+    );
+    return new Map(rows.toArray().map((row) => [row.key, row.ended]));
+  }
+
   findRun(id: string): Run | null {
     const row = this.sql
       .exec<RunWithReplayRow>(`SELECT ${RUN_COLUMNS}, replay FROM runs WHERE id = ?`, id)

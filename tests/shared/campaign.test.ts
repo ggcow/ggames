@@ -44,6 +44,13 @@ describe('campagne : progression', () => {
     expect(campaignIsUnlocked('x:1', won)).toBe(false);
   });
 
+  it('ouvre au besoin quelques niveaux après le premier non gagné, sans dépasser la campagne', () => {
+    expect(campaignIsUnlocked('c:7', won, MAX_LEVEL, 3)).toBe(true);
+    expect(campaignIsUnlocked('c:8', won, MAX_LEVEL, 3)).toBe(false);
+    expect(campaignIsUnlocked('c:4', won, MAX_LEVEL, 3)).toBe(true);
+    expect(campaignIsUnlocked('c:21', new Set(), 20, 30)).toBe(false);
+  });
+
   it('s’arrête au dernier niveau d’une campagne plus courte', () => {
     const all = new Set(Array.from({ length: 20 }, (_, i) => campaignKey(i + 1)));
     expect(parseCampaignKey('c:20', 20)).toBe(20);

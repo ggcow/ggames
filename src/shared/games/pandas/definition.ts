@@ -1,6 +1,6 @@
 // Définition du jeu Pandas pour la plateforme : grilles enregistrées de la campagne, replays.
 
-import { campaignCompareKeys, campaignIsUnlocked, parseCampaignKey } from '../campaign.ts';
+import { campaignCompareKeys, campaignIsUnlocked, MAX_LEVEL, parseCampaignKey } from '../campaign.ts';
 import type { GameDefinition, ReplayOutcome } from '../game.ts';
 import { LEVELS } from './levels.ts';
 import { findSolutions, type Grid, isSolved, type Pandas, parseGrid } from './rules.ts';
@@ -21,19 +21,16 @@ export function startGrid(key: string): Grid | null {
 
 /* ---------- Tentatives ---------- */
 
-/** Erreurs permises : à la troisième, la partie est perdue. */
-export const LIVES = 3;
-
 /**
- * Où en est une partie : les pandas bien posés et les cases tentées à tort. Une tentative sur une case de la
- * solution (unique) y pose un panda, une autre coûte une vie.
+ * Où en est une partie : les pandas bien posés et la case tentée à tort, s'il y en a une. Une tentative sur une
+ * case de la solution (unique) y pose un panda ; une autre perd la partie.
  */
 export interface PandasState {
   pandas: Pandas;
   misses: readonly number[];
 }
 
-export const isLost = (state: PandasState): boolean => state.misses.length >= LIVES;
+export const isLost = (state: PandasState): boolean => state.misses.length > 0;
 
 /** Pandas de la solution d'une grille ; chaque grille enregistrée en a exactement une. */
 export const solutionOf = (grid: Grid): Pandas => findSolutions(grid, 1).solutions[0] ?? [];
@@ -79,12 +76,19 @@ export function playActions(grid: Grid, cells: readonly number[]): PandasState[]
 
 /* ---------- Définition ---------- */
 
+/** Blocage d'un niveau après une défaite, pour le joueur qui l'a perdu. */
+export const LOSS_COOLDOWN_MS = 5 * 60 * 1000;
+
+/** Niveaux jouables après le premier pas encore gagné : un niveau bloqué n'arrête pas la progression. */
+export const AHEAD = 3;
+
 export const pandas: GameDefinition = {
   id: PANDAS_ID,
   scoreOrder: 'asc',
   isValidKey: (key) => parseCampaignKey(key) !== null,
   compareKeys: campaignCompareKeys,
-  isUnlocked: campaignIsUnlocked,
+  isUnlocked: (key, won) => campaignIsUnlocked(key, won, MAX_LEVEL, AHEAD),
+  lossCooldownMs: LOSS_COOLDOWN_MS,
   replay(key, replay): ReplayOutcome | null {
     const grid = startGrid(key);
     const cells = decodeActions(replay);
@@ -93,6 +97,7 @@ export const pandas: GameDefinition = {
     if (!grid || !last) return null;
     return { finished: isSolved(grid, last.pandas), value: last.misses.length };
   },
-  // Pas de score : seule la réussite compte. Le nombre d'erreurs est gardé avec la partie, sans être affiché.
+  // Pas de score : seule la réussite compte. Le nombre d'erreurs (0 pour une victoire, 1 pour une défaite) est
+  // gardé avec la partie, sans être affiché.
   bestPossible: () => null,
 };

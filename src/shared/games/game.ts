@@ -26,6 +26,8 @@ export interface GameDefinition {
   compareKeys(a: string, b: string): number;
   /** Vrai si un joueur ayant gagné les clés `won` a débloqué `key` par sa propre progression. */
   isUnlocked(key: string, won: ReadonlySet<string>): boolean;
+  /** Après une défaite, durée pendant laquelle le joueur ne peut plus jouer la même clé ; 0 sans blocage. */
+  readonly lossCooldownMs: number;
   /** Rejoue une partie. `null` si le replay est invalide (action impossible, format incorrect). */
   replay(key: string, replay: string): ReplayOutcome | null;
   /** Meilleur score possible sur une clé, prouvé par une recherche exhaustive ; `null` s'il n'est pas connu. */

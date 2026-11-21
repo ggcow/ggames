@@ -59,6 +59,7 @@ export const couteaux: GameDefinition = {
   isValidKey: (key) => parseCampaignKey(key, LEVEL_COUNT) !== null,
   compareKeys: campaignCompareKeys,
   isUnlocked: (key, won) => campaignIsUnlocked(key, won, LEVEL_COUNT),
+  lossCooldownMs: 0,
   replay(key, replay): ReplayOutcome | null {
     const level = startLevel(key);
     const ticks = decodeThrows(replay);

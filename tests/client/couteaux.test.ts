@@ -58,6 +58,7 @@ function view(overrides: Partial<GameState> = {}): GameView {
     players: [{ id: ME, name: 'Moi', created: 1, avatar: null }],
     progress: [],
     records: {},
+    lockedUntil: {},
     ...overrides,
   };
   return createGameView(state, ME, 'fr');
@@ -96,7 +97,7 @@ describe('jeu', () => {
     expect(couteauxClient.formatValue?.(2, 'fr')).toBe('2 erreurs');
     expect(couteauxClient.formatValue?.(2, 'zh')).toBe('失误 2 次');
     const v = view({ records: { 'c:1': [{ player: ME, value: 0, run: 'r1' }] } });
-    expect(couteauxClient.levelProgress(v, ME)).toEqual({ unlocked: 2, total: LEVEL_COUNT });
+    expect(couteauxClient.levelProgress(v, ME)).toEqual({ current: 2, unlocked: 2, total: LEVEL_COUNT });
     expect(couteauxClient.levelTile(1, v)).toMatchObject({ status: 'done', perfect: true, recordPerfect: true });
     expect(couteauxClient.keyLabel('c:4', 'zh')).toBe('第 4 关');
     expect(couteauxClient.nextKey('c:19', v)).toBe('c:20');

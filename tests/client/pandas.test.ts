@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { GameView } from '../../src/client/games/client-game.ts';
 import {
   cellSize,
-  DOUBLE_TAP_MS,
   HIDDEN_REGION,
   MIN_CELL,
+  MULTI_TAP_MS,
   REGION_COLORS,
   renderMiniGrid,
 } from '../../src/client/games/pandas/board.ts';
@@ -31,6 +31,7 @@ function view(overrides: Partial<GameState> = {}): GameView {
     players: [{ id: ME, name: 'Moi', created: 1, avatar: null }],
     progress: [],
     records: {},
+    lockedUntil: {},
     ...overrides,
   };
   return createGameView(state, ME, 'fr');
@@ -53,7 +54,8 @@ describe('jeu', () => {
     const v = view({
       records: { 'c:1': [{ player: ME, value: 5, run: 'r1' }], 'c:2': [{ player: ME, value: 7, run: 'r2' }] },
     });
-    expect(pandasClient.levelProgress(v, ME)).toEqual({ unlocked: 3, total: MAX_LEVEL });
+    // Le niveau 3 est le premier à gagner ; les trois suivants sont ouverts aussi.
+    expect(pandasClient.levelProgress(v, ME)).toEqual({ current: 3, unlocked: 6, total: MAX_LEVEL });
     expect(pandasClient.levelTile(1, v)).toEqual({
       key: 'c:1',
       label: '1',
@@ -63,6 +65,8 @@ describe('jeu', () => {
       recordPerfect: false,
     });
     expect(pandasClient.levelTile(3, v).status).toBe('open');
+    expect(pandasClient.levelTile(6, v).status).toBe('open');
+    expect(pandasClient.levelTile(7, v).status).toBe('locked');
     expect(pandasClient.keyLabel('c:5', 'zh')).toBe('第 5 关');
     expect(pandasClient.formatValue).toBeNull();
   });
@@ -72,25 +76,22 @@ describe('jeu', () => {
   });
 });
 
+const tripleTap = (host: HTMLElement, cell: number) => {
+  for (let tap = 0; tap < 3; tap++) cells(host)[cell]?.click();
+};
+
 describe('partie', () => {
   afterEach(() => vi.restoreAllMocks());
-
-  const rightClick = (element: HTMLElement | undefined) => {
-    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
-    element?.dispatchEvent(event);
-    return event;
+  /** Avance l'horloge au-delà de l'écart permis entre deux touchers enchaînés. */
+  const pause = () => {
+    const later = Date.now() + MULTI_TAP_MS + 1;
+    vi.spyOn(Date, 'now').mockReturnValue(later);
   };
-  const doubleTap = (host: HTMLElement, cell: number) => {
-    cells(host)[cell]?.click();
-    cells(host)[cell]?.click();
-  };
-  const lives = (host: HTMLElement) => host.querySelector('.lives');
 
-  it('signale la grille vide dès le montage, avec trois vies et sans bouton Annuler', () => {
+  it('signale la grille vide dès le montage, sans vies ni bouton Annuler', () => {
     const { host, onProgress } = mount();
     expect(onProgress).toHaveBeenCalledWith({ state: liveState(grid, [], 0), value: 0, replay: '' });
-    expect(lives(host)?.textContent).toBe('❤️❤️❤️');
-    expect(lives(host)?.getAttribute('aria-label')).toBe('3 vies restantes');
+    expect(host.querySelector('.counter')).toBeNull();
     expect([...host.querySelectorAll('.controls button')].map((button) => button.textContent)).toEqual([fr.restart]);
   });
 
@@ -100,56 +101,64 @@ describe('partie', () => {
     cells(host)[6]?.click();
     expect(cells(host)[6]?.textContent).toBe('✕');
     expect(cells(host)[6]?.getAttribute('aria-label')).toBe('Ligne 2, colonne 2, écartée');
-    vi.spyOn(Date, 'now').mockReturnValue(Date.now() + DOUBLE_TAP_MS + 1);
+    pause();
     cells(host)[6]?.click();
     expect(cells(host)[6]?.textContent).toBe('');
     expect(onProgress).toHaveBeenCalledTimes(calls);
   });
 
-  it('pose un panda bien placé d’un double toucher', () => {
+  it('ne tente rien d’un double toucher, d’un clic droit ni de touchers trop espacés', () => {
     const { host, onProgress } = mount();
-    doubleTap(host, 8);
+    const calls = onProgress.mock.calls.length;
+    cells(host)[8]?.click();
+    cells(host)[8]?.click();
+    expect(cells(host)[8]?.textContent).toBe('');
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    cells(host)[8]?.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+    pause();
+    cells(host)[8]?.click();
+    expect(cells(host)[8]?.textContent).toBe('✕');
+    expect(onProgress).toHaveBeenCalledTimes(calls);
+  });
+
+  it('pose un panda bien placé d’un triple toucher', () => {
+    const { host, onProgress } = mount();
+    tripleTap(host, 8);
     expect(cells(host)[8]?.textContent).toBe('🐼');
     expect(cells(host)[8]?.getAttribute('aria-label')).toBe('Ligne 2, colonne 4, panda');
     expect(onProgress).toHaveBeenLastCalledWith(expect.objectContaining({ replay: '08' }));
-    expect(lives(host)?.textContent).toBe('❤️❤️❤️');
     // Un panda bien placé reste : ni croix ni retrait.
-    cells(host)[8]?.click();
-    rightClick(cells(host)[8]);
+    pause();
+    tripleTap(host, 8);
     expect(cells(host)[8]?.textContent).toBe('🐼');
   });
 
-  it('retire une vie pour une tentative ratée, marquée d’une croix rouge qui tremble', () => {
-    const { host } = mount();
-    const event = rightClick(cells(host)[0]);
-    expect(event.defaultPrevented).toBe(true);
+  it('perd la partie à la première erreur, marquée d’une croix rouge qui tremble', () => {
+    const { host, onLose, onWin } = mount();
+    tripleTap(host, 8);
+    pause();
+    tripleTap(host, 0);
     expect(cells(host)[0]?.classList.contains('miss')).toBe(true);
     expect(cells(host)[0]?.classList.contains('shake')).toBe(true);
     expect(cells(host)[0]?.getAttribute('aria-label')).toBe('Ligne 1, colonne 1, erreur');
-    expect(lives(host)?.textContent).toBe('❤️❤️🖤');
-    // La croix rouge est définitive.
-    cells(host)[0]?.click();
-    expect(cells(host)[0]?.classList.contains('miss')).toBe(true);
-  });
-
-  it('perd la partie à la troisième erreur', () => {
-    const { host, onLose, onWin } = mount();
-    for (const cell of [0, 2, 3]) rightClick(cells(host)[cell]);
-    expect(onLose).toHaveBeenCalledExactlyOnceWith('000203');
+    expect(onLose).toHaveBeenCalledExactlyOnceWith('0800');
     expect(onWin).not.toHaveBeenCalled();
-    expect(lives(host)?.textContent).toBe('🖤🖤🖤');
-    expect(pandas.replay('c:1', '000203')).toEqual({ finished: false, value: 3 });
-    rightClick(cells(host)[8]);
-    expect(cells(host)[8]?.textContent).toBe('');
+    expect(pandas.replay('c:1', '0800')).toEqual({ finished: false, value: 1 });
+    expect(host.querySelector<HTMLButtonElement>('.controls button')?.disabled).toBe(true);
+    // Plus rien ne se joue ensuite.
+    tripleTap(host, 1);
+    cells(host)[2]?.click();
+    expect(cells(host)[1]?.textContent).toBe('');
+    expect(cells(host)[2]?.textContent).toBe('');
   });
 
   it('gagne en posant la solution et produit un replay valide', () => {
     const { host, onWin } = mount();
-    rightClick(cells(host)[0]);
-    for (const cell of solution) doubleTap(host, cell);
+    for (const cell of solution) tripleTap(host, cell);
     expect(onWin).toHaveBeenCalledOnce();
     const replay = onWin.mock.calls[0]?.[0] as string;
-    expect(pandas.replay('c:1', replay)).toEqual({ finished: true, value: 1 });
+    expect(pandas.replay('c:1', replay)).toEqual({ finished: true, value: 0 });
     expect(host.querySelector('.board-host')?.classList.contains('solved')).toBe(true);
   });
 
@@ -173,35 +182,33 @@ describe('partie', () => {
     slide([6, 11, 12]);
     expect(marked()).toEqual([5, 6, 7, 11, 12]);
     // Un toucher levé sur sa première case enlève toujours la croix.
-    vi.spyOn(Date, 'now').mockReturnValue(Date.now() + DOUBLE_TAP_MS + 1);
+    pause();
     cells(host)[6]?.click();
     expect(marked()).toEqual([5, 7, 11, 12]);
   });
 
-  it('recommence à zéro, croix, pandas et vies compris', () => {
+  it('recommence à zéro, croix et pandas compris', () => {
     const { host, onProgress } = mount();
-    doubleTap(host, 8);
-    rightClick(cells(host)[0]);
+    tripleTap(host, 8);
+    pause();
     cells(host)[6]?.click();
     host.querySelector<HTMLButtonElement>('.controls button')?.click();
     expect(host.querySelectorAll('.pd-cell.panda, .pd-cell.miss')).toHaveLength(0);
     expect(cells(host)[6]?.textContent).toBe('');
-    expect(lives(host)?.textContent).toBe('❤️❤️❤️');
     expect(onProgress).toHaveBeenLastCalledWith({ state: liveState(grid, [], 0), value: 0, replay: '' });
   });
 
-  it('explique les commandes sous la grille', () => {
-    expect(mount().host.querySelector('.pd-hint')?.textContent).toBe(fr.hint);
+  it('explique les commandes sous la grille, et le blocage de cinq minutes', () => {
+    expect(mount().host.querySelector('.pd-hint')?.textContent).toBe(fr.hint(5));
   });
 });
 
 describe('replay', () => {
-  it('rejoue tentative par tentative, erreurs comprises, sans compteur de coups', () => {
+  it('rejoue tentative par tentative, sans compteur de coups', () => {
     const host = document.createElement('div');
-    mountPandasReplay(host, grid, encodeActions([0, ...solution]));
+    mountPandasReplay(host, grid, encodeActions(solution));
     expect(host.querySelector('.counter')).toBeNull();
-    host.querySelectorAll<HTMLButtonElement>('.controls button')[3]?.click();
-    expect(host.querySelectorAll('.pd-cell.miss')).toHaveLength(1);
+    expect(host.querySelectorAll('.pd-cell.panda')).toHaveLength(0);
     host.querySelectorAll<HTMLButtonElement>('.controls button')[3]?.click();
     expect(host.querySelectorAll('.pd-cell.panda')).toHaveLength(1);
     expect(host.querySelector('button.pd-cell')).toBeNull();
@@ -209,8 +216,8 @@ describe('replay', () => {
 });
 
 describe('aperçu et indicateur en direct', () => {
-  it('montre sur l’aperçu les bosquets trouvés, sans la case d’aucun panda, et les vies à côté du nom', () => {
-    const mini = pandasClient.renderLiveState(liveState(grid, [1, 8], 1));
+  it('montre sur l’aperçu les bosquets trouvés, sans la case d’aucun panda, ni vies à côté du nom', () => {
+    const mini = pandasClient.renderLiveState(liveState(grid, [1, 8], 0));
     const shown = [...(mini?.querySelectorAll<HTMLElement>('.pd-cell') ?? [])];
     expect(shown).toHaveLength(25);
     expect(mini?.querySelectorAll('.pd-cell.panda')).toHaveLength(0);
@@ -221,30 +228,33 @@ describe('aperçu et indicateur en direct', () => {
       expect(cell.style.background).toBe(found.has(region) ? REGION_COLORS[region] : HIDDEN_REGION);
     });
     expect(mini?.textContent).toBe('');
-    expect(pandasClient.liveTag(liveState(grid, [1, 8], 1), 2, 'fr')).toBe('❤️❤️🖤');
-    expect(pandasClient.liveTag(liveState(grid, [], 3), 3, 'zh')).toBe('🖤🖤🖤');
-    expect(pandasClient.liveTag('n’importe quoi', 0, 'fr')).toBeNull();
+    expect(pandasClient.liveTag(liveState(grid, [1, 8], 0), 2, 'fr')).toBeNull();
+    expect(pandasClient.liveTag(liveState(grid, [], 1), 1, 'zh')).toBeNull();
     expect(pandasClient.renderLiveState('n’importe quoi')).toBeNull();
     expect(renderMiniGrid({ grid, found: new Set(), misses: 0 }).classList.contains('mini')).toBe(true);
   });
 
-  it('diffuse à chaque tentative les bosquets trouvés et les erreurs', () => {
+  it('diffuse à chaque tentative les bosquets trouvés et l’erreur', () => {
     const { host, onProgress } = mount();
     const found = solution[0] ?? 0;
-    cells(host)[found]?.click();
-    cells(host)[found]?.click();
-    cells(host)[0]?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    tripleTap(host, found);
+    vi.spyOn(Date, 'now').mockReturnValue(Date.now() + MULTI_TAP_MS + 1);
+    tripleTap(host, 0);
     expect(onProgress).toHaveBeenLastCalledWith(
       expect.objectContaining({ state: liveState(grid, [found], 1), value: 2 }),
     );
+    vi.restoreAllMocks();
   });
 
-  it('distingue le début, la fin proche et le reste, sans impasse possible', () => {
-    expect(pandasStatus(grid, 0, 0)).toBe('start');
-    expect(pandasStatus(grid, 1, 1)).toBe('far');
-    expect(pandasStatus(grid, 3, 3)).toBe('close');
-    expect(pandasStatus(grid, solution.length, 5)).toBe('close');
-    expect(pandasClient.liveStatus(liveState(grid, [1], 1), 2)).toBe('far');
+  it('distingue le début, la fin proche, le reste, et l’impasse après l’erreur', () => {
+    const live = (found: number[], misses = 0) => ({ grid, found: new Set(found), misses });
+    expect(pandasStatus(live([]), 0)).toBe('start');
+    expect(pandasStatus(live([0]), 1)).toBe('far');
+    expect(pandasStatus(live([0, 1, 2]), 3)).toBe('close');
+    expect(pandasStatus(live([0, 1, 2, 3, 4]), 5)).toBe('close');
+    expect(pandasStatus(live([0], 1), 2)).toBe('stuck');
+    expect(pandasClient.liveStatus(liveState(grid, [1], 0), 1)).toBe('far');
+    expect(pandasClient.liveStatus(liveState(grid, [1], 1), 2)).toBe('stuck');
     expect(pandasClient.liveStatus('n’importe quoi', 0)).toBeNull();
   });
 
