@@ -99,9 +99,9 @@ describe('définition', () => {
     expect(pandas.isUnlocked('c:101', new Set())).toBe(false);
   });
 
-  it('bloque un niveau cinq minutes après une défaite', () => {
+  it('bloque un niveau trente minutes après une défaite', () => {
     expect(pandas.lossCooldownMs).toBe(LOSS_COOLDOWN_MS);
-    expect(LOSS_COOLDOWN_MS).toBe(5 * 60 * 1000);
+    expect(LOSS_COOLDOWN_MS).toBe(30 * 60 * 1000);
   });
 
   it('reconnaît une victoire, sans erreur, et n’a pas de meilleur score possible', () => {

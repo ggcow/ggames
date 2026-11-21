@@ -231,8 +231,8 @@ describe('partie', () => {
     expect(onProgress).toHaveBeenLastCalledWith({ state: liveState(grid, [], 0), value: 0, replay: '' });
   });
 
-  it('explique les commandes sous la grille, et le blocage de cinq minutes', () => {
-    expect(mount().host.querySelector('.pd-hint')?.textContent).toBe(fr.hint(5));
+  it('explique les commandes sous la grille, et le blocage de trente minutes', () => {
+    expect(mount().host.querySelector('.pd-hint')?.textContent).toBe(fr.hint(30));
   });
 });
 

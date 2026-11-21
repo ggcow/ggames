@@ -99,7 +99,7 @@ describe('fin de partie', () => {
     attemptAll(host, [0]);
     await settle();
     expect(document.querySelector('.modal h2')?.textContent).toBe(PLATFORM_STRINGS.fr.lost);
-    expect(document.querySelector('.modal-box')?.textContent).toContain(PLATFORM_STRINGS.fr.cooldownHint(5));
+    expect(document.querySelector('.modal-box')?.textContent).toContain(PLATFORM_STRINGS.fr.cooldownHint(30));
     const buttons = [...document.querySelectorAll<HTMLButtonElement>('.modal-buttons button')];
     expect(buttons.map((button) => button.textContent)).toEqual(['Suivant', '← Retour']);
     buttons[0]?.click();

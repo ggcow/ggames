@@ -77,7 +77,7 @@ export function playActions(grid: Grid, cells: readonly number[]): PandasState[]
 /* ---------- Définition ---------- */
 
 /** Blocage d'un niveau après une défaite, pour le joueur qui l'a perdu. */
-export const LOSS_COOLDOWN_MS = 5 * 60 * 1000;
+export const LOSS_COOLDOWN_MS = 30 * 60 * 1000;
 
 /** Niveaux pas encore gagnés jouables à la fois : un niveau bloqué n'arrête pas la progression. */
 export const OPEN_LEVELS = 3;

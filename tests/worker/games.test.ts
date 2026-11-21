@@ -433,7 +433,7 @@ describe('Pandas', () => {
     expect((await win(6)).status).toBe(200);
   });
 
-  it('bloque cinq minutes, pour le seul perdant, le niveau perdu, sans bloquer les suivants', async () => {
+  it('bloque trente minutes, pour le seul perdant, le niveau perdu, sans bloquer les suivants', async () => {
     const me = await newPlayer();
     const friend = await newPlayer();
     const lost = await submitPandas(me.token, { key: 'c:1', status: 'lost', durationMs: 1, replay: '00' });
@@ -443,7 +443,7 @@ describe('Pandas', () => {
     expect(again.status).toBe(403);
     expect(again.body).toEqual({ error: 'cooldown' });
     const state = await call<GameState>('/api/games/pandas', { token: me.token });
-    expect(state.body.lockedUntil).toEqual({ 'c:1': ended + 5 * 60 * 1000 });
+    expect(state.body.lockedUntil).toEqual({ 'c:1': ended + 30 * 60 * 1000 });
     const win2 = encodePandas(pandasWin(2));
     expect((await submitPandas(me.token, { key: 'c:2', status: 'won', durationMs: 1, replay: win2 })).status).toBe(200);
 
@@ -455,14 +455,14 @@ describe('Pandas', () => {
   it('refuse une partie commencée pendant le blocage, et rouvre le niveau ensuite', async () => {
     const me = await newPlayer();
     const lost = await submitPandas(me.token, { key: 'c:1', status: 'lost', durationMs: 1, replay: '00' });
-    // La défaite remonte à quatre minutes : une partie de deux minutes a commencé pendant le blocage.
+    // La défaite remonte à 29 minutes : une partie de deux minutes a commencé pendant le blocage.
     await runInDurableObject(world(), (_instance, state) => {
-      state.storage.sql.exec('UPDATE runs SET ended = ? WHERE id = ?', Date.now() - 4 * 60 * 1000, lost.body.run.id);
+      state.storage.sql.exec('UPDATE runs SET ended = ? WHERE id = ?', Date.now() - 29 * 60 * 1000, lost.body.run.id);
     });
     const long = await submitPandas(me.token, { key: 'c:1', status: 'won', durationMs: 2 * 60 * 1000, replay });
     expect(long.status).toBe(403);
     await runInDurableObject(world(), (_instance, state) => {
-      state.storage.sql.exec('UPDATE runs SET ended = ? WHERE id = ?', Date.now() - 6 * 60 * 1000, lost.body.run.id);
+      state.storage.sql.exec('UPDATE runs SET ended = ? WHERE id = ?', Date.now() - 31 * 60 * 1000, lost.body.run.id);
     });
     const state = await call<GameState>('/api/games/pandas', { token: me.token });
     expect(state.body.lockedUntil).toEqual({});

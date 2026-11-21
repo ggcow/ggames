@@ -109,7 +109,7 @@ porte les deux (`Jouons ensemble · 一起玩`), et 一起玩 seul sous l'icône
   unique. Un toucher met ou enlève une croix (repère qui n'entre pas dans le replay), glisser le doigt en met
   sur chaque case parcourue, sans jamais en enlever ; seul un triple toucher (ou un triple clic) tente un
   panda. Un panda bien placé reste ; une tentative ratée perd la partie : une seule vie, sans cœurs affichés.
-  Un niveau perdu se bloque cinq minutes pour le perdant ; les trois premiers niveaux pas encore gagnés sont
+  Un niveau perdu se bloque trente minutes pour le perdant ; les trois premiers niveaux pas encore gagnés sont
   jouables, déjà gagnés sautés, pour que la progression continue pendant un blocage. Pas de score : seule la réussite compte (ni 💎, ni
   record, ni classement par score, ni Annuler) ; essais, temps et replay restent. L'aperçu d'un autre joueur ne
   révèle rien de la solution : la grille part grise, chaque bosquet où il a trouvé le panda prend sa couleur, et
