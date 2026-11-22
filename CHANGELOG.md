@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.35](https://github.com/ggcow/ggames/compare/v0.5.34...v0.5.35) (2026-11-22)
+
+### Corrections
+
+* **client:** pas de niveau suivant après une course rejointe ([9b098c4](https://github.com/ggcow/ggames/commit/9b098c4f379bffc4889d1117ae63e324c6e01a1b))
+
 ## [0.5.34](https://github.com/ggcow/ggames/compare/v0.5.33...v0.5.34) (2026-11-21)
 
 ### Fonctionnalités
