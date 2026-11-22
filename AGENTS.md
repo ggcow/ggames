@@ -56,7 +56,7 @@ porte les deux (`Jouons ensemble · 一起玩`), et 一起玩 seul sous l'icône
   rejoue tout niveau gagné.
 - Rejoindre : un niveau verrouillé qu'un ami joue en direct peut être rejoint (course sur le même plateau, trois
   joueurs au plus, quatre aux Pandas). La victoire compte au classement mais ne fait pas avancer la
-  progression. Le serveur accepte une partie sur un niveau débloqué par le joueur ou par n'importe quel autre
+  progression : la fin de partie n'y propose pas le niveau suivant, victoire ou défaite. Le serveur accepte une partie sur un niveau débloqué par le joueur ou par n'importe quel autre
   joueur, et refuse le reste.
 - Écran de partie pensé pour un téléphone : son plateau en grand en bas, au-dessus les aperçus des autres
   joueurs en petit, côte à côte sur deux colonnes (trois aux Pandas quand trois autres joueurs sont là, en

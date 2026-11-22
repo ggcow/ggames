@@ -59,6 +59,14 @@ function context(navigate: (route: unknown) => void, online: readonly Presence[]
   };
 }
 
+/** Première case hors de la solution d'un niveau : y tenter un panda perd la partie. */
+const firstMiss = (grid: ReturnType<typeof pandasLevel>): number => {
+  const solution = new Set(pandasSolution(grid));
+  let cell = 0;
+  while (solution.has(cell)) cell++;
+  return cell;
+};
+
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 /** Tente un panda sur chaque case : trois touchers enchaînés, puis une pause avant la case suivante. */
@@ -140,6 +148,8 @@ describe('niveau bloqué', () => {
 });
 
 describe('course rejointe', () => {
+  afterEach(closeModals);
+
   const racers = (count: number): Presence[] =>
     ['p1', 'p2', 'p3', 'p4'].slice(0, count).map((player) => ({
       player,
@@ -156,6 +166,36 @@ describe('course rejointe', () => {
     await settle();
     expect(host.querySelectorAll('.live-board')).toHaveLength(3);
     expect(host.querySelector('.pd-cell')).not.toBeNull();
+  });
+
+  it('ne propose pas le niveau suivant après une course rejointe, même gagnée', async () => {
+    // Niveau 5 déjà gagné en course : ouverts 1, 2, 3 et le 5, que la fin du 4 rejoint ne doit pas proposer.
+    const records = { 'c:5': [{ player: me.id, value: 0, run: 'r5' }] };
+    const online = racers(1).map((presence) => ({ ...presence, key: 'c:4' }));
+    const host = document.createElement('div');
+    mountPlay(host, context(vi.fn(), online, { ...state, records }), pandasClient, 'c:4');
+    await settle();
+    attemptAll(host, pandasSolution(pandasLevel(4)));
+    await settle();
+    expect(document.querySelector('.modal h2')?.textContent).toBe(PLATFORM_STRINGS.fr.won);
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>('.modal-buttons button')];
+    expect(buttons.map((button) => button.textContent)).toEqual(['⟲ Rejouer', '← Retour']);
+  });
+
+  it('ne propose pas le niveau suivant après une course rejointe perdue', async () => {
+    // Niveaux 2, 3 et 7 gagnés : ouverts 1, 4, 5 et le 7. Le 6, rejoint puis perdu, ne propose pas le 7.
+    const records = Object.fromEntries(
+      ['c:2', 'c:3', 'c:7'].map((key) => [key, [{ player: me.id, value: 0, run: key }]]),
+    );
+    const online = racers(1).map((presence) => ({ ...presence, key: 'c:6' }));
+    const host = document.createElement('div');
+    mountPlay(host, context(vi.fn(), online, { ...state, records }), pandasClient, 'c:6');
+    await settle();
+    attemptAll(host, [firstMiss(pandasLevel(6))]);
+    await settle();
+    expect(document.querySelector('.modal h2')?.textContent).toBe(PLATFORM_STRINGS.fr.lost);
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>('.modal-buttons button')];
+    expect(buttons.map((button) => button.textContent)).toEqual(['← Retour']);
   });
 
   it('refuse une course de Pandas déjà à quatre joueurs', async () => {

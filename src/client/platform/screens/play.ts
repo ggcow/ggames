@@ -137,6 +137,8 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
   let unmountGame: Unmount | null = null;
   let started = Date.now();
   let pending: { replay: string; value: number } | null = null;
+  /** Course rejointe sur un niveau que sa propre progression n'ouvre pas : fixé au chargement de la partie. */
+  let joined = false;
 
   const format = game.formatValue;
   const bestPossible = game.definition.bestPossible(key);
@@ -457,10 +459,10 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
 
   /**
    * Niveau suivant, proposé seulement si sa propre progression l'ouvre après cette partie et qu'il n'est pas
-   * bloqué par une défaite.
+   * bloqué par une défaite. Jamais après une course rejointe : elle ne fait pas avancer la progression.
    */
   const nextAfter = (won: boolean): string | null => {
-    if (!view) return null;
+    if (!view || joined) return null;
     const next = game.nextKey(key, view);
     const keys = wonKeys(view.state, ctx.me.id);
     if (won) keys.add(key);
@@ -542,6 +544,7 @@ export function mountPlay(host: HTMLElement, ctx: AppContext, game: ClientGame, 
         const until = state.lockedUntil[key];
         if (until !== undefined && coolingDown(key)) return showCooldown(until);
         if (!canPlay(state)) return showLocked();
+        joined = !game.definition.isUnlocked(key, wonKeys(state, ctx.me.id));
         replaceChildren(
           host,
           screenHeader(

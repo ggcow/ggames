@@ -16,7 +16,8 @@ aussi l'ajouter à l'écran d'accueil pour jouer en plein écran.
   rythme : un niveau se débloque quand tous les précédents sont gagnés ; aux Pandas, les trois premiers niveaux
   pas encore gagnés sont jouables.
 - Si un ami joue un niveau que tu n'as pas encore débloqué, tu peux le rejoindre et faire la course avec lui
-  (trois joueurs au plus, quatre aux Pandas). La victoire compte au classement, mais ta progression reste la tienne.
+  (trois joueurs au plus, quatre aux Pandas). La victoire compte au classement, mais ta progression reste la tienne : la fin de partie ne propose pas le
+  niveau suivant.
 - En partie, ton plateau occupe le bas de l'écran ; au-dessus, les plateaux des autres joueurs en petit.
   Après une victoire, Rejouer relance le même niveau pour améliorer ton score. Aux Pandas, un niveau perdu se
   bloque trente minutes.
