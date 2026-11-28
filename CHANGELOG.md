@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.5.36](https://github.com/ggcow/ggames/compare/v0.5.35...v0.5.36) (2026-11-28)
+
+### Fonctionnalités
+
+* **pandas:** ajouter une sixième page de niveaux ([6e76e3b](https://github.com/ggcow/ggames/commit/6e76e3b40353d3488905087d52b0dc4d1c3684ba))
+
 ## [0.5.35](https://github.com/ggcow/ggames/compare/v0.5.34...v0.5.35) (2026-11-22)
 
 ### Corrections
