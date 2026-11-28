@@ -12,6 +12,7 @@ import {
   solutionOf,
   startGrid,
 } from '../../src/shared/games/pandas/definition.ts';
+import { LEVEL_COUNT } from '../../src/shared/games/pandas/rules.ts';
 import { pandasLevel, pandasWin } from '../support/pandas.ts';
 
 // Niveau 1, 5 × 5 : solution 1, 8, 10, 17, 24 ; les cases 0, 2 et 3 sont fausses.
@@ -71,18 +72,21 @@ describe('définition', () => {
   it('donne la grille de chaque niveau de la campagne', () => {
     expect(levelGrid(1)?.size).toBe(5);
     expect(levelGrid(100)?.size).toBe(10);
-    expect(levelGrid(101)).toBeNull();
+    expect(levelGrid(LEVEL_COUNT)?.size).toBe(10);
+    expect(levelGrid(LEVEL_COUNT + 1)).toBeNull();
     expect(startGrid('c:1')).toEqual(levelGrid(1));
+    expect(startGrid('c:120')).toEqual(levelGrid(LEVEL_COUNT));
     expect(startGrid('x:1')).toBeNull();
   });
 
   it('valide les clés et ouvre toujours les trois premiers niveaux pas encore gagnés', () => {
     const open = (won: readonly number[]) =>
-      Array.from({ length: 100 }, (_, i) => i + 1).filter((level) =>
+      Array.from({ length: LEVEL_COUNT }, (_, i) => i + 1).filter((level) =>
         pandas.isUnlocked(`c:${level}`, new Set(won.map((n) => `c:${n}`))),
       );
     expect(pandas.isValidKey('c:1')).toBe(true);
-    expect(pandas.isValidKey('c:101')).toBe(false);
+    expect(pandas.isValidKey('c:120')).toBe(true);
+    expect(pandas.isValidKey('c:121')).toBe(false);
     expect(OPEN_LEVELS).toBe(3);
     expect(open([])).toEqual([1, 2, 3]);
     expect(open([1, 2])).toEqual([1, 2, 3, 4, 5]);
@@ -95,8 +99,8 @@ describe('définition', () => {
       73,
     ]);
     expect(open([2, 3, 4, 6])).toEqual([1, 2, 3, 4, 5, 6, 7]);
-    expect(open(Array.from({ length: 99 }, (_, i) => i + 1))).toHaveLength(100);
-    expect(pandas.isUnlocked('c:101', new Set())).toBe(false);
+    expect(open(Array.from({ length: LEVEL_COUNT - 1 }, (_, i) => i + 1))).toHaveLength(LEVEL_COUNT);
+    expect(pandas.isUnlocked('c:121', new Set())).toBe(false);
   });
 
   it('bloque un niveau trente minutes après une défaite', () => {

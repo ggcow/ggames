@@ -1,5 +1,6 @@
-// Générateur des niveaux de Pandas : des grilles de plus en plus grandes, chacune avec une seule solution.
-// Sert une fois pour toutes à écrire `levels.ts` (`npm run levels -- pandas`), jamais pendant une partie.
+// Générateur des niveaux de Pandas : des grilles de plus en plus grandes puis de plus en plus difficiles, chacune
+// avec une seule solution. Sert une fois pour toutes à écrire `levels.ts` (`npm run levels -- pandas`), jamais
+// pendant une partie.
 
 import { createRandom, shuffle } from '../random.ts';
 import {
@@ -18,6 +19,15 @@ const SIZE_STARTS = [1, 11, 26, 46, 66, 86] as const;
 /** Grilles candidates par niveau : la plus difficile est retenue vers la fin de chaque palier de taille. */
 const CANDIDATES = 5;
 
+/**
+ * Dernier niveau dont la difficulté se règle dans son palier de taille. Au-delà, la grille garde sa plus grande
+ * taille et la difficulté monte en élargissant le vivier des grilles candidates.
+ */
+const LAST_TIER_LEVEL = 100;
+
+/** Niveaux par grille candidate ajoutée au vivier après `LAST_TIER_LEVEL`. */
+const TAIL_CANDIDATES_STEP = 4;
+
 /** Retouches au plus d'une grille pour qu'elle n'ait qu'une solution, avant d'en recommencer une autre. */
 const MAX_TWEAKS = 400;
 
@@ -31,8 +41,19 @@ export function sizeOfLevel(level: number): number {
 function stepProgress(level: number): number {
   const size = sizeOfLevel(level);
   const start = SIZE_STARTS[size - MIN_SIZE] ?? 1;
-  const end = (SIZE_STARTS[size - MIN_SIZE + 1] ?? 101) - 1;
+  const end = (SIZE_STARTS[size - MIN_SIZE + 1] ?? LAST_TIER_LEVEL + 1) - 1;
   return end === start ? 1 : (level - start) / (end - start);
+}
+
+/** Grilles candidates d'un niveau : cinq dans les paliers, davantage au-delà pour que la difficulté monte encore. */
+function candidateCount(level: number): number {
+  if (level <= LAST_TIER_LEVEL) return CANDIDATES;
+  return CANDIDATES + Math.ceil((level - LAST_TIER_LEVEL) / TAIL_CANDIDATES_STEP);
+}
+
+/** Rang de la grille retenue : du plus facile au plus difficile dans un palier, la plus difficile au-delà. */
+function candidateRank(level: number, count: number): number {
+  return level > LAST_TIER_LEVEL ? count - 1 : Math.round(stepProgress(level) * (CANDIDATES - 1));
 }
 
 /** Une colonne par ligne, deux lignes voisines jamais dans des colonnes voisines : une solution possible. */
@@ -109,15 +130,17 @@ function makeUnique(size: number, seeds: readonly number[], random: () => number
 export function generateLevel(level: number): Grid {
   const size = sizeOfLevel(level);
   const random = createRandom(level * 7919 + 17);
+  const count = candidateCount(level);
   const candidates: { grid: Grid; effort: number }[] = [];
-  while (candidates.length < CANDIDATES) {
+  while (candidates.length < count) {
     const seeds = randomPlacement(size, random);
     const grid = seeds ? makeUnique(size, seeds, random) : null;
     if (grid) candidates.push({ grid, effort: findSolutions(grid, 2).nodes });
   }
-  // Les cases essayées par la recherche mesurent la difficulté : le palier commence facile et finit difficile.
+  // Les cases essayées par la recherche mesurent la difficulté : un palier commence facile et finit difficile, et
+  // au-delà la plus difficile d'un vivier qui s'élargit.
   candidates.sort((a, b) => a.effort - b.effort);
-  const chosen = candidates[Math.round(stepProgress(level) * (CANDIDATES - 1))] ?? candidates[0];
+  const chosen = candidates[candidateRank(level, count)] ?? candidates[0];
   if (!chosen) throw new Error(`niveau ${level} : aucune grille`);
   return chosen.grid;
 }

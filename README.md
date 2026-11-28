@@ -12,9 +12,9 @@ aussi l'ajouter à l'écran d'accueil pour jouer en plein écran.
 - L'accueil liste les jeux et les joueurs en ligne. Son bouton « Installer l'appli » l'ajoute à l'écran
   d'accueil (ou explique comment faire sur iPhone, depuis WeChat et sur ordinateur) ; il disparaît dans l'appli
   installée.
-- Pour chaque jeu : une grille de 100 niveaux sur 5 pages (20 sur une page pour Couteaux). Chacun avance à son
-  rythme : un niveau se débloque quand tous les précédents sont gagnés ; aux Pandas, les trois premiers niveaux
-  pas encore gagnés sont jouables.
+- Pour chaque jeu : une grille de niveaux sur des pages de 20 (100 niveaux sur 5 pages ; 120 sur 6 pages pour
+  Pandas ; une seule page de 20 pour Couteaux). Chacun avance à son rythme : un niveau se débloque quand tous les
+  précédents sont gagnés ; aux Pandas, les trois premiers niveaux pas encore gagnés sont jouables.
 - Si un ami joue un niveau que tu n'as pas encore débloqué, tu peux le rejoindre et faire la course avec lui
   (trois joueurs au plus, quatre aux Pandas). La victoire compte au classement, mais ta progression reste la tienne : la fin de partie ne propose pas le
   niveau suivant.
@@ -59,7 +59,7 @@ aussi l'ajouter à l'écran d'accueil pour jouer en plein écran.
 | ----------- | -------------------------------------------------------------------------------- | ------------------------------ |
 | 🧪 Fioles   | Verser les couleurs jusqu'à ce que chaque fiole soit d'une seule couleur         | 100 niveaux                    |
 | 💐 Bouquets | Glisser les fleurs de pot en pot : trois pareilles devant un pot font un bouquet | 100 niveaux                    |
-| 🐼 Pandas   | Un panda par ligne, par colonne et par bosquet, sans que deux pandas se touchent | 100 niveaux, 1 vie, sans score |
+| 🐼 Pandas   | Un panda par ligne, par colonne et par bosquet, sans que deux pandas se touchent | 120 niveaux, 1 vie, sans score |
 | 🚗 Parking  | Faire glisser les véhicules pour libérer la sortie de la voiture rouge           | 100 niveaux                    |
 | 🔪 Couteaux | Lancer des couteaux dans une planète qui tourne, sans toucher ceux déjà plantés  | 20 niveaux, 3 vies             |
 

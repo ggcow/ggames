@@ -104,7 +104,7 @@ porte les deux (`Jouons ensemble · 一起玩`), et 一起玩 seul sous l'icône
 - Deuxième jeu : **Bouquets** (réunir trois fleurs pareilles devant un pot ; des couches cachées avancent quand
   un devant se vide), avec une campagne de 100 niveaux de difficulté croissante et des illustrations peintes.
 - Troisième jeu : **Pandas** (un panda par ligne, par colonne et par bosquet coloré, sans que deux pandas se
-  touchent, même en diagonale), avec une campagne de 100 grilles de 5 à 10 cases de côté, chacune à solution
+  touchent, même en diagonale), avec une campagne de 120 grilles de 5 à 10 cases de côté, chacune à solution
   unique. Un toucher met ou enlève une croix (repère qui n'entre pas dans le replay), glisser le doigt en met
   sur chaque case parcourue, sans jamais en enlever ; seul un triple toucher (ou un triple clic) tente un
   panda. Un panda bien placé reste ; une tentative ratée perd la partie : une seule vie, sans cœurs affichés.

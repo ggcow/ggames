@@ -57,7 +57,7 @@ export const couteaux: GameDefinition = {
   // Le score est le nombre de rebonds : moins il y en a, mieux c'est.
   scoreOrder: 'asc',
   isValidKey: (key) => parseCampaignKey(key, LEVEL_COUNT) !== null,
-  compareKeys: campaignCompareKeys,
+  compareKeys: (a, b) => campaignCompareKeys(a, b, LEVEL_COUNT),
   isUnlocked: (key, won) => campaignIsUnlocked(key, won, LEVEL_COUNT),
   lossCooldownMs: 0,
   replay(key, replay): ReplayOutcome | null {

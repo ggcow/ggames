@@ -4,8 +4,8 @@
 // jeu qui le permet, les premiers (`open`).
 
 /**
- * Nombre de niveaux d'une campagne, sauf pour un jeu qui en déclare moins : cinq pages de la grille, enregistrés
- * dans chaque jeu (`levels.ts`).
+ * Nombre de niveaux d'une campagne par défaut : cinq pages de la grille. Un jeu qui en a un autre nombre déclare
+ * le sien (`LEVEL_COUNT`) et le passe aux fonctions ci-dessous.
  */
 export const MAX_LEVEL = 100;
 
@@ -26,9 +26,9 @@ export function parseCampaignKey(key: string, size = MAX_LEVEL): number | null {
  * Ordre d'affichage des clés : niveaux de la campagne par numéro croissant, puis les autres clés par ordre
  * alphabétique, pour qu'une liste reste la même d'un chargement à l'autre.
  */
-export function campaignCompareKeys(a: string, b: string): number {
-  const levelA = parseCampaignKey(a);
-  const levelB = parseCampaignKey(b);
+export function campaignCompareKeys(a: string, b: string, size = MAX_LEVEL): number {
+  const levelA = parseCampaignKey(a, size);
+  const levelB = parseCampaignKey(b, size);
   if (levelA !== null && levelB !== null) return levelA - levelB;
   if (levelA !== null) return -1;
   if (levelB !== null) return 1;

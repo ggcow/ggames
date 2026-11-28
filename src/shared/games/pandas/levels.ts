@@ -1,4 +1,4 @@
-// Niveaux 1 à 100 de la campagne, enregistrés une fois pour toutes par `npm run levels -- pandas`.
+// Niveaux 1 à 120 de la campagne, enregistrés une fois pour toutes par `npm run levels -- pandas`.
 // Ne pas modifier ni regénérer : les parties enregistrées sont rejouées sur ces plateaux.
 
 export const LEVELS: readonly string[] = [
@@ -102,4 +102,24 @@ export const LEVELS: readonly string[] = [
   'ccccccaaaa.bbbccaaaae.ggccdafffe.gggcddffee.gggggddfhe.gggggddfhh.gggigiijhh.gggiiiijhh.iiiiiijjjh.iiiiijjjhh',
   'aaacccbbbb.aacccchbbb.ccccgchhbb.cdccgchhhh.ddddgchhhe.ffdggghhee.iidggghhhh.iiigghhhhh.iiiighhhhh.iiiiihhhjh',
   'ffffbbaccc.ffffbaaccc.fffdbbccee.ffddddcdee.hfddgdddde.hffdgddeee.hffggggeei.hhfggggeii.hhfggggeii.jhhhgggiii',
+  'abbbbbbccc.bbbbebbdcc.bbeeeedddc.bbeeeddddh.ffeegihddh.ffeggihhhh.gggggiiihh.gggggiihhh.ggggiiiijh.ggggiiiijh',
+  'eeeeebbbaa.eeeebbaaaa.eeeddbbaca.eeedddbfff.jeegffffff.jeggfiffff.jegffiffff.jjjjiiihhh.jjjjjiiihh.jjjjjjjihh',
+  'adddddddbb.aaaadddbbb.accddddfbe.fcfdddffee.fffffffffe.fffiifgggg.hhhiiigjgg.hhiiiijjjj.iiiijjjjjj.iiijjjjjjj',
+  'cccbbbbaaa.cccbbdbdfa.cccbddddfa.eccdddddfa.eecgddddff.egcggijjjf.ggggiijjjj.hiiiiijjjj.iiiiijjjjj.iiiijjjjjj',
+  'bbbbaaaacc.bbbbdccccc.bbbbdccefc.bbbddeeefc.bgggheeffc.bghhheffff.gghhheeeef.gghhhheeef.gihhhhheef.iihhjheeff',
+  'aaaaacccbb.daaacccbbb.dffffcchhb.dffffgchhe.fffffgghhe.ffjifighhh.fjjiiigghh.fjjjjihhhh.jjjjiihhih.jjjjjiiiih',
+  'bbbaaaaaaa.ddbaeeeacc.dddeeeeacc.dddeheeeec.ffhhheheeg.fjjhhhhheg.jjjjhhhiig.jjjhhiiiii.jjjhhhhiii.jjjjhiiiii',
+  'cccbbbbbae.cbbbbbbbee.cddbdeeeee.fddddegeee.fdddheggee.ffdhhgggee.fhhhjiiggi.jjjhjiiigi.jjjjjjiiii.jjjjiiiiii',
+  'bbbcccccaa.bbccccccdd.ggcceedddd.ggceeedidi.ggceeediii.fgceehhhii.fggeeehhii.ggghhhhhhi.ghhhjjjhji.ghhhhhjjjj',
+  'aaggddddcc.aaagggdbbc.gagggddbcc.gaggeddfff.ggggeeefff.gggghhffff.gggihhffhf.iiiiihhhhf.iiiiihhhhf.ijiiihhhhf',
+  'caddddbbbb.cadddddddb.ccddddddbb.ecdddggiii.eeeegggiii.eeehhggffi.eehhggiiii.ehhhgjiiii.ehhggjiiii.ehhhgjjiii',
+  'ccaaebbbbd.caaeebbbdd.cceeebbbdd.cffeeebiid.fffegebiii.fffegebiii.ffffgggiii.hfjjjjiiii.jjjjiiiiii.jjjjjjiiii',
+  'eaccbbbbbb.eecccbcbdd.eeeccccddd.eeeccddddg.eehhccgggg.eehhfhgggg.jjjhhhgigi.jjjhhjiiii.jjjjjjiiii.jjjjjiiiii',
+  'ddaaaaaabb.ddaaaabbbc.dddddbbbcc.dddedbbbbc.ddeeeebjcc.fdegeeejii.hhggejjjji.hhggjjjjji.hggjjjjjji.hggjjjjjjj',
+  'ccaaaabbbd.cccafafbbd.cecafaffbd.eecafffffd.eeeeiiifgg.eieeiiffgg.iiiiihfhgg.iiiiihhhig.iiiiiiiiig.jiiiiiiggg',
+  'accccccbbb.dcccccebbg.dcdcfeeeeg.dddcfeeeeg.ddffffeeeg.ffffhhhhgg.ffjffhgggg.ffjjjhgiij.fjjjjjjijj.jjjjjjjjjj',
+  'eaaaaabbbb.eaaaaadddb.eaeecddddd.eeeffdgddd.heeffdgggg.hhefffgggg.hhejfiigii.jhjjiiiiii.jjjiiiiiii.jjjiiiiiii',
+  'ccbbbbefaa.ccbcbeeffa.ccccbeeffa.dccebbefaa.gcgeeeeffa.ggggeifffa.ggigiijjff.ggigiijjjh.ggiiiiiijj.ggiiiiijjj',
+  'aaaaaccccc.baaaaccccc.dddacceeee.dddaffeeee.gdgfffeeee.gggffffjee.ggiffijjhh.giiiiijjjh.iiiijjjjjj.iiijjjjjjj',
+  'bbaaaaafff.bbbaaadfcc.bbaaaadfcf.bbaaaddfff.ebbggddffj.iihgdddffj.ihhgggfffj.ihhhggggjj.iihggjjjjj.hhhgjjjjjj',
 ];

@@ -418,8 +418,12 @@ describe('Pandas', () => {
     const { token } = await newPlayer();
     const win = (level: number) =>
       submitPandas(token, { key: `c:${level}`, status: 'won', durationMs: 1, replay: encodePandas(pandasWin(level)) });
-    expect((await submitPandas(token, { key: 'c:101', status: 'abandoned', durationMs: 1, replay: '' })).status).toBe(
+    expect((await submitPandas(token, { key: 'c:121', status: 'abandoned', durationMs: 1, replay: '' })).status).toBe(
       400,
+    );
+    // Le niveau 101 existe, mais reste verrouillé tant que les précédents ne sont pas gagnés.
+    expect((await submitPandas(token, { key: 'c:101', status: 'abandoned', durationMs: 1, replay: '' })).status).toBe(
+      403,
     );
     expect((await win(4)).status).toBe(403);
     expect((await win(3)).status).toBe(200);

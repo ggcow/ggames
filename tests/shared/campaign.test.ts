@@ -25,6 +25,9 @@ describe('campagne : clés', () => {
     expect(keys.sort(campaignCompareKeys)).toEqual(['c:1', 'c:2', 'c:10', 'c:100', 'c:101', 'x:a', 'x:b']);
     expect(campaignCompareKeys('c:3', 'c:3')).toBe(0);
     expect(campaignCompareKeys('x:a', 'x:a')).toBe(0);
+    // Une campagne de 120 niveaux range ses derniers numéros dans l'ordre des niveaux.
+    expect(campaignCompareKeys('c:99', 'c:110', 120)).toBeLessThan(0);
+    expect(campaignCompareKeys('c:110', 'c:120', 120)).toBeLessThan(0);
   });
 });
 
@@ -74,5 +77,13 @@ describe('campagne : progression', () => {
     expect(campaignFrontier(all)).toBe(21);
     expect(campaignIsUnlocked('c:21', all, 20)).toBe(false);
     expect(campaignIsUnlocked('c:21', all)).toBe(true);
+  });
+
+  it('suit aussi une campagne plus longue, comme les 120 niveaux de Pandas', () => {
+    const all = new Set(Array.from({ length: 120 }, (_, i) => campaignKey(i + 1)));
+    expect(parseCampaignKey('c:120', 120)).toBe(120);
+    expect(parseCampaignKey('c:121', 120)).toBeNull();
+    expect(campaignFrontier(all, 120)).toBe(120);
+    expect(campaignIsUnlocked('c:120', all, 120)).toBe(true);
   });
 });

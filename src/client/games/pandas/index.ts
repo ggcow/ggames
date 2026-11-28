@@ -1,7 +1,7 @@
 // Jeu Pandas branché sur la plateforme : campagne de niveaux, écrans de jeu et de replay.
 
 import { pandas, startGrid } from '../../../shared/games/pandas/definition.ts';
-import { parseLiveState } from '../../../shared/games/pandas/rules.ts';
+import { LEVEL_COUNT, parseLiveState } from '../../../shared/games/pandas/rules.ts';
 import { h } from '../../platform/dom.ts';
 import { campaignMethods } from '../campaign.ts';
 import type { ClientGame } from '../client-game.ts';
@@ -21,6 +21,7 @@ export const pandasClient: ClientGame = {
     // Seule la réussite compte : ni score, ni classement par score, ni record.
     null,
     pandas,
+    LEVEL_COUNT,
   ),
 
   raceSize: RACE_SIZE,

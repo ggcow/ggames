@@ -1,9 +1,9 @@
 // Définition du jeu Pandas pour la plateforme : grilles enregistrées de la campagne, replays.
 
-import { campaignCompareKeys, campaignIsUnlocked, MAX_LEVEL, parseCampaignKey } from '../campaign.ts';
+import { campaignCompareKeys, campaignIsUnlocked, parseCampaignKey } from '../campaign.ts';
 import type { GameDefinition, ReplayOutcome } from '../game.ts';
 import { LEVELS } from './levels.ts';
-import { findSolutions, type Grid, isSolved, type Pandas, parseGrid } from './rules.ts';
+import { findSolutions, type Grid, isSolved, LEVEL_COUNT, type Pandas, parseGrid } from './rules.ts';
 
 export const PANDAS_ID = 'pandas';
 
@@ -15,7 +15,7 @@ export function levelGrid(level: number): Grid | null {
 
 /** Grille d'une clé, ou `null` si la clé est invalide. */
 export function startGrid(key: string): Grid | null {
-  const level = parseCampaignKey(key);
+  const level = parseCampaignKey(key, LEVEL_COUNT);
   return level === null ? null : levelGrid(level);
 }
 
@@ -85,9 +85,9 @@ export const OPEN_LEVELS = 3;
 export const pandas: GameDefinition = {
   id: PANDAS_ID,
   scoreOrder: 'asc',
-  isValidKey: (key) => parseCampaignKey(key) !== null,
-  compareKeys: campaignCompareKeys,
-  isUnlocked: (key, won) => campaignIsUnlocked(key, won, MAX_LEVEL, OPEN_LEVELS),
+  isValidKey: (key) => parseCampaignKey(key, LEVEL_COUNT) !== null,
+  compareKeys: (a, b) => campaignCompareKeys(a, b, LEVEL_COUNT),
+  isUnlocked: (key, won) => campaignIsUnlocked(key, won, LEVEL_COUNT, OPEN_LEVELS),
   lossCooldownMs: LOSS_COOLDOWN_MS,
   replay(key, replay): ReplayOutcome | null {
     const grid = startGrid(key);

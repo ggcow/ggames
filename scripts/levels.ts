@@ -9,6 +9,7 @@ import { generateLevels as couteaux } from '../src/shared/games/couteaux/generat
 import { LEVEL_COUNT as COUTEAUX_LEVELS } from '../src/shared/games/couteaux/rules.ts';
 import { generateLevels as fioles } from '../src/shared/games/fioles/generate.ts';
 import { generateLevels as pandas } from '../src/shared/games/pandas/generate.ts';
+import { LEVEL_COUNT as PANDAS_LEVELS } from '../src/shared/games/pandas/rules.ts';
 import { generateLevels as parking } from '../src/shared/games/parking/generate.ts';
 
 /**
@@ -21,7 +22,7 @@ type Generate = (count: number, progress: (level: number) => void) => string[];
 const GENERATORS: Record<string, { generate: Generate; count: number }> = {
   fioles: { generate: fioles, count: MAX_LEVEL },
   bouquets: { generate: bouquets, count: MAX_LEVEL },
-  pandas: { generate: pandas, count: MAX_LEVEL },
+  pandas: { generate: pandas, count: PANDAS_LEVELS },
   parking: { generate: parking, count: MAX_LEVEL },
   couteaux: { generate: couteaux, count: COUTEAUX_LEVELS },
 };

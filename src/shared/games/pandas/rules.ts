@@ -5,6 +5,9 @@
 export const MIN_SIZE = 5;
 export const MAX_SIZE = 10;
 
+/** Niveaux de la campagne : six pages de la grille. */
+export const LEVEL_COUNT = 120;
+
 /** Grille d'un niveau : `size` × `size` cases et autant de bosquets. */
 export interface Grid {
   readonly size: number;
